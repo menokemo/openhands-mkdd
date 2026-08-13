@@ -1,6 +1,6 @@
-import fs from "node:fs";
 import { openhands } from "../lib/openhands-client.mjs";
 import { listEmployeeNames } from "../lib/list-employee-definitions.mjs";
+import { readEmployeeDisplayInfo } from "../lib/employee-display-info.mjs";
 
 export async function handleProjects(req, res) {
   if (req.method !== "GET" || req.url !== "/api/projects") return false;
@@ -23,21 +23,11 @@ export async function handleEmployees(req, res) {
   data.profiles = (data.profiles ?? [])
     .filter((p) => allowed.has(p.name))
     .map((profile) => {
-      const file = `/company-agents-definitions/${profile.name}.md`;
-      const text = fs.readFileSync(file, "utf8");
-
-      const read = (label) => {
-        const m = text.match(new RegExp(`^- ${label}:\\s*(.+)$`, "m"));
-        return m ? m[1].trim() : null;
-      };
-
+      const info = readEmployeeDisplayInfo(profile.name);
       return {
         ...profile,
-        displayNameEn: read("Name"),
-        displayNameAr: read("Arabic Name"),
-        role: read("Role"),
+        ...info,
         avatarUrl: `/avatars/${profile.name}.webp`,
-        order: Number((text.match(/^order:\s*(\d+)$/m) || [])[1] || 999),
       };
     })
     .sort((a, b) => a.order - b.order);

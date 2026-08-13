@@ -2,11 +2,39 @@ import { OPENHANDS_URL, sessionKey, openhands } from "../lib/openhands-client.mj
 import { findAuthorizedConversation } from "../lib/authorize-conversation.mjs";
 import { normalizeEvent } from "../lib/normalize-event.mjs";
 import { deriveWorkPlan } from "../lib/work-plan.mjs";
+import { readEmployeeDisplayInfo } from "../lib/employee-display-info.mjs";
+import { withTimeContext } from "../lib/time-context.mjs";
 
 async function readJsonBody(req) {
   let body = "";
   for await (const chunk of req) body += chunk;
   return JSON.parse(body || "{}");
+}
+
+/**
+ * Looks up the human-readable project name from the registered workspace
+ * list (the single source of truth - see server/routes/projects.mjs),
+ * falling back to the raw path if the workspace can't be found for any
+ * reason (should not normally happen, since `project` always comes from
+ * a workspace fetchProjects() already read from this same list).
+ */
+async function resolveProjectDisplayName(projectPath) {
+  try {
+    const r = await openhands("/api/workspaces");
+    const data = await r.json();
+    const match = (data.workspaces ?? []).find((w) => w.path === projectPath);
+    return match?.name ?? projectPath;
+  } catch {
+    return projectPath;
+  }
+}
+
+function resolveEmployeeDisplayName(employeeId, employeeName) {
+  try {
+    return readEmployeeDisplayInfo(employeeId).displayNameEn ?? employeeName;
+  } catch {
+    return employeeName;
+  }
 }
 
 export async function handleChatSend(req, res) {
@@ -27,6 +55,11 @@ export async function handleChatSend(req, res) {
   });
 
   if (!conversation) {
+    const [employeeDisplayName, projectDisplayName] = await Promise.all([
+      Promise.resolve(resolveEmployeeDisplayName(employeeId, employeeName)),
+      resolveProjectDisplayName(project),
+    ]);
+
     const r = await fetch(OPENHANDS_URL + "/api/conversations", {
       method: "POST",
       headers: {
@@ -40,6 +73,12 @@ export async function handleChatSend(req, res) {
         },
         agent_profile_id: employeeId,
         autotitle: false,
+        // Confirmed real field (README/ENGINEERING_PRINCIPLES.md #1): the
+        // real Agent Canvas create-conversation payload sends `title`
+        // (see use-create-conversation.ts). Without it, conversations
+        // MKDD creates show up unnamed in Agent Canvas's own UI
+        // (BUGS_AND_FIXES.md #24).
+        title: `${employeeDisplayName} — ${projectDisplayName}`,
         tags: {
           mkddproject: project,
           mkddemployee: employeeName,
@@ -47,7 +86,7 @@ export async function handleChatSend(req, res) {
         },
         initial_message: {
           role: "user",
-          content: [{ type: "text", text: message }],
+          content: [{ type: "text", text: withTimeContext(message) }],
           run: true,
         },
       }),
@@ -68,7 +107,7 @@ export async function handleChatSend(req, res) {
     },
     body: JSON.stringify({
       role: "user",
-      content: [{ type: "text", text: message }],
+      content: [{ type: "text", text: withTimeContext(message) }],
       run: true,
     }),
   });

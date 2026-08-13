@@ -30,6 +30,42 @@ test("textContent: null/undefined/other types normalize to an empty array", () =
   assert.deepEqual(textContent(42), []);
 });
 
+test("normalizeEvent: strips the time-context marker from user messages", () => {
+  const event = {
+    id: "1",
+    kind: "MessageEvent",
+    source: "user",
+    llm_message: {
+      content: [
+        { type: "text", text: "<!--mkdd:time:2026-08-14T10:00:00.000Z-->\nhello there" },
+      ],
+    },
+  };
+  const result = normalizeEvent(event);
+  assert.equal(result.llm_message.content[0].text, "hello there");
+});
+
+test("normalizeEvent: leaves agent messages untouched (no marker to strip)", () => {
+  const event = {
+    id: "1",
+    kind: "MessageEvent",
+    source: "agent",
+    llm_message: {
+      content: [
+        { type: "text", text: "<!--mkdd:time:2026-08-14T10:00:00.000Z-->\nhello there" },
+      ],
+    },
+  };
+  const result = normalizeEvent(event);
+  // Agent messages never carry the marker in practice; this only proves
+  // stripping is scoped to source === "user" and doesn't accidentally
+  // mangle unrelated agent text that happens to look similar.
+  assert.equal(
+    result.llm_message.content[0].text,
+    "<!--mkdd:time:2026-08-14T10:00:00.000Z-->\nhello there",
+  );
+});
+
 test("normalizeEvent: MessageEvent normalizes string content via the shared fix", () => {
   const event = {
     id: "1",

@@ -12,6 +12,8 @@
  * returns the array form the UI expects.
  */
 
+import { stripTimeContext } from "./time-context.mjs";
+
 /**
  * Normalizes message content into the array-of-TextContent shape that
  * OpenHands' own MessageEvent.llm_message.content type uses
@@ -47,13 +49,25 @@ export function normalizeEvent(event) {
   };
 
   switch (event.kind) {
-    case "MessageEvent":
+    case "MessageEvent": {
+      const content = textContent(event.llm_message?.content);
+      // Only user messages ever carry the time-context marker (see
+      // server/lib/time-context.mjs) - strip it here so neither transport
+      // (REST or WebSocket, both routed through this same function) ever
+      // shows it to the browser. It's only injected on the first content
+      // item, matching how it's always constructed on the way out.
+      const cleaned =
+        base.source === "user"
+          ? content.map((item, i) =>
+              i === 0 ? { ...item, text: stripTimeContext(item.text) } : item,
+            )
+          : content;
+
       return {
         ...base,
-        llm_message: {
-          content: textContent(event.llm_message?.content),
-        },
+        llm_message: { content: cleaned },
       };
+    }
 
     case "ActionEvent":
       return {
