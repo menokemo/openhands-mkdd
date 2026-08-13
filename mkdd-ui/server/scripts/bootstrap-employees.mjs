@@ -1,9 +1,11 @@
+import fs from "node:fs";
+import path from "node:path";
 import { openhandsFetch } from "../lib/openhands-client.mjs";
 import { listEmployeeNames } from "../lib/list-employee-definitions.mjs";
 
 /**
- * Bootstrap script: creates an OpenHands Agent Profile for each employee
- * definition in /company-agents-definitions.
+ * Bootstrap script: creates (or updates) an OpenHands Agent Profile for
+ * each employee definition in /company-agents-definitions.
  *
  * Why this exists (see BUGS_AND_FIXES.md #16): Agent Profiles are not
  * auto-registered from the mounted company-agents-definitions/*.md files —
@@ -13,12 +15,23 @@ import { listEmployeeNames } from "../lib/list-employee-definitions.mjs";
  *
  * The live agent-server API REQUIRES `llm_profile_ref` at creation time
  * (confirmed via a real 422 response: "llm_profile_ref: Field required") —
- * profiles cannot be created "empty" and bound to an LLM later. Per an
- * explicit product decision, this script does NOT guess or hardcode an
- * LLM profile name: the caller must create one LLM profile first (via
- * Settings) and pass its name/id here. Every employee is created pointing
- * at that same starting LLM profile; each can be repointed individually
- * afterwards from the UI.
+ * profiles cannot be created "empty" and bound to an LLM later. The caller
+ * must create one LLM profile first (via Settings) and pass its name/id
+ * here. Every employee is created pointing at that same starting LLM
+ * profile; each can be repointed individually afterwards from the UI.
+ *
+ * The employee's actual identity/instructions (everything after the
+ * frontmatter in the .md file) is sent as `system_message_suffix` — the
+ * same field the MKDD customization in agent-profiles-local-view.tsx
+ * exposes in the UI (README section 9). Without it, a profile exists but
+ * has no personality/rules bound to it (observed live: "Employee
+ * Instructions" showed empty in the UI after the first bootstrap run,
+ * which only set agent_kind/agent/llm_profile_ref).
+ *
+ * POST /api/agent-profiles/{name} is an upsert (create-or-update, mirroring
+ * the frontend's own saveProfile call used for both create and edit), so
+ * this script re-runs safely: existing profiles get their instructions
+ * (re)applied rather than being skipped.
  *
  * Usage (run inside the mkdd-ui container, which shares the agent-canvas
  * container's PID namespace and so can discover its session key):
@@ -26,12 +39,23 @@ import { listEmployeeNames } from "../lib/list-employee-definitions.mjs";
  *     mkdd-ui-staging node server/scripts/bootstrap-employees.mjs
  */
 
-async function profileExists(name) {
-  const r = await openhandsFetch(`/api/agent-profiles/${name}`);
-  return r.status === 200;
+const DEFINITIONS_DIR = "/company-agents-definitions";
+
+/**
+ * Splits a definition file into its frontmatter and body. The body (the
+ * employee's actual instructions/persona) becomes system_message_suffix.
+ */
+function readSystemMessageSuffix(name) {
+  const file = path.join(DEFINITIONS_DIR, `${name}.md`);
+  const content = fs.readFileSync(file, "utf8");
+  const parts = content.split("---");
+  // parts[0] is empty (content starts with "---"), parts[1] is frontmatter,
+  // the rest (rejoined, in case the body itself contains "---") is the body.
+  const body = parts.length >= 3 ? parts.slice(2).join("---") : content;
+  return body.trim();
 }
 
-async function createProfile(name, llmProfileRef) {
+async function createOrUpdateProfile(name, llmProfileRef) {
   const r = await openhandsFetch(`/api/agent-profiles/${name}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -39,6 +63,7 @@ async function createProfile(name, llmProfileRef) {
       agent_kind: "openhands",
       agent: "CodeActAgent",
       llm_profile_ref: llmProfileRef,
+      system_message_suffix: readSystemMessageSuffix(name),
     }),
   });
 
@@ -63,28 +88,20 @@ async function main() {
     return;
   }
 
-  const names = listEmployeeNames();
+  const names = listEmployeeNames(DEFINITIONS_DIR);
   console.log(`Found ${names.length} employee definitions: ${names.join(", ")}`);
   console.log(`Using LLM profile: ${llmProfileRef}\n`);
 
-  let created = 0;
-  let skipped = 0;
+  let ok = 0;
   let failed = 0;
 
   for (const name of names) {
     // eslint-disable-next-line no-await-in-loop -- intentionally sequential,
     // this runs once during bootstrap, not on a hot path.
-    if (await profileExists(name)) {
-      console.log(`[skip]   ${name} — profile already exists`);
-      skipped += 1;
-      continue;
-    }
-
-    // eslint-disable-next-line no-await-in-loop
-    const result = await createProfile(name, llmProfileRef);
+    const result = await createOrUpdateProfile(name, llmProfileRef);
     if (result.ok) {
-      console.log(`[created] ${name}`);
-      created += 1;
+      console.log(`[ok]     ${name}`);
+      ok += 1;
     } else {
       console.error(`[FAILED] ${name} — HTTP ${result.status}: ${result.body}`);
       failed += 1;
@@ -92,7 +109,7 @@ async function main() {
   }
 
   console.log("");
-  console.log(`Done. created=${created} skipped=${skipped} failed=${failed}`);
+  console.log(`Done. ok=${ok} failed=${failed}`);
 
   if (failed > 0) {
     process.exitCode = 1;
@@ -103,3 +120,4 @@ main().catch((err) => {
   console.error("Bootstrap failed:", err);
   process.exitCode = 1;
 });
+
