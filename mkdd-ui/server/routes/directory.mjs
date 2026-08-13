@@ -3,7 +3,7 @@ import { openhands } from "../lib/openhands-client.mjs";
 import { listEmployeeNames } from "../lib/list-employee-definitions.mjs";
 
 export async function handleProjects(req, res) {
-  if (req.url !== "/api/projects") return false;
+  if (req.method !== "GET" || req.url !== "/api/projects") return false;
 
   const r = await openhands("/api/workspaces");
   res.writeHead(r.status, { "content-type": "application/json" });

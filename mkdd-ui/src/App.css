@@ -1658,3 +1658,67 @@ header button,
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* New project modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 9, 16, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 50;
+}
+
+.modal {
+  background: #101622;
+  border: 1px solid #263149;
+  border-radius: 20px;
+  padding: 22px;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.modal input {
+  border: 1px solid #273149;
+  background: #0b0f18;
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+}
+
+.modal input:focus {
+  outline: none;
+  border-color: #3d5aff;
+}
+
+.modal-error {
+  margin: 0;
+  color: #ff6b6b;
+  font-size: 13px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modal-actions button[type="submit"] {
+  background: #3d5aff;
+  border-color: #3d5aff;
+}
+
+.modal-actions button:disabled {
+  opacity: 0.5;
+}

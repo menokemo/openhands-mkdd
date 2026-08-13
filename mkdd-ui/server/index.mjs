@@ -9,6 +9,7 @@ import {
   WORKFLOW_ERROR_CODES,
 } from "./routes/workflow.mjs";
 import { handleProjects, handleEmployees } from "./routes/directory.mjs";
+import { handleCreateProject } from "./routes/projects.mjs";
 import { handleConversation } from "./routes/conversation.mjs";
 import { handleChatSend, handleChatEvents } from "./routes/chat.mjs";
 
@@ -26,6 +27,7 @@ const ROUTES = [
   handleReviews,
   handleFindings,
   handleProjects,
+  handleCreateProject,
   handleEmployees,
   handleConversation,
   handleChatSend,

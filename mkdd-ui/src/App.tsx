@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Workspace, AgentProfile } from "./types";
-import { fetchProjects, fetchEmployees } from "./api/client";
+import { fetchProjects, fetchEmployees, createProject } from "./api/client";
 import ChatScreen from "./screens/ChatScreen";
 import ProjectsScreen from "./screens/ProjectsScreen";
 import ProjectHomeScreen from "./screens/ProjectHomeScreen";
@@ -59,6 +59,11 @@ export default function App() {
       .finally(() => setLoading(false));
   }, []);
 
+  const handleCreateProject = async (name: string) => {
+    const project = await createProject(name);
+    setProjects((prev) => [...prev, project]);
+  };
+
   useEffect(() => {
     if (!selectedProject) {
       setEmployees([]);
@@ -114,6 +119,7 @@ export default function App() {
       t={t}
       setLanguage={setLanguage}
       onOpenProject={openProject}
+      onCreateProject={handleCreateProject}
     />
   );
 }

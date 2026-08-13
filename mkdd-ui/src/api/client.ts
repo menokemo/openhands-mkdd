@@ -15,6 +15,17 @@ export async function fetchProjects(): Promise<Workspace[]> {
   );
 }
 
+export async function createProject(name: string): Promise<Workspace> {
+  const r = await fetch("/api/projects", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error ?? "project_creation_failed");
+  return data.project;
+}
+
 export async function fetchEmployees(): Promise<AgentProfile[]> {
   const r = await fetch("/api/employees");
   const data = await r.json();

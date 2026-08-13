@@ -7,6 +7,13 @@ export const translations = {
     back: "رجوع",
     model: "الموديل",
     language: "English",
+    newProject: "+ مشروع جديد",
+    newProjectTitle: "إنشاء مشروع جديد",
+    newProjectNamePlaceholder: "اسم المشروع",
+    create: "إنشاء",
+    cancel: "إلغاء",
+    creatingProject: "جاري الإنشاء...",
+    projectCreationFailed: "فشل إنشاء المشروع. حاول مرة أخرى.",
   },
   en: {
     projects: "Projects",
@@ -16,6 +23,13 @@ export const translations = {
     back: "Back",
     model: "Model",
     language: "العربية",
+    newProject: "+ New Project",
+    newProjectTitle: "Create New Project",
+    newProjectNamePlaceholder: "Project name",
+    create: "Create",
+    cancel: "Cancel",
+    creatingProject: "Creating...",
+    projectCreationFailed: "Failed to create project. Please try again.",
   },
 } as const;
 

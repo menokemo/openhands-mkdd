@@ -49,6 +49,7 @@ services:
     volumes:
       - ./company-agents-definitions:/company-agents-definitions:ro
       - ./mkdd-data:/mkdd-data
+      - ${MKDD_PROJECTS_DIR:-./projects}:/projects
 
 volumes:
   openhands_state:

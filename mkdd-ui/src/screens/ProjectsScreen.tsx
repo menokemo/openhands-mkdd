@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Workspace } from "../types";
 
 type Props = {
@@ -9,9 +10,17 @@ type Props = {
     language: string;
     loadingProjects: string;
     noProjects: string;
+    newProject: string;
+    newProjectTitle: string;
+    newProjectNamePlaceholder: string;
+    create: string;
+    cancel: string;
+    creatingProject: string;
+    projectCreationFailed: string;
   };
   setLanguage: (language: "ar" | "en") => void;
   onOpenProject: (project: Workspace) => void;
+  onCreateProject: (name: string) => Promise<void>;
 };
 
 export default function ProjectsScreen({
@@ -21,7 +30,36 @@ export default function ProjectsScreen({
   t,
   setLanguage,
   onOpenProject,
+  onCreateProject,
 }: Props) {
+  const [isCreating, setIsCreating] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const closeModal = () => {
+    setIsCreating(false);
+    setNewProjectName("");
+    setError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProjectName.trim() || submitting) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      await onCreateProject(newProjectName.trim());
+      closeModal();
+    } catch {
+      setError(t.projectCreationFailed);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <main className="app">
       <header>
@@ -36,9 +74,12 @@ export default function ProjectsScreen({
           </div>
         </div>
 
-        <button onClick={() => setLanguage(language === "ar" ? "en" : "ar")}>
-          {t.language}
-        </button>
+        <div className="header-actions">
+          <button onClick={() => setIsCreating(true)}>{t.newProject}</button>
+          <button onClick={() => setLanguage(language === "ar" ? "en" : "ar")}>
+            {t.language}
+          </button>
+        </div>
       </header>
 
       <section className="chat">
@@ -65,6 +106,38 @@ export default function ProjectsScreen({
           </article>
         ))}
       </section>
+
+      {isCreating && (
+        <div className="modal-backdrop" onClick={closeModal}>
+          <form
+            className="modal"
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={handleSubmit}
+          >
+            <h2>{t.newProjectTitle}</h2>
+
+            <input
+              type="text"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              placeholder={t.newProjectNamePlaceholder}
+              autoFocus
+              disabled={submitting}
+            />
+
+            {error && <p className="modal-error">{error}</p>}
+
+            <div className="modal-actions">
+              <button type="button" onClick={closeModal} disabled={submitting}>
+                {t.cancel}
+              </button>
+              <button type="submit" disabled={submitting || !newProjectName.trim()}>
+                {submitting ? t.creatingProject : t.create}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </main>
   );
 }
