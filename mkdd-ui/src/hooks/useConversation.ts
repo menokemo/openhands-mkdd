@@ -17,11 +17,9 @@ type Params = {
   employee: AgentProfile | null;
 };
 
-const TERMINAL_STATUSES = new Set<ConversationExecutionStatus>([
-  "finished",
-  "error",
-  "stuck",
-]);
+const OPTIMISTIC_ID_PREFIX = "optimistic-";
+const RECONNECT_DELAY_MS = 3000;
+const MAX_RECONNECT_ATTEMPTS = 10;
 
 function splitEvents(events: ConversationEvent[]) {
   const messages = events.filter(
@@ -48,6 +46,22 @@ function mergeById<T extends ConversationEventBase>(current: T[], incoming: T[])
   });
 }
 
+function buildChatWebSocketUrl(
+  conversationId: string,
+  project: string,
+  employeeId: string,
+  employeeName: string,
+): string {
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const qs = new URLSearchParams({
+    conversation: conversationId,
+    project,
+    employeeId,
+    employeeName,
+  });
+  return `${protocol}//${window.location.host}/ws/chat?${qs}`;
+}
+
 export function useConversation({ project, employee }: Params) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
@@ -57,39 +71,49 @@ export function useConversation({ project, employee }: Params) {
     useState<ConversationExecutionStatus | null>(null);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
+  // Reflects incoming events into state, dropping any optimistic
+  // placeholder once a real (non-optimistic) message has actually arrived
+  // - see sendMessage() below for where the placeholder is added.
+  function applyIncomingEvents(
+    events: ConversationEvent[],
+    newWorkPlan: WorkPlan | null,
+  ) {
+    const split = splitEvents(events);
+    const hasRealMessage = split.messages.some(
+      (m) => !m.id.startsWith(OPTIMISTIC_ID_PREFIX),
+    );
+
+    setMessages((current) => {
+      const merged = mergeById(current, split.messages);
+      return hasRealMessage
+        ? merged.filter((m) => !m.id.startsWith(OPTIMISTIC_ID_PREFIX))
+        : merged;
+    });
+    setActivity((current) => mergeById(current, split.activity));
+    if (newWorkPlan !== undefined) setWorkPlan(newWorkPlan);
+  }
+
+  // --- Initial REST load: resolves the conversation id (if one exists)
+  // and the starting history. This stays REST-only (Phase D keeps REST
+  // for initial history + recovery, per REALTIME_CHAT_RESEARCH.md).
   useEffect(() => {
-    if (!project || !employee) {
-      setMessages([]);
-      setActivity([]);
-      setWorkPlan(null);
-      setCost(null);
-      setExecutionStatus(null);
-      return;
-    }
-
-    let cancelled = false;
-
     setMessages([]);
     setActivity([]);
     setWorkPlan(null);
     setCost(null);
     setExecutionStatus(null);
+    setConversationId(null);
+
+    if (!project || !employee) return;
+
+    let cancelled = false;
 
     fetchConversation(project.path, employee.id, employee.name)
       .then(async (data) => {
         const conversation = data.conversation;
-
-        if (!conversation) {
-          if (!cancelled) {
-            setMessages([]);
-            setActivity([]);
-            setWorkPlan(null);
-            setCost(null);
-            setExecutionStatus(null);
-          }
-          return;
-        }
+        if (!conversation || cancelled) return;
 
         const response = await fetchEvents(
           conversation.id,
@@ -99,12 +123,10 @@ export function useConversation({ project, employee }: Params) {
         );
         if (cancelled) return;
 
-        const split = splitEvents(response.items ?? []);
-        setMessages((current) => mergeById(current, split.messages));
-        setActivity((current) => mergeById(current, split.activity));
-        setWorkPlan(response.work_plan);
+        applyIncomingEvents(response.items ?? [], response.work_plan);
         setCost(conversation.cost ?? null);
         setExecutionStatus(conversation.execution_status ?? null);
+        setConversationId(conversation.id);
       })
       .catch(() => {
         // Keep the last known-good conversation state visible.
@@ -113,103 +135,150 @@ export function useConversation({ project, employee }: Params) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- applyIncomingEvents is stable in intent
   }, [project, employee]);
 
   useEffect(() => {
     setMessage("");
   }, [project, employee]);
 
+  // --- Live WebSocket subscription (Phase D). Connects once a
+  // conversation id is known; reconnects with backoff on drop; falls back
+  // to nothing further (the REST recovery path below covers the
+  // WS-unavailable case).
+  useEffect(() => {
+    if (!project || !employee || !conversationId) return;
+
+    let cancelled = false;
+    let socket: WebSocket | null = null;
+    let reconnectTimer: number | null = null;
+    let attempt = 0;
+
+    const connect = () => {
+      if (cancelled) return;
+
+      const url = buildChatWebSocketUrl(
+        conversationId,
+        project.path,
+        employee.id,
+        employee.name,
+      );
+      socket = new WebSocket(url);
+
+      socket.onopen = () => {
+        attempt = 0;
+      };
+
+      socket.onmessage = (ev) => {
+        try {
+          const payload = JSON.parse(ev.data);
+          if (payload.type === "event" && payload.event) {
+            applyIncomingEvents([payload.event], undefined as unknown as WorkPlan);
+          }
+        } catch {
+          // ignore malformed frames
+        }
+      };
+
+      socket.onclose = () => {
+        if (cancelled) return;
+        if (attempt >= MAX_RECONNECT_ATTEMPTS) return;
+        attempt += 1;
+        reconnectTimer = window.setTimeout(connect, RECONNECT_DELAY_MS);
+      };
+
+      socket.onerror = () => {
+        socket?.close();
+      };
+    };
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      if (reconnectTimer) window.clearTimeout(reconnectTimer);
+      socket?.close();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- applyIncomingEvents is stable in intent
+  }, [project, employee, conversationId]);
+
+  // --- REST recovery fallback: periodically re-syncs execution status and
+  // cost (not covered by the chat WebSocket, which only streams events),
+  // and re-fetches the full conversation as a safety net if the
+  // WebSocket has been unable to reconnect. Much lighter than the old
+  // 2s full-history poll: this only runs every 15s and skips the
+  // expensive event fetch when nothing indicates it's needed.
   useEffect(() => {
     if (!project || !employee) return;
 
     let cancelled = false;
-    let refreshing = false;
 
-    const refreshConversation = async () => {
-      if (refreshing) return;
-      refreshing = true;
-
+    const resync = async () => {
       try {
         const conversationData = await fetchConversation(
           project.path,
           employee.id,
           employee.name,
         );
-
         const conversation = conversationData.conversation;
         if (!conversation || cancelled) return;
 
-        const eventsData = await fetchEvents(
-          conversation.id,
-          project.path,
-          employee.id,
-          employee.name,
-        );
-
-        if (cancelled) return;
-
-        const split = splitEvents(eventsData.items ?? []);
-
-        setMessages((current) => mergeById(current, split.messages));
-        setActivity((current) => mergeById(current, split.activity));
-        setWorkPlan(eventsData.work_plan);
         setCost(conversation.cost ?? null);
         setExecutionStatus(conversation.execution_status ?? null);
+
+        if (conversation.id !== conversationId) {
+          setConversationId(conversation.id);
+        }
       } catch {
-        // Keep the last confirmed UI state on transient sync failures.
-      } finally {
-        refreshing = false;
+        // Keep last confirmed state on transient failures.
       }
     };
 
-    void refreshConversation();
-    const timer = window.setInterval(refreshConversation, 2000);
-
+    const timer = window.setInterval(resync, 15000);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [project, employee]);
+  }, [project, employee, conversationId]);
 
   async function sendMessage() {
     if (!project || !employee || !message.trim() || sending) return;
 
+    const text = message.trim();
+    const optimisticId = `${OPTIMISTIC_ID_PREFIX}${Date.now()}`;
+    const optimisticMessage: ChatMessage = {
+      id: optimisticId,
+      kind: "MessageEvent",
+      source: "user",
+      timestamp: new Date().toISOString(),
+      llm_message: { content: [{ type: "text", text }] },
+    };
+
     setSending(true);
+    setMessage("");
+    setMessages((current) => [...current, optimisticMessage]);
 
     try {
       const sendData = await sendChatMessage(
         project.path,
         employee.id,
         employee.name,
-        message.trim(),
+        text,
       );
 
       const id = sendData.conversation?.id ?? sendData.conversation_id;
-      setMessage("");
-
-      if (!id) return;
-
-      for (let attempt = 0; attempt < 30; attempt += 1) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        const [conversationData, eventsData] = await Promise.all([
-          fetchConversation(project.path, employee.id, employee.name),
-          fetchEvents(id, project.path, employee.id, employee.name),
-        ]);
-
-        const split = splitEvents(eventsData.items ?? []);
-        setMessages((current) => mergeById(current, split.messages));
-        setActivity((current) => mergeById(current, split.activity));
-        setWorkPlan(eventsData.work_plan);
-        setCost(conversationData.conversation?.cost ?? null);
-        const status = conversationData.conversation?.execution_status ?? null;
-
-        setExecutionStatus(status);
-
-        if (status && TERMINAL_STATUSES.has(status)) {
-          break;
-        }
+      if (id && id !== conversationId) {
+        setConversationId(id);
       }
+      // The real echo arrives via the WebSocket subscription above, which
+      // clears the optimistic placeholder once it does (see
+      // applyIncomingEvents). If the WebSocket is down, the 15s REST
+      // resync will eventually reconcile it as a fallback.
+    } catch {
+      // Sending genuinely failed - remove the optimistic bubble and give
+      // the user their text back instead of silently losing it.
+      setMessages((current) => current.filter((m) => m.id !== optimisticId));
+      setMessage(text);
     } finally {
       setSending(false);
     }

@@ -154,6 +154,7 @@ function normalizeMessageContent(content) {
 
 ## 7. ملخص القيمة المضافة لهذا البحث
 
+
 | السؤال المفتوح في README | الإجابة المكتشفة |
 |---|---|
 | ما شكل الـ WebSocket endpoint في OpenHands؟ | `/sockets/events/{conversationId}` — موثق ومُستخدم فعليًا |
@@ -165,3 +166,22 @@ function normalizeMessageContent(content) {
 **الخلاصة:** لا حاجة لابتكار بروتوكول أو معمارية جديدة من الصفر. الحل هو **إعادة استخدام نفس الأنماط والمنطق المُثبتة فعليًا داخل OpenHands نفسه**، مع تطبيقها مرتين:
 - مرة بين **MKDD backend و OpenHands** (بنفس بروتوكول auth الأصلي).
 - ومرة بين **المتصفح و MKDD backend** (بنفس نموذج الـ hook وإدارة الأحداث).
+
+---
+
+## 8. حالة التنفيذ (تحديث 2026-08-13)
+
+| Phase | الوصف | الحالة |
+|---|---|---|
+| A | Shared normalization | ✅ تم — `server/lib/normalize-event.mjs` مستخدم من REST **و** WebSocket بدون أي فرق منطق |
+| B | String message content | ✅ تم — نفس `textContent` بيدعم الشكلين |
+| C | Secure backend WebSocket bridge | ✅ تم — `server/lib/ws-bridge.mjs`، مُختبَر فعليًا (auth check، رفض بارامترات ناقصة، رفض مسار غلط) |
+| D | Frontend live subscription | ✅ تم — `useConversation.ts` بيتصل بـ WebSocket بعد تحميل التاريخ الأولي، مع reconnect بـ backoff (10 محاولات، 3 ثواني) |
+| E | Optimistic user message | ✅ تم — رسالة المستخدم تظهر فورًا، وتُستبدَل تلقائيًا بالـ echo الحقيقي أول ما يوصل عبر WebSocket |
+| F | إزالة الـ polling التراكمي | ✅ تم جزئيًا — الـ polling الرئيسي (كل ثانيتين) اتشال بالكامل؛ بقي resync خفيف كل 15 ثانية كـ fallback (تحديث الـ cost/execution status، والتعافي لو الـ WebSocket فشل يعيد الاتصال) |
+
+**قيود معروفة بعد هذا التنفيذ (صريحة، مش مخفية):**
+- **Work Plan لسه مش live 100%:** تحديثات `task_tracker` الحية عبر WebSocket بتوصل كأحداث منفردة، لكن حساب الـ work plan الكامل (نسبة الإنجاز، إلخ) لسه محسوب فقط في REST route (`server/lib/work-plan.mjs`) من تاريخ الأحداث الكامل. يتحدّث كل 15 ثانية عبر الـ resync، مش لحظيًا مع كل حدث.
+- **الاختبار الفعلي محدود ببيئة بدون Docker:** تم التحقق الكامل من: منطق الأمان (رفض/قبول الاتصال)، توافق HTTP+WS في نفس السيرفر، البناء والاختبارات. **لم يتم بعد** اختبار محادثة حقيقية كاملة (رسالة → رد فعلي من موظف) على الـ staging، لأن هذا يحتاج بيئة Docker فعلية (VM المستخدم).
+
+---

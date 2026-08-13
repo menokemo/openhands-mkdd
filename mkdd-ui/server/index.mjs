@@ -12,6 +12,7 @@ import { handleProjects, handleEmployees } from "./routes/directory.mjs";
 import { handleCreateProject } from "./routes/projects.mjs";
 import { handleConversation } from "./routes/conversation.mjs";
 import { handleChatSend, handleChatEvents } from "./routes/chat.mjs";
+import { attachChatWebSocketBridge } from "./lib/ws-bridge.mjs";
 
 // Route handlers are tried in order; each returns `true` once it has
 // written a response, or `false` to let the next handler try. This keeps
@@ -34,21 +35,23 @@ const ROUTES = [
   handleChatEvents,
 ];
 
-http
-  .createServer(async (req, res) => {
-    try {
-      for (const route of ROUTES) {
-        // eslint-disable-next-line no-await-in-loop -- routes are tried in
-        // priority order; only one will ever actually do async work.
-        if (await route(req, res)) return;
-      }
-
-      res.writeHead(404, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: "not_found" }));
-    } catch (e) {
-      const status = WORKFLOW_ERROR_CODES.has(e.message) ? 409 : 502;
-      res.writeHead(status, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: e.message }));
+const server = http.createServer(async (req, res) => {
+  try {
+    for (const route of ROUTES) {
+      // eslint-disable-next-line no-await-in-loop -- routes are tried in
+      // priority order; only one will ever actually do async work.
+      if (await route(req, res)) return;
     }
-  })
-  .listen(8787, "0.0.0.0", () => console.log("MKDD backend ready on 8787"));
+
+    res.writeHead(404, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "not_found" }));
+  } catch (e) {
+    const status = WORKFLOW_ERROR_CODES.has(e.message) ? 409 : 502;
+    res.writeHead(status, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: e.message }));
+  }
+});
+
+attachChatWebSocketBridge(server);
+
+server.listen(8787, "0.0.0.0", () => console.log("MKDD backend ready on 8787"));
