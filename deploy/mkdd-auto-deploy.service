@@ -1,0 +1,11 @@
+[Unit]
+Description=MKDD auto-deploy (poll GitHub, rebuild, health-check, rollback on failure)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/mkdd-live/deploy/auto-deploy.sh
+# Environment overrides (uncomment/edit as needed):
+# Environment=MKDD_REPO_URL=https://github.com/menokemo/openhands-mkdd.git
+# Environment=MKDD_DEPLOY_DIR=/opt/mkdd-live

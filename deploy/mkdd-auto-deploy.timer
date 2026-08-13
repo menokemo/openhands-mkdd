@@ -1,0 +1,12 @@
+[Unit]
+Description=Run mkdd-auto-deploy every minute
+
+[Timer]
+# Fires 1 minute after boot, then every 1 minute thereafter.
+OnBootSec=1min
+OnUnitActiveSec=1min
+# If the VM was off when a run was due, run once on the next boot.
+Persistent=true
+
+[Install]
+WantedBy=timers.target
