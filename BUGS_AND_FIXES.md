@@ -237,6 +237,37 @@ build:
 
 ---
 
+### 17. `auto-deploy.sh` كان يفشل بصمت تحت systemd بسبب `git` "dubious ownership"
+**الوصف:** بعد التركيب الأول الناجح (`install.sh` شغّله المستخدم مباشرة)، كل الدورات اللاحقة اللي شغّلها الـ systemd timer كانت **تفشل فورًا** برسالة:
+```
+fatal: detected dubious ownership in repository at '/opt/mkdd-live'
+```
+والنتيجة: أي commit جديد بعد التركيب الأول **لم يصل أبدًا** للـ staging، رغم أن اللوج لم يُظهر أي "CRITICAL" واضح (فشل الأمر بصمت داخل `git fetch` نفسه، قبل حتى منطق اكتشاف الـ commit الجديد).
+
+**التشخيص:** إصلاح يدوي بـ `sudo git config --global --add safe.directory /opt/mkdd-live` بدا ناجحًا (اتسجل فعليًا في `/root/.gitconfig`)، لكن الفشل استمر. تم تأكيد السبب بالفحص المباشر:
+```
+sudo systemctl show mkdd-auto-deploy.service -p Environment
+→ Environment=   (فاضي تمامًا)
+```
+يعني الـ systemd service بيشتغل بدون `$HOME` معرّف، فـ git بيتجاهل `/root/.gitconfig` بالكامل تحت هذا السياق.
+
+**الحل الدائم (بدل الاعتماد على إعداد يدوي على كل VM):**
+1. `auto-deploy.sh` نفسه بقى يسجّل `git config --global --add safe.directory "$DEPLOY_DIR"` **في بداية كل تشغيل** (idempotent — بيتفحص الأول قبل الإضافة)، فمبقاش معتمد على أي إعداد خارجي.
+2. `mkdd-auto-deploy.service` بقى فيه `Environment=HOME=/root` صريح، كدفاع إضافي.
+
+**الحالة:** ✅ تم الحل (الكود جاهز، محتاج push + دورة واحدة تنجح للتأكيد النهائي).
+
+---
+
+### 18. سرعة الفحص الدورية (بناءً على طلب صريح)
+**الوصف:** تم تقليل الفاصل الزمني للـ `mkdd-auto-deploy.timer` من دقيقة واحدة إلى **20 ثانية**.
+
+**السبب:** `git fetch` ضد ريبو بدون تغيير عملية خفيفة جدًا، والقفل (`flock`) في `auto-deploy.sh` يضمن عدم تداخل الدورات مع بعضها حتى لو استغرق أي build فعلي وقتًا أطول من 20 ثانية.
+
+**الحالة:** ✅ تم الحل.
+
+---
+
 ## قوالب للإضافة المستقبلية
 
 عند إضافة مشكلة جديدة، استخدم هذا القالب:

@@ -5,6 +5,7 @@ Requires=docker.service
 
 [Service]
 Type=oneshot
+Environment=HOME=/root
 ExecStart=/opt/mkdd-live/deploy/auto-deploy.sh
 # Environment overrides (uncomment/edit as needed):
 # Environment=MKDD_REPO_URL=https://github.com/menokemo/openhands-mkdd.git

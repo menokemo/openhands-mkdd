@@ -39,6 +39,20 @@ log() {
 }
 
 # ---------------------------------------------------------------------------
+# 0. Git safety: mark DEPLOY_DIR as a safe.directory for whichever user runs
+# this script. Git refuses to operate on a repo whose owner doesn't match
+# the current user ("detected dubious ownership") — this commonly bites
+# systemd-run services, where $HOME may not point at the same place a
+# manual `sudo git config --global` edit was made. Doing this here, every
+# run, makes the script self-contained: it never depends on a one-off
+# manual setup step succeeding on whatever machine/user context it happens
+# to run under.
+# ---------------------------------------------------------------------------
+if ! git config --global --get-all safe.directory 2>/dev/null | grep -qxF "$DEPLOY_DIR"; then
+  git config --global --add safe.directory "$DEPLOY_DIR"
+fi
+
+# ---------------------------------------------------------------------------
 # 1. Ensure the dedicated deploy checkout exists
 # ---------------------------------------------------------------------------
 if [ ! -d "$DEPLOY_DIR/.git" ]; then

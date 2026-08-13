@@ -1,10 +1,13 @@
 [Unit]
-Description=Run mkdd-auto-deploy every minute
+Description=Run mkdd-auto-deploy every 20 seconds
 
 [Timer]
-# Fires 1 minute after boot, then every 1 minute thereafter.
-OnBootSec=1min
-OnUnitActiveSec=1min
+# Fires 20 seconds after boot, then every 20 seconds thereafter. This is
+# safe to run this frequently: a `git fetch` against an unchanged repo is
+# very cheap, and the locking in auto-deploy.sh (flock) means an in-progress
+# build/deploy is never interrupted or duplicated by the next tick.
+OnBootSec=20sec
+OnUnitActiveSec=20sec
 # If the VM was off when a run was due, run once on the next boot.
 Persistent=true
 
