@@ -21,9 +21,7 @@ const statusLabel = {
 export default function WorkPlanPanel({ language, workPlan }: Props) {
   const title = language === "ar" ? "خطة العمل" : "Work Plan";
   const empty =
-    language === "ar"
-      ? "لا توجد خطة عمل مسجلة حتى الآن."
-      : "No tracked work plan yet.";
+    language === "ar" ? "لا توجد خطة عمل مسجلة حتى الآن." : "No tracked work plan yet.";
 
   if (!workPlan) {
     return (
@@ -61,7 +59,10 @@ export default function WorkPlanPanel({ language, workPlan }: Props) {
 
       <div className="work-plan-tasks">
         {workPlan.tasks.map((task, index) => (
-          <article className={`work-plan-task ${task.status}`} key={`${task.title}-${index}`}>
+          <article
+            className={`work-plan-task ${task.status}`}
+            key={`${task.title}-${index}`}
+          >
             <span className="work-plan-task-marker" aria-hidden="true" />
             <div>
               <strong>{task.title}</strong>

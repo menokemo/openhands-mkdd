@@ -70,13 +70,15 @@ function activityLabel(event: ActivityEvent, language: "ar" | "en") {
   }
 
   if (event.kind === "UserRejectObservation") {
-    return event.rejection_reason ||
-      (language === "ar" ? "تم رفض الإجراء" : "Action rejected");
+    return (
+      event.rejection_reason || (language === "ar" ? "تم رفض الإجراء" : "Action rejected")
+    );
   }
 
   if (event.kind === "HookExecutionEvent") {
-    return event.reason ||
-      (language === "ar" ? "فحص سياسة التنفيذ" : "Execution policy check");
+    return (
+      event.reason || (language === "ar" ? "فحص سياسة التنفيذ" : "Execution policy check")
+    );
   }
 
   return language === "ar" ? "نشاط" : "Activity";
@@ -105,62 +107,67 @@ export default function EmployeeInsightsPanel({
       dir={language === "ar" ? "rtl" : "ltr"}
     >
       <summary className="employee-insights-trigger">
-        <span>{language === "ar" ? "تفاصيل الموظف والنشاط" : "Employee details & activity"}</span>
-        <span className={`execution-status-dot execution-status-dot-${statusKey}`} aria-hidden="true" />
+        <span>
+          {language === "ar" ? "تفاصيل الموظف والنشاط" : "Employee details & activity"}
+        </span>
+        <span
+          className={`execution-status-dot execution-status-dot-${statusKey}`}
+          aria-hidden="true"
+        />
       </summary>
 
       <div className="employee-insights-content">
-      <div className="employee-insights-summary">
-        <div className={`execution-status execution-status-${statusKey}`}>
-          <span className="execution-status-dot" aria-hidden="true" />
-          <div>
-            <small>{language === "ar" ? "الحالة" : "Status"}</small>
-            <strong>{statusText[language][statusKey]}</strong>
+        <div className="employee-insights-summary">
+          <div className={`execution-status execution-status-${statusKey}`}>
+            <span className="execution-status-dot" aria-hidden="true" />
+            <div>
+              <small>{language === "ar" ? "الحالة" : "Status"}</small>
+              <strong>{statusText[language][statusKey]}</strong>
+            </div>
+          </div>
+
+          <div className="conversation-cost">
+            <small>{language === "ar" ? "التكلفة" : "Cost"}</small>
+            <strong>{cost ? `$${cost.accumulatedCost.toFixed(4)}` : "—"}</strong>
+            {totalTokens !== null && (
+              <span>
+                {totalTokens.toLocaleString()} {language === "ar" ? "توكن" : "tokens"}
+              </span>
+            )}
           </div>
         </div>
 
-        <div className="conversation-cost">
-          <small>{language === "ar" ? "التكلفة" : "Cost"}</small>
-          <strong>
-            {cost ? `$${cost.accumulatedCost.toFixed(4)}` : "—"}
-          </strong>
-          {totalTokens !== null && (
-            <span>
-              {totalTokens.toLocaleString()}{" "}
-              {language === "ar" ? "توكن" : "tokens"}
-            </span>
-          )}
-        </div>
-      </div>
+        <WorkPlanPanel language={language} workPlan={workPlan} />
 
-      <WorkPlanPanel language={language} workPlan={workPlan} />
+        <section className="activity-drawer">
+          <div className="activity-heading">
+            <span>{language === "ar" ? "النشاط" : "Activity"}</span>
+            <small>{activity.length}</small>
+          </div>
 
-      <section className="activity-drawer">
-        <div className="activity-heading">
-          <span>{language === "ar" ? "النشاط" : "Activity"}</span>
-          <small>{activity.length}</small>
-        </div>
-
-        <div className="activity-list">
-          {latestActivity.length === 0 ? (
-            <p className="activity-empty">
-              {language === "ar"
-                ? "لا يوجد نشاط مسجل حتى الآن."
-                : "No activity recorded yet."}
-            </p>
-          ) : (
-            latestActivity.map((event) => (
-              <article className={`activity-item activity-${event.kind}`} key={event.id}>
-                <span className="activity-marker" aria-hidden="true" />
-                <div>
-                  <strong>{activityLabel(event, language)}</strong>
-                  {event.timestamp && <time>{event.timestamp}</time>}
-                </div>
-              </article>
-            ))
-          )}
-        </div>
-      </section>
+          <div className="activity-list">
+            {latestActivity.length === 0 ? (
+              <p className="activity-empty">
+                {language === "ar"
+                  ? "لا يوجد نشاط مسجل حتى الآن."
+                  : "No activity recorded yet."}
+              </p>
+            ) : (
+              latestActivity.map((event) => (
+                <article
+                  className={`activity-item activity-${event.kind}`}
+                  key={event.id}
+                >
+                  <span className="activity-marker" aria-hidden="true" />
+                  <div>
+                    <strong>{activityLabel(event, language)}</strong>
+                    {event.timestamp && <time>{event.timestamp}</time>}
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
       </div>
     </details>
   );

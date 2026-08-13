@@ -1,5 +1,11 @@
 services:
   agent-canvas:
+    build:
+      context: ./openhands-agent-canvas
+      dockerfile: docker/Dockerfile
+      args:
+        AGENT_SERVER_IMAGE: ${AGENT_SERVER_IMAGE:-ghcr.io/openhands/agent-server:1.40.1-python}
+        AUTOMATION_VERSION: ${AUTOMATION_VERSION:-1.6.0}
     image: mkdd/agent-canvas:1.12.0-mkdd2
     container_name: openhands-agent-canvas
     restart: unless-stopped
@@ -8,15 +14,15 @@ services:
       - "3000:3000"
     volumes:
       - openhands_state:/home/openhands/.openhands
-      - /opt/openhands/projects:/projects
-      - /opt/openhands/company-skills:/home/openhands/.agents/skills:ro
-      - /opt/openhands/company-agents-definitions:/home/openhands/.agents/agents
+      - ${MKDD_PROJECTS_DIR:-./projects}:/projects
+      - ./company-skills:/home/openhands/.agents/skills:ro
+      - ./company-agents-definitions:/home/openhands/.agents/agents
     security_opt:
       - no-new-privileges:true
 
   mkdd-ui:
     build:
-      context: /opt/openhands/projects/mkdd-ui
+      context: ./mkdd-ui
     container_name: mkdd-ui
     pid: "service:agent-canvas"
     restart: unless-stopped

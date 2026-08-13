@@ -26,23 +26,18 @@
 
 ---
 
-## 🔴 معروفة ولسه مفتوحة (Known / Open)
-
 ### 3. Message content normalization mismatch
-**الوصف:** الـ normalization الحالي في MKDD بيقبل محتوى الرسائل فقط لما تكون array من text-content objects. لكن كود OpenHands Agent Canvas بيدعم كمان استقبال المحتوى كـ string مباشر.
+**الوصف:** الـ normalization في MKDD كان بيقبل محتوى الرسائل فقط لما تكون array من text-content objects. لكن بعض المصادر (طبقًا لتوثيق `REALTIME_CHAT_RESEARCH.md`، شكل الرسالة الرسمي في OpenHands هو array دايمًا `(TextContent | ImageContent)[]`) — المشكلة كانت في نقاط استدعاء أخرى ممكن تبعت string خام.
 
-**الحالة:** تم تحديد المشكلة، لكن لم يتم إصلاحها بعد.
+**محاولة سابقة فشلت (موثقة للأمانة):** تمت محاولة تعديل تلقائي (scripted edit) سابقًا فشلت في إيجاد الـ source anchor بالضبط، فتم إيقاف المحاولة **بدون** تعديل الملف عشوائيًا حينها.
 
-**محاولة سابقة:** تمت محاولة تعديل تلقائي (scripted edit) لكنها فشلت في إيجاد الـ source anchor بالضبط، فتم إيقاف المحاولة **بدون** تعديل الملف عشوائيًا. القاعدة المتبعة: لا يتم تطبيق أي تعديل جماعي (blind patch) إذا لم يتطابق الـ anchor المطلوب بدقة.
+**الحل النهائي:** أثناء إعادة هيكلة `server/index.mjs` (انظر `PROJECT_AUDIT_REPORT.md`)، تم استخراج دالة `textContent` الموحدة في `server/lib/normalize-event.mjs`، وتم تعديلها لتقبل الشكلين معًا (`string` أو `[{type:"text", text:"..."}]`) وتُرجع دائمًا الشكل الموحد. الدالة مُغطاة باختبارات في `server/lib/normalize-event.test.mjs`.
 
-**الخطوة القادمة:** دعم الشكلين معًا:
-```
-string
-أو
-[{ type: "text", text: "..." }]
-```
+**الحالة:** ✅ تم الحل.
 
 ---
+
+## 🔴 معروفة ولسه مفتوحة (Known / Open)
 
 ### 4. اختفاء بيانات الموظفين (Employee Information Disappearance)
 **الوصف:** معلومات الموظف أحيانًا بتختفي من الواجهة، وممكن تفضل مختفية حتى بعد عمل refresh للمتصفح.
@@ -114,25 +109,77 @@ AUTOMATION_VERSION=1.6.0
 
 **نتيجة الاختبار:** تم بناء الصورة بنجاح (34/34 خطوة)، وتم تشغيلها فعليًا كـ container منفصل (اسم مؤقت `mkdd-agent-canvas-TEST`) على بورتات بديلة (`18000`, `13000`) بدون التأثير على الحاويات الأصلية الشغالة، وتم التأكد من عملها ثم حذفها بأمان بعد الاختبار.
 
-**الحالة:** لسه لم يتم تعديل `compose.yml` ليدمج هذه القيم بشكل دائم (`build:` context). هذا الإصلاح لسه مطلوب (انظر القسم 8 أدناه).
+**الحل النهائي:** تم دمج هذه القيم في `compose.yml` كـ `build.args` بقيم افتراضية (`${AGENT_SERVER_IMAGE:-...}` / `${AUTOMATION_VERSION:-...}`)، وفي `setup.sh` الذي يصدّرها كمتغيرات بيئة قبل البناء.
 
-**الحالة:** 🔴 مفتوحة — إصلاح مخطط له، لم يتم تنفيذه بعد.
+**الحالة:** ✅ تم الحل.
 
 ---
 
 ### 8. `compose.yml` بدون `build:` context لصورة agent-canvas
-**الوصف:** ملف `compose.yml` الحالي يستخدم:
+**الوصف:** ملف `compose.yml` كان يستخدم:
 ```yaml
 agent-canvas:
     image: mkdd/agent-canvas:1.12.0-mkdd2
 ```
-بدون سطر `build:`، يعني الملف يفترض أن الصورة موجودة مسبقًا (locally أو على registry)، ولا يحتوي على تعليمات لبنائها من الكود المصدري (`openhands-agent-canvas/`).
+بدون سطر `build:`، يعني الملف كان يفترض أن الصورة موجودة مسبقًا (locally أو على registry)، ولا يحتوي على تعليمات لبنائها من الكود المصدري (`openhands-agent-canvas/`).
 
-**الأثر:** لا يمكن حاليًا إعادة بناء البيئة بالكامل على VM جديدة باستخدام `docker compose up` فقط.
+**الأثر:** لم يكن من الممكن إعادة بناء البيئة بالكامل على VM جديدة باستخدام `docker compose up` فقط.
 
-**الحل المطلوب:** إضافة `build:` context في `compose.yml` مع تمرير القيم الصحيحة لـ `AGENT_SERVER_IMAGE` و`AUTOMATION_VERSION` (انظر مشكلة #7).
+**الحل النهائي:** تمت إضافة `build.context: ./openhands-agent-canvas` و`build.dockerfile: docker/Dockerfile` مع `build.args` الصحيحة (انظر مشكلة #7).
 
-**الحالة:** 🔴 مفتوحة.
+**الحالة:** ✅ تم الحل.
+
+---
+
+### 9. `compose.yml` يحتوي على مسارات مطلقة مربوطة بجهاز الـ VM الحالي (اكتشاف من PROJECT_AUDIT_REPORT.md)
+**الوصف:** الفحص الشامل للمشروع (`PROJECT_AUDIT_REPORT.md`، بند 2.2) اكتشف أن `compose.yml` كان يحتوي على مسارات مطلقة مثل:
+```yaml
+- /opt/openhands/projects:/projects
+- /opt/openhands/company-skills:/home/openhands/.agents/skills:ro
+build:
+  context: /opt/openhands/projects/mkdd-ui
+```
+رغم أن نفس هذه الملفات موجودة فعليًا داخل الريبو نفسه بجانب `compose.yml`.
+
+**الأثر:** هذه مشكلة **منفصلة وإضافية** عن مشكلتي #7/#8. حتى بعد حلّهما، كان تشغيل `docker compose up` على أي جهاز آخر (أو حتى نفس الجهاز في مسار مختلف) سيفشل فورًا لعدم وجود `/opt/openhands/...` هناك.
+
+**الحل النهائي:** تحويل جميع المسارات إلى نسبية (`./mkdd-ui`, `./company-skills`, `./company-agents-definitions`)، واستخدام متغير بيئة قابل للتخصيص لمسار المشاريع الفعلية (`${MKDD_PROJECTS_DIR:-./projects}`) لأن هذا المسار يمثل بيانات المستخدم الفعلية وليس جزءًا من كود المنتج.
+
+**الحالة:** ✅ تم الحل.
+
+---
+
+## ✅ إصلاحات ناتجة عن PROJECT_AUDIT_REPORT.md (2026-08-13)
+
+### 10. `server/index.mjs` كان ملف واحد ضخم (830 سطر) بمنطق كل الـ routes
+**الوصف:** 13 route كلهم متعاملين معاهم داخل handler واحد، بدون framework أو تقسيم لملفات.
+
+**الحل النهائي:** تم تقسيمه إلى `server/lib/` (openhands-client, normalize-conversation, normalize-event, work-plan, authorize-conversation) و`server/routes/` (branding, workflow, directory, conversation, chat)، مع `server/index.mjs` كنقطة دخول فقط تربط الـ routes ببعضها. تم التحقق من التطابق الوظيفي الكامل: نفس الأخطاء، نفس الاستجابات، نفس ترتيب المعالجة.
+
+**الحالة:** ✅ تم الحل.
+
+---
+
+### 11. تكرار منطق التحقق من ملكية المحادثة في 3 أماكن
+**الوصف:** منطق المطابقة (project + employeeId + fallback لاسم الموظف القديم) كان مكرر في 3 routes منفصلة.
+
+**الحل النهائي:** تم استخراجه في دالة واحدة `matchesEmployee` + `findAuthorizedConversation` في `server/lib/authorize-conversation.mjs`، تُستخدم الآن في الأماكن الثلاثة بدون استثناء. مُغطاة بـ 6 اختبارات في `server/lib/authorize-conversation.test.mjs`.
+
+**الحالة:** ✅ تم الحل.
+
+---
+
+### 12. صفر اختبارات آلية في `mkdd-ui`
+**الحل النهائي:** تمت إضافة `node:test` (built-in، بدون اعتمادية جديدة) مع 17 اختبار تغطي: `matchesEmployee` (منطق أمني)، `textContent`/`normalizeEvent` (منطق تطبيع حساس للأخطاء)، و`deriveWorkPlan`. كل الاختبارات تعدّي (`npm test`).
+
+**الحالة:** ✅ تم الحل (تغطية أولية للمنطق الأكثر حساسية؛ لسه فيه مجال للتوسع لاحقًا في اختبارات الـ routes نفسها).
+
+---
+
+### 13. لا يوجد Formatter موحّد
+**الحل النهائي:** تمت إضافة Prettier (`.prettierrc.json` + `.prettierignore`)، وتم تشغيله على المشروع بالكامل (`npm run format`). تم التحقق من عدم كسر أي شيء بعد التنسيق (الاختبارات + `tsc -b` + `vite build` كلها ناجحة).
+
+**الحالة:** ✅ تم الحل.
 
 ---
 

@@ -50,10 +50,7 @@ export default function App() {
     employees,
   });
 
-  const {
-    workflow,
-    loading: workflowLoading,
-  } = useProjectWorkflow({
+  const { workflow, loading: workflowLoading } = useProjectWorkflow({
     project: selectedProject,
   });
   useEffect(() => {

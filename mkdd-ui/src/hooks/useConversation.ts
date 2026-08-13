@@ -10,11 +10,7 @@ import type {
   Workspace,
   WorkPlan,
 } from "../types";
-import {
-  fetchConversation,
-  fetchEvents,
-  sendChatMessage,
-} from "../api/client";
+import { fetchConversation, fetchEvents, sendChatMessage } from "../api/client";
 
 type Params = {
   project: Workspace | null;
@@ -29,20 +25,17 @@ const TERMINAL_STATUSES = new Set<ConversationExecutionStatus>([
 
 function splitEvents(events: ConversationEvent[]) {
   const messages = events.filter(
-    (event): event is ChatMessage => event.kind === "MessageEvent"
+    (event): event is ChatMessage => event.kind === "MessageEvent",
   );
 
   const activity = events.filter(
-    (event): event is ActivityEvent => event.kind !== "MessageEvent"
+    (event): event is ActivityEvent => event.kind !== "MessageEvent",
   );
 
   return { messages, activity };
 }
 
-function mergeById<T extends ConversationEventBase>(
-  current: T[],
-  incoming: T[]
-): T[] {
+function mergeById<T extends ConversationEventBase>(current: T[], incoming: T[]): T[] {
   const merged = new Map<string, T>();
 
   for (const item of current) merged.set(item.id, item);
@@ -98,7 +91,12 @@ export function useConversation({ project, employee }: Params) {
           return;
         }
 
-        const response = await fetchEvents(conversation.id, project.path, employee.id, employee.name);
+        const response = await fetchEvents(
+          conversation.id,
+          project.path,
+          employee.id,
+          employee.name,
+        );
         if (cancelled) return;
 
         const split = splitEvents(response.items ?? []);
@@ -135,7 +133,7 @@ export function useConversation({ project, employee }: Params) {
         const conversationData = await fetchConversation(
           project.path,
           employee.id,
-          employee.name
+          employee.name,
         );
 
         const conversation = conversationData.conversation;
@@ -145,7 +143,7 @@ export function useConversation({ project, employee }: Params) {
           conversation.id,
           project.path,
           employee.id,
-          employee.name
+          employee.name,
         );
 
         if (cancelled) return;
@@ -183,7 +181,7 @@ export function useConversation({ project, employee }: Params) {
         project.path,
         employee.id,
         employee.name,
-        message.trim()
+        message.trim(),
       );
 
       const id = sendData.conversation?.id ?? sendData.conversation_id;
@@ -204,8 +202,7 @@ export function useConversation({ project, employee }: Params) {
         setActivity((current) => mergeById(current, split.activity));
         setWorkPlan(eventsData.work_plan);
         setCost(conversationData.conversation?.cost ?? null);
-        const status =
-          conversationData.conversation?.execution_status ?? null;
+        const status = conversationData.conversation?.execution_status ?? null;
 
         setExecutionStatus(status);
 

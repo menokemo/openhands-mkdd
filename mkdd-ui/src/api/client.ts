@@ -11,7 +11,7 @@ export async function fetchProjects(): Promise<Workspace[]> {
   const data = await r.json();
 
   return (data.workspaces ?? []).filter(
-    (workspace: Workspace) => workspace.path !== "/projects"
+    (workspace: Workspace) => workspace.path !== "/projects",
   );
 }
 
@@ -25,7 +25,7 @@ export async function fetchEmployees(): Promise<AgentProfile[]> {
 export async function fetchConversation(
   project: string,
   employeeId: string,
-  employeeName: string
+  employeeName: string,
 ): Promise<ConversationResponse> {
   const qs = new URLSearchParams({
     project,
@@ -41,7 +41,7 @@ export async function fetchEvents(
   conversationId: string,
   project: string,
   employeeId: string,
-  employeeName: string
+  employeeName: string,
 ): Promise<EventsResponse> {
   const qs = new URLSearchParams({
     conversation: conversationId,
@@ -58,7 +58,7 @@ export async function sendChatMessage(
   project: string,
   employeeId: string,
   employeeName: string,
-  message: string
+  message: string,
 ): Promise<SendMessageResponse> {
   const r = await fetch("/api/chat/send", {
     method: "POST",
@@ -74,17 +74,10 @@ export async function sendChatMessage(
   return r.json();
 }
 
-export type WorkflowGateName =
-  | "requirements"
-  | "ui_ux"
-  | "architecture"
-  | "production";
+export type WorkflowGateName = "requirements" | "ui_ux" | "architecture" | "production";
 
 export type WorkflowReviewRole =
-  | "qa"
-  | "test_automation"
-  | "code_review"
-  | "security_review";
+  "qa" | "test_automation" | "code_review" | "security_review";
 
 export type WorkflowState = {
   project: string;
@@ -132,9 +125,7 @@ export type WorkflowState = {
   updatedAt: string;
 };
 
-export async function fetchWorkflow(
-  project: string
-): Promise<WorkflowState> {
+export async function fetchWorkflow(project: string): Promise<WorkflowState> {
   const qs = new URLSearchParams({ project });
   const r = await fetch(`/api/workflow?${qs}`);
   const data = await r.json();
@@ -144,7 +135,7 @@ export async function fetchWorkflow(
 export async function approveWorkflowGate(
   project: string,
   gate: WorkflowGateName,
-  approvedBy: string
+  approvedBy: string,
 ): Promise<WorkflowState> {
   const r = await fetch("/api/workflow/approve-gate", {
     method: "POST",
@@ -160,7 +151,7 @@ export async function updateWorkflowReview(
   project: string,
   action: "complete" | "reopen",
   reviewRole: WorkflowReviewRole,
-  reviewedBy: string
+  reviewedBy: string,
 ): Promise<WorkflowState> {
   const r = await fetch("/api/workflow/reviews", {
     method: "POST",
@@ -176,4 +167,3 @@ export async function updateWorkflowReview(
   if (!r.ok) throw new Error(data.error ?? "workflow_review_update_failed");
   return data.workflow;
 }
-

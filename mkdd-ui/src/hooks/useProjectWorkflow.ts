@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  fetchWorkflow,
-  type WorkflowState,
-} from "../api/client";
+import { fetchWorkflow, type WorkflowState } from "../api/client";
 import type { Workspace } from "../types";
 
 type Options = {

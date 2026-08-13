@@ -49,7 +49,7 @@ export function useProjectTeamStatus({ project, employees }: Params) {
             const conversationResponse = await fetchConversation(
               project.path,
               employee.id,
-              employee.name
+              employee.name,
             );
 
             const conversation = conversationResponse.conversation;
@@ -71,7 +71,7 @@ export function useProjectTeamStatus({ project, employees }: Params) {
                 conversation.id,
                 project.path,
                 employee.id,
-                employee.name
+                employee.name,
               );
               workPlan = eventsResponse.work_plan;
             } catch {
@@ -88,14 +88,12 @@ export function useProjectTeamStatus({ project, employees }: Params) {
           } catch {
             return null;
           }
-        })
+        }),
       );
 
       if (!cancelled) {
         setItems((current) => {
-          const previous = new Map(
-            current.map((item) => [item.employeeId, item])
-          );
+          const previous = new Map(current.map((item) => [item.employeeId, item]));
 
           for (const update of updates) {
             if (!update) continue;
@@ -104,22 +102,10 @@ export function useProjectTeamStatus({ project, employees }: Params) {
 
             previous.set(update.employeeId, {
               ...update,
-              workPlan:
-                update.workPlan ??
-                old?.workPlan ??
-                null,
-              cost:
-                update.cost ??
-                old?.cost ??
-                null,
-              executionStatus:
-                update.executionStatus ??
-                old?.executionStatus ??
-                null,
-              conversationId:
-                update.conversationId ??
-                old?.conversationId ??
-                null,
+              workPlan: update.workPlan ?? old?.workPlan ?? null,
+              cost: update.cost ?? old?.cost ?? null,
+              executionStatus: update.executionStatus ?? old?.executionStatus ?? null,
+              conversationId: update.conversationId ?? old?.conversationId ?? null,
             });
           }
 
@@ -131,7 +117,7 @@ export function useProjectTeamStatus({ project, employees }: Params) {
                 executionStatus: null,
                 cost: null,
                 workPlan: null,
-              }
+              },
           );
         });
       }
@@ -154,16 +140,12 @@ export function useProjectTeamStatus({ project, employees }: Params) {
 
   const byEmployeeId = useMemo(
     () => new Map(items.map((item) => [item.employeeId, item])),
-    [items]
+    [items],
   );
 
   const totalProjectCost = useMemo(
-    () =>
-      items.reduce(
-        (sum, item) => sum + (item.cost?.accumulatedCost ?? 0),
-        0
-      ),
-    [items]
+    () => items.reduce((sum, item) => sum + (item.cost?.accumulatedCost ?? 0), 0),
+    [items],
   );
 
   return {

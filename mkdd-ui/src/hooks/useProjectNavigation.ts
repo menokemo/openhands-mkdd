@@ -8,15 +8,13 @@ type Params = {
 
 export function useProjectNavigation({ projects, employees }: Params) {
   const [selectedProject, setSelectedProject] = useState<Workspace | null>(null);
-  const [selectedEmployee, setSelectedEmployee] =
-    useState<AgentProfile | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<AgentProfile | null>(null);
 
   useEffect(() => {
     function syncFromUrl() {
       const hashPath = decodeURIComponent(window.location.hash.slice(1));
 
-      const project =
-        projects.find((workspace) => workspace.path === hashPath) ?? null;
+      const project = projects.find((workspace) => workspace.path === hashPath) ?? null;
 
       setSelectedProject(project);
 
@@ -25,12 +23,9 @@ export function useProjectNavigation({ projects, employees }: Params) {
         return;
       }
 
-      const employeeName = new URLSearchParams(window.location.search).get(
-        "employee"
-      );
+      const employeeName = new URLSearchParams(window.location.search).get("employee");
 
-      const employee =
-        employees.find((profile) => profile.name === employeeName) ?? null;
+      const employee = employees.find((profile) => profile.name === employeeName) ?? null;
 
       setSelectedEmployee(employee);
     }

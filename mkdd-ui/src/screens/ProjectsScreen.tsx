@@ -36,9 +36,7 @@ export default function ProjectsScreen({
           </div>
         </div>
 
-        <button
-          onClick={() => setLanguage(language === "ar" ? "en" : "ar")}
-        >
+        <button onClick={() => setLanguage(language === "ar" ? "en" : "ar")}>
           {t.language}
         </button>
       </header>

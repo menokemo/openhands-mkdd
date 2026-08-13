@@ -1,5 +1,12 @@
 import ReactMarkdown from "react-markdown";
-import type { ActivityEvent, AgentProfile, ChatMessage, ConversationCost, ConversationExecutionStatus, WorkPlan } from "../types";
+import type {
+  ActivityEvent,
+  AgentProfile,
+  ChatMessage,
+  ConversationCost,
+  ConversationExecutionStatus,
+  WorkPlan,
+} from "../types";
 import EmployeeInsightsPanel from "../components/EmployeeInsightsPanel";
 
 type Props = {
@@ -42,9 +49,7 @@ export default function ChatScreen({
         </button>
 
         <div className="chat-screen-person">
-          <div className="chat-employee-avatar">
-            {employeeName?.slice(0, 1) ?? "?"}
-          </div>
+          <div className="chat-employee-avatar">{employeeName?.slice(0, 1) ?? "?"}</div>
 
           <div className="chat-employee-info">
             <strong>{employeeName}</strong>
@@ -62,15 +67,10 @@ export default function ChatScreen({
       />
       <section className="chat">
         {messages.map((event) => {
-          const text = event.llm_message.content
-            .map((item) => item.text)
-            .join("\n");
+          const text = event.llm_message.content.map((item) => item.text).join("\n");
 
           return (
-            <article
-              key={event.id}
-              className={event.source === "user" ? "me" : ""}
-            >
+            <article key={event.id} className={event.source === "user" ? "me" : ""}>
               {event.source === "agent" && <b>{employeeName}</b>}
 
               <div className="message-markdown">

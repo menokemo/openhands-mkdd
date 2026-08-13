@@ -4,19 +4,9 @@ import path from "node:path";
 const STATE_DIR = process.env.MKDD_DATA_DIR ?? "/mkdd-data";
 const STATE_FILE = path.join(STATE_DIR, "workflow-state.json");
 
-const GATES = [
-  "requirements",
-  "ui_ux",
-  "architecture",
-  "production",
-];
+const GATES = ["requirements", "ui_ux", "architecture", "production"];
 
-const REVIEW_ROLES = [
-  "qa",
-  "test_automation",
-  "code_review",
-  "security_review",
-];
+const REVIEW_ROLES = ["qa", "test_automation", "code_review", "security_review"];
 
 function emptyReviews() {
   return Object.fromEntries(
@@ -27,7 +17,7 @@ function emptyReviews() {
         reviewedBy: null,
         completedAt: null,
       },
-    ])
+    ]),
   );
 }
 
@@ -90,10 +80,7 @@ function writeStore(store) {
 
 export function getWorkflowState(project) {
   const store = readStore();
-  return normalizeProjectState(
-    project,
-    store.projects?.[project]
-  );
+  return normalizeProjectState(project, store.projects?.[project]);
 }
 
 export function updateWorkflowState(project, updater) {
@@ -103,10 +90,7 @@ export function updateWorkflowState(project, updater) {
     store.projects = {};
   }
 
-  const current = normalizeProjectState(
-    project,
-    store.projects[project]
-  );
+  const current = normalizeProjectState(project, store.projects[project]);
   const next = updater(structuredClone(current));
 
   if (!next || typeof next !== "object") {

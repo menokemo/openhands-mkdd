@@ -1,10 +1,6 @@
 import type { AgentProfile, Workspace } from "../types";
 import type { ProjectEmployeeStatus } from "../hooks/useProjectTeamStatus";
-import type {
-  WorkflowGateName,
-  WorkflowReviewRole,
-  WorkflowState,
-} from "../api/client";
+import type { WorkflowGateName, WorkflowReviewRole, WorkflowState } from "../api/client";
 
 type Props = {
   project: Workspace;
@@ -25,12 +21,7 @@ type Props = {
   onOpenEmployee: (employee: AgentProfile) => void;
 };
 
-const GATES: WorkflowGateName[] = [
-  "requirements",
-  "ui_ux",
-  "architecture",
-  "production",
-];
+const GATES: WorkflowGateName[] = ["requirements", "ui_ux", "architecture", "production"];
 
 const REVIEW_ROLES: WorkflowReviewRole[] = [
   "qa",
@@ -53,9 +44,9 @@ export default function ProjectHomeScreen({
   onBack,
   onOpenEmployee,
 }: Props) {
-  const workingCount = Array.from(
-    teamStatusByEmployeeId.values()
-  ).filter((item) => item.executionStatus === "running").length;
+  const workingCount = Array.from(teamStatusByEmployeeId.values()).filter(
+    (item) => item.executionStatus === "running",
+  ).length;
 
   const openBlockers =
     workflow?.blockers.filter((item) => item.status === "open").length ?? 0;
@@ -77,12 +68,9 @@ export default function ProjectHomeScreen({
   const reviewLabel = (role: WorkflowReviewRole) => {
     const labels = {
       qa: "QA",
-      test_automation:
-        language === "ar" ? "الاختبارات الآلية" : "Test Automation",
-      code_review:
-        language === "ar" ? "مراجعة الكود" : "Code Review",
-      security_review:
-        language === "ar" ? "مراجعة الأمان" : "Security Review",
+      test_automation: language === "ar" ? "الاختبارات الآلية" : "Test Automation",
+      code_review: language === "ar" ? "مراجعة الكود" : "Code Review",
+      security_review: language === "ar" ? "مراجعة الأمان" : "Security Review",
     };
 
     return labels[role];
@@ -91,11 +79,7 @@ export default function ProjectHomeScreen({
   return (
     <main className="app project-home">
       <header className="project-header">
-        <button
-          className="header-icon-button"
-          onClick={onBack}
-          aria-label={t.back}
-        >
+        <button className="header-icon-button" onClick={onBack} aria-label={t.back}>
           ←
         </button>
 
@@ -114,31 +98,19 @@ export default function ProjectHomeScreen({
 
       <section className="project-summary-grid">
         <article className="project-summary-card">
-          <small>
-            {language === "ar" ? "التكلفة الإجمالية" : "Total project cost"}
-          </small>
-          <strong>
-            {teamStatusLoading ? "…" : `$${totalProjectCost.toFixed(4)}`}
-          </strong>
+          <small>{language === "ar" ? "التكلفة الإجمالية" : "Total project cost"}</small>
+          <strong>{teamStatusLoading ? "…" : `$${totalProjectCost.toFixed(4)}`}</strong>
         </article>
 
         <article className="project-summary-card">
-          <small>
-            {language === "ar" ? "يعملون الآن" : "Working now"}
-          </small>
+          <small>{language === "ar" ? "يعملون الآن" : "Working now"}</small>
           <strong>{teamStatusLoading ? "…" : workingCount}</strong>
         </article>
 
         <article className="project-summary-card">
-          <small>
-            {language === "ar" ? "المرحلة الحالية" : "Current gate"}
-          </small>
+          <small>{language === "ar" ? "المرحلة الحالية" : "Current gate"}</small>
           <strong>
-            {workflowLoading
-              ? "…"
-              : workflow
-                ? gateLabel(workflow.currentGate)
-                : "—"}
+            {workflowLoading ? "…" : workflow ? gateLabel(workflow.currentGate) : "—"}
           </strong>
         </article>
       </section>
@@ -147,9 +119,7 @@ export default function ProjectHomeScreen({
         <div className="section-heading">
           <div>
             <small>MKDD Workflow</small>
-            <h2>
-              {language === "ar" ? "سير المشروع" : "Project workflow"}
-            </h2>
+            <h2>{language === "ar" ? "سير المشروع" : "Project workflow"}</h2>
           </div>
         </div>
 
@@ -163,9 +133,7 @@ export default function ProjectHomeScreen({
                 key={gate}
               >
                 <small>{gateLabel(gate)}</small>
-                <strong>
-                  {workflowLoading ? "…" : gateState?.status ?? "—"}
-                </strong>
+                <strong>{workflowLoading ? "…" : (gateState?.status ?? "—")}</strong>
               </article>
             );
           })}
@@ -174,11 +142,7 @@ export default function ProjectHomeScreen({
         <div className="section-heading workflow-subheading">
           <div>
             <small>Quality Gates</small>
-            <h3>
-              {language === "ar"
-                ? "المراجعات الإلزامية"
-                : "Mandatory reviews"}
-            </h3>
+            <h3>{language === "ar" ? "المراجعات الإلزامية" : "Mandatory reviews"}</h3>
           </div>
         </div>
 
@@ -192,12 +156,8 @@ export default function ProjectHomeScreen({
                 key={reviewRole}
               >
                 <small>{reviewLabel(reviewRole)}</small>
-                <strong>
-                  {workflowLoading ? "…" : review?.status ?? "—"}
-                </strong>
-                {review?.reviewedBy && (
-                  <span>{review.reviewedBy}</span>
-                )}
+                <strong>{workflowLoading ? "…" : (review?.status ?? "—")}</strong>
+                {review?.reviewedBy && <span>{review.reviewedBy}</span>}
               </article>
             );
           })}
@@ -205,18 +165,12 @@ export default function ProjectHomeScreen({
 
         <div className="workflow-summary-row">
           <article>
-            <span>
-              {language === "ar" ? "عوائق مفتوحة" : "Open blockers"}
-            </span>
+            <span>{language === "ar" ? "عوائق مفتوحة" : "Open blockers"}</span>
             <strong>{workflowLoading ? "…" : openBlockers}</strong>
           </article>
 
           <article>
-            <span>
-              {language === "ar"
-                ? "ملاحظات غير مؤكدة"
-                : "Unverified findings"}
-            </span>
+            <span>{language === "ar" ? "ملاحظات غير مؤكدة" : "Unverified findings"}</span>
             <strong>{workflowLoading ? "…" : unverifiedFindings}</strong>
           </article>
         </div>
@@ -226,9 +180,7 @@ export default function ProjectHomeScreen({
         <div className="section-heading">
           <div>
             <small>MKDD</small>
-            <h2>
-              {language === "ar" ? "فريق المشروع" : "Project team"}
-            </h2>
+            <h2>{language === "ar" ? "فريق المشروع" : "Project team"}</h2>
           </div>
 
           <span className="employee-count">{employees.length}</span>
@@ -238,23 +190,17 @@ export default function ProjectHomeScreen({
           {employees.map((employee) => {
             const status = teamStatusByEmployeeId.get(employee.id);
             const label =
-              language === "ar"
-                ? employee.displayNameAr
-                : employee.displayNameEn;
+              language === "ar" ? employee.displayNameAr : employee.displayNameEn;
 
             return (
               <button
                 className={`employee-card${
-                  status?.executionStatus === "running"
-                    ? " employee-card-running"
-                    : ""
+                  status?.executionStatus === "running" ? " employee-card-running" : ""
                 }`}
                 key={employee.id}
                 onClick={() => onOpenEmployee(employee)}
               >
-                <div className="employee-avatar">
-                  {label?.slice(0, 1) ?? "?"}
-                </div>
+                <div className="employee-avatar">{label?.slice(0, 1) ?? "?"}</div>
 
                 <div className="employee-card-info">
                   <strong>{label}</strong>
@@ -263,22 +209,17 @@ export default function ProjectHomeScreen({
                   <div className="employee-card-meta">
                     <span>
                       {status?.executionStatus ??
-                        (language === "ar"
-                          ? "لا توجد محادثة"
-                          : "No conversation")}
+                        (language === "ar" ? "لا توجد محادثة" : "No conversation")}
                     </span>
 
                     {status?.workPlan && (
                       <span>
-                        {status.workPlan.counts.done}/
-                        {status.workPlan.counts.total}
+                        {status.workPlan.counts.done}/{status.workPlan.counts.total}
                       </span>
                     )}
 
                     {status?.cost && (
-                      <span>
-                        ${status.cost.accumulatedCost.toFixed(4)}
-                      </span>
+                      <span>${status.cost.accumulatedCost.toFixed(4)}</span>
                     )}
                   </div>
                 </div>
