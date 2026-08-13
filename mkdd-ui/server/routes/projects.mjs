@@ -84,14 +84,16 @@ export async function handleCreateProject(req, res) {
 
   fs.mkdirSync(projectPath, { recursive: true });
 
-  // The registered `name` is the human-entered display name (may be
-  // Arabic, spaces, etc.) - only the filesystem path/id needs to be
-  // ASCII-safe. OpenHands' own workspace registration accepts any string
-  // for `name`; it's a display label, not derived from the path.
+  // The agent-server expects {"workspaces": [...]}, not a bare array -
+  // confirmed via the live openapi.json's AddWorkspacesRequest schema
+  // (an initial guess without this envelope failed with a real 422:
+  // "Input should be a valid dictionary or object to extract fields from").
   const r = await openhandsFetch("/api/workspaces", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify([{ id: projectPath, name: name.trim(), path: projectPath }]),
+    body: JSON.stringify({
+      workspaces: [{ id: projectPath, name: name.trim(), path: projectPath }],
+    }),
   });
 
   if (!r.ok) {

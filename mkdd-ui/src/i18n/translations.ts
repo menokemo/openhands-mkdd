@@ -10,6 +10,8 @@ export const translations = {
     newProject: "+ مشروع جديد",
     newProjectTitle: "إنشاء مشروع جديد",
     newProjectNamePlaceholder: "اسم المشروع",
+    newProjectNameHint:
+      "يفضّل استخدام حروف/أرقام إنجليزية في الاسم (لتسمية المجلد على القرص).",
     create: "إنشاء",
     cancel: "إلغاء",
     creatingProject: "جاري الإنشاء...",
@@ -26,6 +28,8 @@ export const translations = {
     newProject: "+ New Project",
     newProjectTitle: "Create New Project",
     newProjectNamePlaceholder: "Project name",
+    newProjectNameHint:
+      "Prefer English letters/numbers (used for the folder name on disk).",
     create: "Create",
     cancel: "Cancel",
     creatingProject: "Creating...",

@@ -323,6 +323,23 @@ HTTP 422: {"detail":[{"loc":["openhands","llm_profile_ref"],"type":"missing","ms
 
 ---
 
+### 23. `POST /api/workspaces` يحتاج غلاف `{"workspaces": [...]}`، مش array مباشر
+**الوصف:** أول محاولة فعلية لإنشاء مشروع من الواجهة فشلت برسالة `"Input should be a valid dictionary or object to extract fields from"`. الكود الأصلي كان بيبعت array مباشر (`[{id, name, path}]`)، بناءً على قراءة سريعة لكود `folder-browser-modal.tsx` اللي بيستدعي `client().addWorkspaces(items)` — بدون التأكد من الـ HTTP body الفعلي اللي الـ SDK بيبنيه تحت الغطاء.
+
+**التشخيص:** استعلام حي لـ `openapi.json` على schema اسمه `AddWorkspacesRequest` أظهر إن الشكل الصحيح هو:
+```json
+{ "workspaces": [ { "id": "...", "name": "...", "path": "..." } ] }
+```
+وليس array مباشر. تم أيضًا التأكد من `WorkspaceItem` نفسه: الحقول الإجبارية هي بالظبط `id`, `name`, `path` (و`parentPath` اختياري) — يعني باقي الكود كان صحيحًا، والمشكلة فقط في الغلاف الخارجي.
+
+**الدرس المستفاد (يعزز ENGINEERING_PRINCIPLES.md #1):** قراءة كود الـ frontend اللي بيستخدم SDK خارجي (`@openhands/typescript-client`) مش كافية لمعرفة شكل الـ HTTP body الفعلي — الـ SDK ممكن يغيّر شكل البيانات تحت الغطاء. **يجب دائمًا التأكيد من `openapi.json` الحي كخطوة أخيرة قبل الاعتماد على أي endpoint**، حتى لو الكود بيوحي بشكل معين.
+
+**الحل:** تعديل `server/routes/projects.mjs` ليبعت الغلاف الصحيح.
+
+**الحالة:** ✅ تم الحل، محتاج إعادة اختبار فعلي للتأكيد النهائي.
+
+---
+
 ## قوالب للإضافة المستقبلية
 
 عند إضافة مشكلة جديدة، استخدم هذا القالب:

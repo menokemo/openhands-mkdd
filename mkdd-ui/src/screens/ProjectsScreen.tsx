@@ -13,6 +13,7 @@ type Props = {
     newProject: string;
     newProjectTitle: string;
     newProjectNamePlaceholder: string;
+    newProjectNameHint: string;
     create: string;
     cancel: string;
     creatingProject: string;
@@ -124,6 +125,7 @@ export default function ProjectsScreen({
               autoFocus
               disabled={submitting}
             />
+            <p className="modal-hint">{t.newProjectNameHint}</p>
 
             {error && <p className="modal-error">{error}</p>}
 
