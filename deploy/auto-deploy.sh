@@ -22,7 +22,6 @@ DEPLOY_DIR="${MKDD_DEPLOY_DIR:-/opt/mkdd-live}"
 LOCK_FILE="/tmp/mkdd-auto-deploy.lock"
 LOG_FILE="${MKDD_DEPLOY_LOG:-/var/log/mkdd-auto-deploy.log}"
 STATE_FILE="$DEPLOY_DIR/.last-good-commit"
-HEALTH_URL="http://localhost:8787/api/health"
 HEALTH_RETRIES=30
 HEALTH_INTERVAL=2
 
@@ -53,6 +52,19 @@ if [ ! -d "$DEPLOY_DIR/.git" ]; then
 fi
 
 cd "$DEPLOY_DIR"
+
+# If an isolated .env exists here (staging ports/names/image/volume — see
+# deploy/.env.staging), source it so our own health check below hits the
+# correct port. `docker compose` also picks this file up automatically for
+# every build/up call, with no extra flags needed.
+if [ -f "$DEPLOY_DIR/.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$DEPLOY_DIR/.env"
+  set +a
+fi
+
+HEALTH_URL="http://localhost:${MKDD_UI_BACKEND_PORT:-8787}/api/health"
 
 # ---------------------------------------------------------------------------
 # 2. Check for new commits

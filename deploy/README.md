@@ -10,6 +10,24 @@
 
 أي تطوير يدوي (تجربة، تعديل، إلخ) يجب أن يحصل في مكان منفصل تمامًا (مثل مجلد التطوير العادي على الـ VM، أو بيئة أخرى)، ثم يُرفع لـ GitHub عبر `git push` عادي عندما يكون جاهزًا. النظام التلقائي بعد كده هو اللي هيتولى نشره.
 
+## 🔒 العزل الكامل عن النظام الشغال فعليًا (Production)
+
+النشر التلقائي **لا يلمس الحاويات الإنتاجية الشغالة حاليًا (`openhands-agent-canvas`, `mkdd-ui` على البورتات 8000/3000/5173/8787) أبدًا.** يشتغل بمعزل تام، بنفس مبدأ التجربة اليدوية اللي اتعملت على الـ VM في 2026-08-13 (`mkdd-agent-canvas-TEST` على بورتات بديلة):
+
+| العنصر | الإنتاج (الشغال حاليًا) | النشر التلقائي (staging) |
+|---|---|---|
+| Agent Canvas port | 8000 / 3000 | **18000 / 13000** |
+| MKDD UI port | 5173 / 8787 | **15173 / 18787** |
+| اسم حاوية agent-canvas | `openhands-agent-canvas` | `openhands-agent-canvas-staging` |
+| اسم حاوية mkdd-ui | `mkdd-ui` | `mkdd-ui-staging` |
+| اسم صورة agent-canvas | `mkdd/agent-canvas:1.12.0-mkdd2` | `mkdd/agent-canvas:staging` |
+| اسم الـ volume | `openhands_agent_canvas_state` | `openhands_agent_canvas_state_staging` |
+| شبكة Docker | مشروع `openhands` (افتراضي) | مشروع `mkdd-staging` (`COMPOSE_PROJECT_NAME`) |
+
+القيم دي معرّفة في `deploy/.env.staging`، و`install.sh` بينسخها لـ `$DEPLOY_DIR/.env` تلقائيًا — `docker compose` بيقرأها لوحده، ومفيش أي تعارض ممكن يحصل مع الإنتاج حتى لو الاتنين شغالين في نفس اللحظة على نفس الـ VM.
+
+**لتجربة النشر التلقائي بعد التركيب:** `http://<VM-IP>:15173` (بدل 5173 للإنتاج).
+
 ## طريقة العمل
 
 ```

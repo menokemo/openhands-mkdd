@@ -1,3 +1,13 @@
+# Every host-facing identifier below (ports, container names, image tag,
+# volume name) is parameterized with environment variables, defaulting to
+# the original hardcoded values. This means:
+#   - Normal / production use (no .env, no vars set): behaves exactly as
+#     before, zero change.
+#   - Isolated instances (e.g. the auto-deploy staging stack in deploy/,
+#     or a manual test like the one done on 2026-08-13 with the
+#     mkdd-agent-canvas-TEST container) can override every value via a
+#     .env file so they never collide with a production instance running
+#     from a different directory.
 services:
   agent-canvas:
     build:
@@ -6,12 +16,12 @@ services:
       args:
         AGENT_SERVER_IMAGE: ${AGENT_SERVER_IMAGE:-ghcr.io/openhands/agent-server:1.40.1-python}
         AUTOMATION_VERSION: ${AUTOMATION_VERSION:-1.6.0}
-    image: mkdd/agent-canvas:1.12.0-mkdd2
-    container_name: openhands-agent-canvas
+    image: ${MKDD_AGENT_CANVAS_IMAGE:-mkdd/agent-canvas:1.12.0-mkdd2}
+    container_name: ${MKDD_AGENT_CANVAS_CONTAINER_NAME:-openhands-agent-canvas}
     restart: unless-stopped
     ports:
-      - "8000:8000"
-      - "3000:3000"
+      - "${MKDD_AGENT_CANVAS_PORT:-8000}:8000"
+      - "${MKDD_AGENT_CANVAS_UI_PORT:-3000}:3000"
     volumes:
       - openhands_state:/home/openhands/.openhands
       - ${MKDD_PROJECTS_DIR:-./projects}:/projects
@@ -23,7 +33,10 @@ services:
   mkdd-ui:
     build:
       context: ./mkdd-ui
-    container_name: mkdd-ui
+    container_name: ${MKDD_UI_CONTAINER_NAME:-mkdd-ui}
+    # References the *service* name "agent-canvas" above, not its
+    # container_name, so this keeps working correctly even when
+    # container names are overridden for an isolated instance.
     pid: "service:agent-canvas"
     restart: unless-stopped
     environment:
@@ -31,12 +44,12 @@ services:
     depends_on:
       - agent-canvas
     ports:
-      - "5173:5173"
-      - "8787:8787"
+      - "${MKDD_UI_PORT:-5173}:5173"
+      - "${MKDD_UI_BACKEND_PORT:-8787}:8787"
     volumes:
       - ./company-agents-definitions:/company-agents-definitions:ro
       - ./mkdd-data:/mkdd-data
 
 volumes:
   openhands_state:
-    name: openhands_agent_canvas_state
+    name: ${MKDD_STATE_VOLUME_NAME:-openhands_agent_canvas_state}

@@ -17,6 +17,19 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# `docker compose` auto-loads a .env file from this directory for variable
+# substitution inside compose.yml (e.g. port mappings). Source it here too,
+# so this script's OWN bash-side logic (health-check port, printed URLs)
+# agrees with whatever docker compose actually bound — otherwise an
+# isolated instance (see deploy/.env.staging) would have its container
+# correctly listening on e.g. 18787, while this script kept checking 8787.
+if [ -f "$SCRIPT_DIR/.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$SCRIPT_DIR/.env"
+  set +a
+fi
+
 # ---------------------------------------------------------------------------
 # 1. Prerequisite checks
 # ---------------------------------------------------------------------------
@@ -93,21 +106,26 @@ esac
 # 5. Wait for the backend to answer, then report where everything is
 # ---------------------------------------------------------------------------
 echo "==> Waiting for MKDD backend to become ready..."
+MKDD_UI_BACKEND_PORT="${MKDD_UI_BACKEND_PORT:-8787}"
 for _ in $(seq 1 30); do
-  if curl -fsS "http://localhost:8787/api/health" >/dev/null 2>&1; then
+  if curl -fsS "http://localhost:${MKDD_UI_BACKEND_PORT}/api/health" >/dev/null 2>&1; then
     echo "    MKDD backend is up."
     break
   fi
   sleep 2
 done
 
-cat <<'EOF'
+MKDD_UI_PORT="${MKDD_UI_PORT:-5173}"
+MKDD_AGENT_CANVAS_UI_PORT="${MKDD_AGENT_CANVAS_UI_PORT:-3000}"
+MKDD_AGENT_CANVAS_PORT="${MKDD_AGENT_CANVAS_PORT:-8000}"
+
+cat <<EOF
 
 ==> MKDD is starting.
 
-    MKDD UI:        http://localhost:5173
-    Agent Canvas:   http://localhost:3000
-    Agent Server:   http://localhost:8000
+    MKDD UI:        http://localhost:${MKDD_UI_PORT}
+    Agent Canvas:   http://localhost:${MKDD_AGENT_CANVAS_UI_PORT}
+    Agent Server:   http://localhost:${MKDD_AGENT_CANVAS_PORT}
 
 Run './setup.sh status' to check container health, or
     './setup.sh logs'   to follow logs.

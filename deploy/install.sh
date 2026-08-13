@@ -33,6 +33,10 @@ echo "==> Cloning $REPO_URL into $DEPLOY_DIR ..."
 sudo git clone "$REPO_URL" "$DEPLOY_DIR"
 sudo git -C "$DEPLOY_DIR" checkout -B main origin/main
 sudo chown -R "$(id -u):$(id -g)" "$DEPLOY_DIR"
+
+echo "==> Installing staging .env (isolated ports/names/image/volume, never"
+echo "    touches the production stack — see deploy/.env.staging comments)..."
+cp "$SCRIPT_DIR/.env.staging" "$DEPLOY_DIR/.env"
 chmod +x "$DEPLOY_DIR/setup.sh" "$DEPLOY_DIR/deploy/auto-deploy.sh"
 
 echo "==> Recording current commit as the initial 'last known good' baseline..."
@@ -57,6 +61,12 @@ cat <<EOF
 Auto-deploy is now active: mkdd-auto-deploy.timer runs every minute and
 will automatically pull, build, restart, and health-check any new commit
 pushed to 'main'. On failure it rolls back to the last known good commit.
+
+This staging stack is FULLY ISOLATED from any production instance running
+on this VM (different ports, container names, image tag, volume, and
+Docker Compose project — see deploy/README.md for the full table).
+
+Staging MKDD UI: http://localhost:15173  (production, if running, stays on 5173)
 
 Useful commands:
     systemctl status mkdd-auto-deploy.timer     # confirm the timer is active
