@@ -268,6 +268,35 @@ sudo systemctl show mkdd-auto-deploy.service -p Environment
 
 ---
 
+### 19. `AGENTS.md` اتحسب غلط كـ "موظف رقم 14"
+**الوصف:** بعد إضافة `AGENTS.md` لمجلد `company-agents-definitions/` (مشكلة #16)، اكتُشف أثناء اختبار سكريبت الـ bootstrap الفعلي إن الفلتر الموجود (بيستثني `company-orchestrator.md` بس) مش كافي — `AGENTS.md` نفسه بقى بيتحسب كموظف اسمه "AGENTS".
+
+**الأثر:** المشكلة **موجودة في مكانين**: `server/routes/directory.mjs` (الإنتاج الحقيقي، `/api/employees`) و`bootstrap-employees.mjs`. لو محدش صلّحها، أي استدعاء لـ `/api/employees` بعد إضافة `AGENTS.md` كان هيحاول يتعامل مع "AGENTS" كموظف حقيقي.
+
+**الحل:** استخراج دالة موحدة `listEmployeeNames()` في `server/lib/list-employee-definitions.mjs`، بقائمة استثناء صريحة (`company-orchestrator.md`, `AGENTS.md`) بدل شرط واحد بس. تُستخدم الآن في المكانين. مُغطاة بـ 4 اختبارات جديدة (منها اختبار regression صريح لنفس الباگ ده).
+
+**الحالة:** ✅ تم الحل.
+
+---
+
+### 20. إنشاء Agent Profile يتطلب `llm_profile_ref` إجباريًا (لا يمكن الإنشاء فارغًا)
+**الوصف:** أول تشغيل فعلي لـ `bootstrap-employees.mjs` على الـ staging فشل في كل الـ 13 محاولة بنفس الخطأ:
+```
+HTTP 422: {"detail":[{"loc":["openhands","llm_profile_ref"],"type":"missing","msg":"Field required"}]}
+```
+يعني الافتراض الأصلي (إنشاء الموظف فارغًا، وربط LLM بعدين) **غير ممكن تقنيًا** — الـ API يرفض الإنشاء بالكامل بدون `llm_profile_ref` صالح وقت الإنشاء نفسه.
+
+**الحل (قرار منتج):** بما إن قيمة الـ LLM محتاجة تكون حقيقية وقت الإنشاء، وبما إن المستخدم هو اللي هيظبط إعدادات الـ LLM بنفسه، تم تعديل السكريبت ليطلب اسم LLM profile **كمدخل صريح** عبر متغير بيئة (`MKDD_BOOTSTRAP_LLM_PROFILE_REF`) بدل تخمين قيمة أو استخدام قيمة من الإنتاج القديم (زي `nemotron-3-ultra-free`، غير موجودة أصلًا في الـ volume الفارغ الجديد). السكريبت يرفض العمل برسالة خطأ واضحة لو المتغير غير موجود، بدل فشل صامت أو تخمين خاطئ.
+
+**سير العمل المطلوب من المستخدم:**
+1. إنشاء LLM profile واحد يدويًا من الإعدادات (بمفتاحه الخاص).
+2. تشغيل: `docker exec -e MKDD_BOOTSTRAP_LLM_PROFILE_REF=<اسم-الـ-LLM-profile> mkdd-ui-staging node server/scripts/bootstrap-employees.mjs`
+3. كل الـ 13 موظف يُنشأون مرتبطين بنفس الـ LLM مبدئيًا، وقابلين للتعديل الفردي لاحقًا من الواجهة.
+
+**الحالة:** ✅ تم الحل (الكود جاهز، محتاج تشغيل فعلي بعد ما المستخدم يجهّز LLM profile).
+
+---
+
 ## قوالب للإضافة المستقبلية
 
 عند إضافة مشكلة جديدة، استخدم هذا القالب:

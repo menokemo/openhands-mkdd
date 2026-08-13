@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { openhands } from "../lib/openhands-client.mjs";
+import { listEmployeeNames } from "../lib/list-employee-definitions.mjs";
 
 export async function handleProjects(req, res) {
   if (req.url !== "/api/projects") return false;
@@ -17,12 +18,7 @@ export async function handleEmployees(req, res) {
   res.writeHead(r.status, { "content-type": "application/json" });
 
   const data = await r.json();
-  const allowed = new Set(
-    fs
-      .readdirSync("/company-agents-definitions")
-      .filter((name) => name.endsWith(".md") && name !== "company-orchestrator.md")
-      .map((name) => name.replace(/\.md$/, "")),
-  );
+  const allowed = new Set(listEmployeeNames());
 
   data.profiles = (data.profiles ?? [])
     .filter((p) => allowed.has(p.name))
