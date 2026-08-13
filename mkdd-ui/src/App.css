@@ -1728,3 +1728,14 @@ header button,
 .modal-actions button:disabled {
   opacity: 0.5;
 }
+
+.message-time {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #6b7488;
+}
+
+.project-view .chat article.me .message-time {
+  text-align: end;
+}

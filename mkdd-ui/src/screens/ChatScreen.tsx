@@ -8,6 +8,7 @@ import type {
   WorkPlan,
 } from "../types";
 import EmployeeInsightsPanel from "../components/EmployeeInsightsPanel";
+import { formatMessageTime } from "../utils/formatMessageTime";
 
 type Props = {
   language: "ar" | "en";
@@ -68,6 +69,7 @@ export default function ChatScreen({
       <section className="chat">
         {messages.map((event) => {
           const text = event.llm_message.content.map((item) => item.text).join("\n");
+          const time = formatMessageTime(event.timestamp, language);
 
           return (
             <article key={event.id} className={event.source === "user" ? "me" : ""}>
@@ -76,6 +78,8 @@ export default function ChatScreen({
               <div className="message-markdown">
                 <ReactMarkdown>{text}</ReactMarkdown>
               </div>
+
+              {time && <time className="message-time">{time}</time>}
             </article>
           );
         })}
