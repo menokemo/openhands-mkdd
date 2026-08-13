@@ -1,0 +1,36 @@
+services:
+  agent-canvas:
+    image: mkdd/agent-canvas:1.12.0-mkdd2
+    container_name: openhands-agent-canvas
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "3000:3000"
+    volumes:
+      - openhands_state:/home/openhands/.openhands
+      - /opt/openhands/projects:/projects
+      - /opt/openhands/company-skills:/home/openhands/.agents/skills:ro
+      - /opt/openhands/company-agents-definitions:/home/openhands/.agents/agents
+    security_opt:
+      - no-new-privileges:true
+
+  mkdd-ui:
+    build:
+      context: /opt/openhands/projects/mkdd-ui
+    container_name: mkdd-ui
+    pid: "service:agent-canvas"
+    restart: unless-stopped
+    environment:
+      OPENHANDS_URL: http://agent-canvas:8000
+    depends_on:
+      - agent-canvas
+    ports:
+      - "5173:5173"
+      - "8787:8787"
+    volumes:
+      - ./company-agents-definitions:/company-agents-definitions:ro
+      - ./mkdd-data:/mkdd-data
+
+volumes:
+  openhands_state:
+    name: openhands_agent_canvas_state
