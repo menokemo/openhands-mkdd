@@ -118,6 +118,46 @@ done
 MKDD_UI_PORT="${MKDD_UI_PORT:-5173}"
 MKDD_AGENT_CANVAS_UI_PORT="${MKDD_AGENT_CANVAS_UI_PORT:-3000}"
 MKDD_AGENT_CANVAS_PORT="${MKDD_AGENT_CANVAS_PORT:-8000}"
+MKDD_UI_CONTAINER_NAME="${MKDD_UI_CONTAINER_NAME:-mkdd-ui}"
+
+# ---------------------------------------------------------------------------
+# 6. Employee bootstrap (Agent Profiles for the 13 company employees)
+#
+# This is opt-in via MKDD_BOOTSTRAP_LLM_PROFILE_REF because it names an
+# LLM profile that must already exist in Agent Canvas settings (Settings
+# -> LLM Profiles) - setup.sh cannot invent one. If it's not set, employees
+# are skipped with clear instructions instead of failing the whole setup.
+# See server/scripts/bootstrap-employees.mjs and BUGS_AND_FIXES.md #20.
+# ---------------------------------------------------------------------------
+if [ -n "${MKDD_BOOTSTRAP_LLM_PROFILE_REF:-}" ]; then
+  echo "==> Bootstrapping employees (LLM profile: ${MKDD_BOOTSTRAP_LLM_PROFILE_REF})..."
+  docker exec \
+    -e "MKDD_BOOTSTRAP_LLM_PROFILE_REF=${MKDD_BOOTSTRAP_LLM_PROFILE_REF}" \
+    -e "MKDD_TIMEZONE=${MKDD_TIMEZONE:-Europe/Amsterdam}" \
+    "${MKDD_UI_CONTAINER_NAME}" \
+    node server/scripts/bootstrap-employees.mjs || {
+      echo "WARNING: employee bootstrap failed - the stack is still up," >&2
+      echo "         but employees were not created. Retry manually:" >&2
+      echo "         docker exec -e MKDD_BOOTSTRAP_LLM_PROFILE_REF=<profile> \\" >&2
+      echo "           ${MKDD_UI_CONTAINER_NAME} node server/scripts/bootstrap-employees.mjs" >&2
+    }
+else
+  cat <<'EOF'
+==> Skipping employee bootstrap: MKDD_BOOTSTRAP_LLM_PROFILE_REF is not set.
+
+    Employees (the 13 Agent Profiles) need an LLM profile that already
+    exists in Agent Canvas (Settings -> LLM Profiles). Once you have one,
+    either re-run this script with the variable set:
+
+      MKDD_BOOTSTRAP_LLM_PROFILE_REF=<your-llm-profile-name> ./setup.sh --no-build
+
+    or run the bootstrap step directly:
+
+      docker exec -e MKDD_BOOTSTRAP_LLM_PROFILE_REF=<your-llm-profile-name> \
+        mkdd-ui node server/scripts/bootstrap-employees.mjs
+
+EOF
+fi
 
 cat <<EOF
 
