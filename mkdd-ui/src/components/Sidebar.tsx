@@ -1,69 +1,28 @@
-import type { AgentProfile, Workspace } from "../types";
-import type { WorkflowSummary } from "../api/client";
-import { groupProjectsByGateStatus } from "../utils/projectGateStatus";
+type SidebarMenuKey = "active" | "nearCompletion" | "completed" | "employees";
 
 type Props = {
   open: boolean;
   language: "ar" | "en";
-  projects: Workspace[];
-  workflowSummaries: Record<string, WorkflowSummary>;
-  employees: AgentProfile[];
   onClose: () => void;
-  onOpenProject: (project: Workspace) => void;
-  onOpenEmployeeProfile: (employee: AgentProfile) => void;
+  onSelect: (key: SidebarMenuKey) => void;
 };
 
-const LABELS = {
-  ar: {
-    active: "المشاريع الحالية",
-    nearCompletion: "قربت تخلص",
-    completed: "خلصت",
-    employees: "الموظفين",
-    noProjects: "لا يوجد",
-  },
-  en: {
-    active: "Active Projects",
-    nearCompletion: "Near Completion",
-    completed: "Completed",
-    employees: "Employees",
-    noProjects: "None",
-  },
-} as const;
+const MENU_ITEMS: { key: SidebarMenuKey; icon: string; ar: string; en: string }[] = [
+  { key: "active", icon: "📂", ar: "المشاريع الحالية", en: "Active Projects" },
+  { key: "nearCompletion", icon: "⏳", ar: "قربت تخلص", en: "Near Completion" },
+  { key: "completed", icon: "✅", ar: "خلصت", en: "Completed" },
+  { key: "employees", icon: "👥", ar: "الموظفين", en: "Employees" },
+];
 
-export default function Sidebar({
-  open,
-  language,
-  projects,
-  workflowSummaries,
-  employees,
-  onClose,
-  onOpenProject,
-  onOpenEmployeeProfile,
-}: Props) {
+/**
+ * The sidebar is navigation ONLY - a menu of buttons, per explicit
+ * correction from the user ("مش مطلوب هو نفسه يعرض البيانات"). Each item
+ * opens a separate popup (see App.tsx's activeSidebarMenu state +
+ * ProjectListModal/EmployeeListModal) that holds the actual data - the
+ * sidebar itself never renders project or employee lists directly.
+ */
+export default function Sidebar({ open, language, onClose, onSelect }: Props) {
   if (!open) return null;
-
-  const t = LABELS[language];
-  const groups = groupProjectsByGateStatus(projects, workflowSummaries);
-
-  const renderProjectGroup = (title: string, items: Workspace[]) => (
-    <section className="sidebar-section">
-      <h3>{title}</h3>
-      {items.length === 0 && <p className="sidebar-empty">{t.noProjects}</p>}
-      {items.map((project) => (
-        <button
-          key={project.id}
-          className="sidebar-item"
-          style={{ borderInlineStartColor: project.color ?? "#7c6bff" }}
-          onClick={() => {
-            onOpenProject(project);
-            onClose();
-          }}
-        >
-          {project.name}
-        </button>
-      ))}
-    </section>
-  );
 
   return (
     <div className="sidebar-backdrop" onClick={onClose}>
@@ -80,40 +39,25 @@ export default function Sidebar({
           ✕
         </button>
 
-        {renderProjectGroup(t.active, groups.active)}
-        {renderProjectGroup(t.nearCompletion, groups.nearCompletion)}
-        {renderProjectGroup(t.completed, groups.completed)}
-
-        <section className="sidebar-section">
-          <h3>{t.employees}</h3>
-          <div className="sidebar-employee-list">
-            {employees.map((employee) => {
-              const label =
-                language === "ar" ? employee.displayNameAr : employee.displayNameEn;
-
-              return (
-                <button
-                  key={employee.id}
-                  className="sidebar-employee"
-                  onClick={() => {
-                    onOpenEmployeeProfile(employee);
-                    onClose();
-                  }}
-                >
-                  <span className="sidebar-employee-avatar">
-                    {employee.avatarUrl ? (
-                      <img src={employee.avatarUrl} alt={label ?? employee.name} />
-                    ) : (
-                      (label?.slice(0, 1) ?? "?")
-                    )}
-                  </span>
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        <nav className="sidebar-menu">
+          {MENU_ITEMS.map((item) => (
+            <button
+              key={item.key}
+              className="sidebar-menu-item"
+              onClick={() => {
+                onSelect(item.key);
+                onClose();
+              }}
+            >
+              <span className="sidebar-menu-icon">{item.icon}</span>
+              {language === "ar" ? item.ar : item.en}
+              <span className="sidebar-menu-arrow">{language === "ar" ? "←" : "→"}</span>
+            </button>
+          ))}
+        </nav>
       </aside>
     </div>
   );
 }
+
+export type { SidebarMenuKey };

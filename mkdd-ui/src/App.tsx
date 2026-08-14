@@ -13,7 +13,9 @@ import ProjectsScreen from "./screens/ProjectsScreen";
 import ProjectHomeScreen from "./screens/ProjectHomeScreen";
 import AppHeader from "./components/AppHeader";
 import BreadcrumbBar from "./components/BreadcrumbBar";
-import Sidebar from "./components/Sidebar";
+import Sidebar, { type SidebarMenuKey } from "./components/Sidebar";
+import ProjectListModal from "./components/ProjectListModal";
+import EmployeeListModal from "./components/EmployeeListModal";
 import EmployeeProfileModal from "./components/EmployeeProfileModal";
 import "./App.css";
 import { useLanguage } from "./i18n/useLanguage";
@@ -21,6 +23,7 @@ import { useProjectNavigation } from "./hooks/useProjectNavigation";
 import { useConversation } from "./hooks/useConversation";
 import { useProjectTeamStatus } from "./hooks/useProjectTeamStatus";
 import { useProjectWorkflow } from "./hooks/useProjectWorkflow";
+import { groupProjectsByGateStatus } from "./utils/projectGateStatus";
 
 export default function App() {
   const { language, setLanguage, t } = useLanguage();
@@ -31,6 +34,7 @@ export default function App() {
   >({});
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeSidebarMenu, setActiveSidebarMenu] = useState<SidebarMenuKey | null>(null);
   const [profileEmployee, setProfileEmployee] = useState<AgentProfile | null>(null);
 
   const {
@@ -185,13 +189,38 @@ export default function App() {
       <Sidebar
         open={sidebarOpen}
         language={language}
-        projects={projects}
-        workflowSummaries={workflowSummaries}
-        employees={employees}
         onClose={() => setSidebarOpen(false)}
-        onOpenProject={openProject}
-        onOpenEmployeeProfile={setProfileEmployee}
+        onSelect={setActiveSidebarMenu}
       />
+
+      {(activeSidebarMenu === "active" ||
+        activeSidebarMenu === "nearCompletion" ||
+        activeSidebarMenu === "completed") && (
+        <ProjectListModal
+          title={
+            {
+              active: language === "ar" ? "المشاريع الحالية" : "Active Projects",
+              nearCompletion: language === "ar" ? "قربت تخلص" : "Near Completion",
+              completed: language === "ar" ? "خلصت" : "Completed",
+            }[activeSidebarMenu]
+          }
+          projects={
+            groupProjectsByGateStatus(projects, workflowSummaries)[activeSidebarMenu]
+          }
+          language={language}
+          onOpenProject={openProject}
+          onClose={() => setActiveSidebarMenu(null)}
+        />
+      )}
+
+      {activeSidebarMenu === "employees" && (
+        <EmployeeListModal
+          employees={employees}
+          language={language}
+          onOpenEmployeeProfile={setProfileEmployee}
+          onClose={() => setActiveSidebarMenu(null)}
+        />
+      )}
 
       {profileEmployee && (
         <EmployeeProfileModal

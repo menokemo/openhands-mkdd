@@ -2020,19 +2020,39 @@ header button,
   font-size: 14px;
 }
 
-.sidebar-section h3 {
-  margin: 0 0 8px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #7f879a;
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.sidebar-empty {
-  margin: 0;
-  font-size: 12px;
+.sidebar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 12px;
+  border: 1px solid #222d41;
+  border-radius: 12px;
+  background: #10151f;
+  color: #eceff5;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: start;
+}
+
+.sidebar-menu-item:active {
+  background: #151d2b;
+}
+
+.sidebar-menu-icon {
+  font-size: 17px;
+  flex: 0 0 auto;
+}
+
+.sidebar-menu-arrow {
+  margin-inline-start: auto;
   color: #5a6072;
+  font-size: 13px;
 }
 
 .sidebar-item {
@@ -2223,4 +2243,25 @@ header button,
     height: 40px;
     font-size: 15px;
   }
+}
+
+/* =========================
+   List modals (project categories / employees, from Sidebar)
+   ========================= */
+
+.list-modal {
+  max-height: 78vh;
+}
+
+.list-modal h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.list-modal-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  max-height: 50vh;
 }
