@@ -81,24 +81,23 @@ export default function ChatScreen({
           return (
             <article key={event.id} className={isUser ? "me" : "agent-message"}>
               {!isUser && (
-                <div className="agent-message-avatar">
-                  {employee.avatarUrl ? (
-                    <img src={employee.avatarUrl} alt={employeeName ?? employee.name} />
-                  ) : (
-                    (employeeName?.slice(0, 1) ?? "?")
-                  )}
+                <div className="agent-message-header">
+                  <div className="agent-message-avatar">
+                    {employee.avatarUrl ? (
+                      <img src={employee.avatarUrl} alt={employeeName ?? employee.name} />
+                    ) : (
+                      (employeeName?.slice(0, 1) ?? "?")
+                    )}
+                  </div>
+                  <b>{employeeName}</b>
                 </div>
               )}
 
-              <div className="agent-message-body">
-                {!isUser && <b>{employeeName}</b>}
-
-                <div className="message-markdown">
-                  <ReactMarkdown>{text}</ReactMarkdown>
-                </div>
-
-                {time && <time className="message-time">{time}</time>}
+              <div className="message-markdown">
+                <ReactMarkdown>{text}</ReactMarkdown>
               </div>
+
+              {time && <time className="message-time">{time}</time>}
             </article>
           );
         })}

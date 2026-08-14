@@ -15,11 +15,11 @@ export async function fetchProjects(): Promise<Workspace[]> {
   );
 }
 
-export async function createProject(name: string): Promise<Workspace> {
+export async function createProject(name: string, color?: string): Promise<Workspace> {
   const r = await fetch("/api/projects", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, color }),
   });
   const data = await r.json();
   if (!r.ok) throw new Error(data.error ?? "project_creation_failed");
@@ -31,6 +31,20 @@ export async function fetchEmployees(): Promise<AgentProfile[]> {
   const data = await r.json();
 
   return data.profiles ?? [];
+}
+
+export async function uploadEmployeeAvatar(
+  employeeId: string,
+  imageDataUrl: string,
+): Promise<string> {
+  const r = await fetch(`/api/employees/${employeeId}/avatar`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ imageDataUrl }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error ?? "avatar_upload_failed");
+  return data.avatarUrl;
 }
 
 export async function fetchConversation(

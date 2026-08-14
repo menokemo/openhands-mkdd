@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import type { Workspace, AgentProfile } from "./types";
-import { fetchProjects, fetchEmployees, createProject } from "./api/client";
+import {
+  fetchProjects,
+  fetchEmployees,
+  createProject,
+  uploadEmployeeAvatar,
+} from "./api/client";
 import ChatScreen from "./screens/ChatScreen";
 import ProjectsScreen from "./screens/ProjectsScreen";
 import ProjectHomeScreen from "./screens/ProjectHomeScreen";
@@ -59,9 +64,16 @@ export default function App() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleCreateProject = async (name: string) => {
-    const project = await createProject(name);
+  const handleCreateProject = async (name: string, color: string) => {
+    const project = await createProject(name, color);
     setProjects((prev) => [...prev, project]);
+  };
+
+  const handleUploadAvatar = async (employeeSlug: string, imageDataUrl: string) => {
+    const avatarUrl = await uploadEmployeeAvatar(employeeSlug, imageDataUrl);
+    setEmployees((prev) =>
+      prev.map((e) => (e.name === employeeSlug ? { ...e, avatarUrl } : e)),
+    );
   };
 
   useEffect(() => {
@@ -107,6 +119,7 @@ export default function App() {
         setLanguage={setLanguage}
         onBack={closeProject}
         onOpenEmployee={openEmployee}
+        onUploadAvatar={handleUploadAvatar}
       />
     );
   }

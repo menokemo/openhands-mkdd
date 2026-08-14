@@ -2,6 +2,7 @@ export type Workspace = {
   id: string;
   name: string;
   path: string;
+  color?: string;
 };
 
 export type AgentProfile = {

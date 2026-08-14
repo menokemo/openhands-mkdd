@@ -12,6 +12,7 @@ export const translations = {
     newProjectNamePlaceholder: "اسم المشروع",
     newProjectNameHint:
       "يفضّل استخدام حروف/أرقام إنجليزية في الاسم (لتسمية المجلد على القرص).",
+    newProjectColorLabel: "لون غلاف الكارت",
     create: "إنشاء",
     cancel: "إلغاء",
     creatingProject: "جاري الإنشاء...",
@@ -30,6 +31,7 @@ export const translations = {
     newProjectNamePlaceholder: "Project name",
     newProjectNameHint:
       "Prefer English letters/numbers (used for the folder name on disk).",
+    newProjectColorLabel: "Card cover color",
     create: "Create",
     cancel: "Cancel",
     creatingProject: "Creating...",

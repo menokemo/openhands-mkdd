@@ -1,6 +1,12 @@
 import { useState } from "react";
 import type { Workspace } from "../types";
 
+// Must match server/lib/project-metadata.mjs's ALLOWED_COLORS exactly -
+// the backend rejects any color not in this list, falling back silently
+// to the default rather than erroring, so keeping these in sync avoids a
+// confusing "I picked purple but it saved as default" experience.
+const PROJECT_COLORS = ["#7c6bff", "#5c9eff", "#3ecf8e", "#f5a524", "#f5618b", "#8d95aa"];
+
 type Props = {
   projects: Workspace[];
   loading: boolean;
@@ -14,6 +20,7 @@ type Props = {
     newProjectTitle: string;
     newProjectNamePlaceholder: string;
     newProjectNameHint: string;
+    newProjectColorLabel: string;
     create: string;
     cancel: string;
     creatingProject: string;
@@ -21,7 +28,7 @@ type Props = {
   };
   setLanguage: (language: "ar" | "en") => void;
   onOpenProject: (project: Workspace) => void;
-  onCreateProject: (name: string) => Promise<void>;
+  onCreateProject: (name: string, color: string) => Promise<void>;
 };
 
 export default function ProjectsScreen({
@@ -35,12 +42,14 @@ export default function ProjectsScreen({
 }: Props) {
   const [isCreating, setIsCreating] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectColor, setNewProjectColor] = useState(PROJECT_COLORS[0]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const closeModal = () => {
     setIsCreating(false);
     setNewProjectName("");
+    setNewProjectColor(PROJECT_COLORS[0]);
     setError(null);
   };
 
@@ -52,7 +61,7 @@ export default function ProjectsScreen({
     setError(null);
 
     try {
-      await onCreateProject(newProjectName.trim());
+      await onCreateProject(newProjectName.trim(), newProjectColor);
       closeModal();
     } catch {
       setError(t.projectCreationFailed);
@@ -100,6 +109,7 @@ export default function ProjectsScreen({
           <article
             className="project-card"
             key={project.id}
+            style={{ borderInlineStartColor: project.color ?? PROJECT_COLORS[0] }}
             onClick={() => onOpenProject(project)}
           >
             <b>{project.name}</b>
@@ -132,6 +142,21 @@ export default function ProjectsScreen({
               disabled={submitting}
             />
             <p className="modal-hint">{t.newProjectNameHint}</p>
+
+            <p className="modal-color-label">{t.newProjectColorLabel}</p>
+            <div className="color-swatch-row">
+              {PROJECT_COLORS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  className={`color-swatch${color === newProjectColor ? " selected" : ""}`}
+                  style={{ background: color }}
+                  aria-label={color}
+                  disabled={submitting}
+                  onClick={() => setNewProjectColor(color)}
+                />
+              ))}
+            </div>
 
             {error && <p className="modal-error">{error}</p>}
 

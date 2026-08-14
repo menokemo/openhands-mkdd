@@ -19,6 +19,7 @@ type Props = {
   setLanguage: (language: "ar" | "en") => void;
   onBack: () => void;
   onOpenEmployee: (employee: AgentProfile) => void;
+  onUploadAvatar: (employeeSlug: string, imageDataUrl: string) => Promise<void>;
 };
 
 const GATES: WorkflowGateName[] = ["requirements", "ui_ux", "architecture", "production"];
@@ -43,6 +44,7 @@ export default function ProjectHomeScreen({
   setLanguage,
   onBack,
   onOpenEmployee,
+  onUploadAvatar,
 }: Props) {
   const workingCount = Array.from(teamStatusByEmployeeId.values()).filter(
     (item) => item.executionStatus === "running",
@@ -99,34 +101,104 @@ export default function ProjectHomeScreen({
         </button>
       </header>
 
-      <section className="employee-strip project-home-strip">
-        {employees.map((employee) => {
-          const status = teamStatusByEmployeeId.get(employee.id);
-          const label =
-            language === "ar" ? employee.displayNameAr : employee.displayNameEn;
+      <section className="project-home-section project-team-section">
+        <div className="section-heading">
+          <div>
+            <small>MKDD</small>
+            <h2>{language === "ar" ? "فريق المشروع" : "Project team"}</h2>
+          </div>
 
-          return (
-            <button
-              className={`employee-chip${
-                status?.executionStatus === "running" ? " running" : ""
-              }`}
-              key={employee.id}
-              onClick={() => onOpenEmployee(employee)}
-            >
-              <div className="employee-avatar">
-                {employee.avatarUrl ? (
-                  <img src={employee.avatarUrl} alt={label ?? employee.name} />
-                ) : (
-                  (label?.slice(0, 1) ?? "?")
-                )}
-                {status?.executionStatus === "running" && (
-                  <span className="employee-status-dot" />
-                )}
+          <span className="employee-count">{employees.length}</span>
+        </div>
+
+        <div className="employee-grid">
+          {employees.map((employee) => {
+            const status = teamStatusByEmployeeId.get(employee.id);
+            const label =
+              language === "ar" ? employee.displayNameAr : employee.displayNameEn;
+
+            return (
+              <div
+                className={`employee-card${
+                  status?.executionStatus === "running" ? " employee-card-running" : ""
+                }`}
+                key={employee.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => onOpenEmployee(employee)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onOpenEmployee(employee);
+                  }
+                }}
+              >
+                <div className="employee-avatar-wrap">
+                  <div className="employee-avatar">
+                    {employee.avatarUrl ? (
+                      <img src={employee.avatarUrl} alt={label ?? employee.name} />
+                    ) : (
+                      (label?.slice(0, 1) ?? "?")
+                    )}
+                  </div>
+
+                  <label
+                    className="employee-avatar-upload"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={
+                      language === "ar" ? "تغيير صورة الموظف" : "Change employee photo"
+                    }
+                  >
+                    📷
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      hidden
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (!file) return;
+
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          const dataUrl = reader.result;
+                          if (typeof dataUrl === "string") {
+                            void onUploadAvatar(employee.name, dataUrl);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <div className="employee-card-info">
+                  <strong>{label}</strong>
+                  <span>{employee.role}</span>
+
+                  <div className="employee-card-meta">
+                    <span>
+                      {status?.executionStatus ??
+                        (language === "ar" ? "لا توجد محادثة" : "No conversation")}
+                    </span>
+
+                    {status?.workPlan && (
+                      <span>
+                        {status.workPlan.counts.done}/{status.workPlan.counts.total}
+                      </span>
+                    )}
+
+                    {status?.cost && (
+                      <span>${status.cost.accumulatedCost.toFixed(4)}</span>
+                    )}
+                  </div>
+                </div>
+
+                <span className="employee-open-arrow">→</span>
               </div>
-              <span>{label}</span>
-            </button>
-          );
-        })}
+            );
+          })}
+        </div>
       </section>
 
       <section className="project-summary-grid">
@@ -206,61 +278,6 @@ export default function ProjectHomeScreen({
             <span>{language === "ar" ? "ملاحظات غير مؤكدة" : "Unverified findings"}</span>
             <strong>{workflowLoading ? "…" : unverifiedFindings}</strong>
           </article>
-        </div>
-      </section>
-
-      <section className="project-home-section">
-        <div className="section-heading">
-          <div>
-            <small>MKDD</small>
-            <h2>{language === "ar" ? "فريق المشروع" : "Project team"}</h2>
-          </div>
-
-          <span className="employee-count">{employees.length}</span>
-        </div>
-
-        <div className="employee-grid">
-          {employees.map((employee) => {
-            const status = teamStatusByEmployeeId.get(employee.id);
-            const label =
-              language === "ar" ? employee.displayNameAr : employee.displayNameEn;
-
-            return (
-              <button
-                className={`employee-card${
-                  status?.executionStatus === "running" ? " employee-card-running" : ""
-                }`}
-                key={employee.id}
-                onClick={() => onOpenEmployee(employee)}
-              >
-                <div className="employee-avatar">{label?.slice(0, 1) ?? "?"}</div>
-
-                <div className="employee-card-info">
-                  <strong>{label}</strong>
-                  <span>{employee.role}</span>
-
-                  <div className="employee-card-meta">
-                    <span>
-                      {status?.executionStatus ??
-                        (language === "ar" ? "لا توجد محادثة" : "No conversation")}
-                    </span>
-
-                    {status?.workPlan && (
-                      <span>
-                        {status.workPlan.counts.done}/{status.workPlan.counts.total}
-                      </span>
-                    )}
-
-                    {status?.cost && (
-                      <span>${status.cost.accumulatedCost.toFixed(4)}</span>
-                    )}
-                  </div>
-                </div>
-
-                <span className="employee-open-arrow">→</span>
-              </button>
-            );
-          })}
         </div>
       </section>
     </main>

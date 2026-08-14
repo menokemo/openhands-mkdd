@@ -2,6 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { openhandsFetch } from "../lib/openhands-client.mjs";
+import {
+  ALLOWED_COLORS,
+  DEFAULT_PROJECT_COLOR,
+  setProjectColor,
+} from "../lib/project-metadata.mjs";
 
 /**
  * Base directory (inside this container) where new project folders are
@@ -55,13 +60,18 @@ async function readJsonBody(req) {
 export async function handleCreateProject(req, res) {
   if (!(req.method === "POST" && req.url === "/api/projects")) return false;
 
-  const { name } = await readJsonBody(req);
+  const { name, color } = await readJsonBody(req);
 
   if (typeof name !== "string" || !name.trim()) {
     res.writeHead(400, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "name_required" }));
     return true;
   }
+
+  const projectColor =
+    typeof color === "string" && ALLOWED_COLORS.includes(color)
+      ? color
+      : DEFAULT_PROJECT_COLOR;
 
   const slug = slugifyProjectName(name) || `project-${randomUUID().slice(0, 8)}`;
 
@@ -108,10 +118,17 @@ export async function handleCreateProject(req, res) {
     return true;
   }
 
+  setProjectColor(projectPath, projectColor);
+
   res.writeHead(201, { "content-type": "application/json" });
   res.end(
     JSON.stringify({
-      project: { id: projectPath, name: name.trim(), path: projectPath },
+      project: {
+        id: projectPath,
+        name: name.trim(),
+        path: projectPath,
+        color: projectColor,
+      },
     }),
   );
   return true;
