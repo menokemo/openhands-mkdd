@@ -15,7 +15,6 @@ set -euo pipefail
 
 REPO_URL="${MKDD_REPO_URL:-https://github.com/menokemo/openhands-mkdd.git}"
 DEPLOY_DIR="${MKDD_DEPLOY_DIR:-/opt/mkdd-live}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "==> Repo:       $REPO_URL"
 echo "==> Deploy dir: $DEPLOY_DIR"
@@ -34,9 +33,20 @@ sudo git clone "$REPO_URL" "$DEPLOY_DIR"
 sudo git -C "$DEPLOY_DIR" checkout -B main origin/main
 sudo chown -R "$(id -u):$(id -g)" "$DEPLOY_DIR"
 
+# Every file this script needs after this point is read from inside the
+# freshly-cloned $DEPLOY_DIR/deploy/ (not from wherever THIS script
+# happens to be running from). install.sh is commonly copied out of its
+# natural location before being run (e.g. to /tmp, to avoid a separate
+# clone just to fetch it) - referencing $DEPLOY_DIR/deploy/ instead of
+# this script's own location makes that safe, since $DEPLOY_DIR is
+# guaranteed cloned by this point regardless of where install.sh itself
+# came from. Found live: a copy-to-/tmp invocation failed with
+# "cp: cannot stat '/tmp/.env.staging'" until this fix.
+DEPLOY_SCRIPT_DIR="$DEPLOY_DIR/deploy"
+
 echo "==> Installing staging .env (isolated ports/names/image/volume, never"
 echo "    touches the production stack — see deploy/.env.staging comments)..."
-cp "$SCRIPT_DIR/.env.staging" "$DEPLOY_DIR/.env"
+cp "$DEPLOY_SCRIPT_DIR/.env.staging" "$DEPLOY_DIR/.env"
 chmod +x "$DEPLOY_DIR/setup.sh" "$DEPLOY_DIR/deploy/auto-deploy.sh"
 
 echo "==> Recording current commit as the initial 'last known good' baseline..."
@@ -47,8 +57,8 @@ echo "    NEW commits after this point, so the first deploy happens now)..."
 (cd "$DEPLOY_DIR" && ./setup.sh up)
 
 echo "==> Installing systemd units..."
-sudo cp "$SCRIPT_DIR/mkdd-auto-deploy.service" /etc/systemd/system/mkdd-auto-deploy.service
-sudo cp "$SCRIPT_DIR/mkdd-auto-deploy.timer" /etc/systemd/system/mkdd-auto-deploy.timer
+sudo cp "$DEPLOY_SCRIPT_DIR/mkdd-auto-deploy.service" /etc/systemd/system/mkdd-auto-deploy.service
+sudo cp "$DEPLOY_SCRIPT_DIR/mkdd-auto-deploy.timer" /etc/systemd/system/mkdd-auto-deploy.timer
 
 echo "==> Reloading systemd and enabling the timer..."
 sudo systemctl daemon-reload
