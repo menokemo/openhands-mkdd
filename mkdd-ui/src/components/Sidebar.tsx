@@ -1,3 +1,13 @@
+import {
+  FaFolderOpen,
+  FaHourglassHalf,
+  FaCircleCheck,
+  FaUsers,
+  FaXmark,
+  FaChevronLeft,
+  FaChevronRight,
+} from "react-icons/fa6";
+
 type SidebarMenuKey = "active" | "nearCompletion" | "completed" | "employees";
 
 type Props = {
@@ -7,11 +17,26 @@ type Props = {
   onSelect: (key: SidebarMenuKey) => void;
 };
 
-const MENU_ITEMS: { key: SidebarMenuKey; icon: string; ar: string; en: string }[] = [
-  { key: "active", icon: "📂", ar: "المشاريع الحالية", en: "Active Projects" },
-  { key: "nearCompletion", icon: "⏳", ar: "قربت تخلص", en: "Near Completion" },
-  { key: "completed", icon: "✅", ar: "خلصت", en: "Completed" },
-  { key: "employees", icon: "👥", ar: "الموظفين", en: "Employees" },
+const MENU_ITEMS: {
+  key: SidebarMenuKey;
+  icon: React.ReactNode;
+  ar: string;
+  en: string;
+}[] = [
+  {
+    key: "active",
+    icon: <FaFolderOpen />,
+    ar: "المشاريع الحالية",
+    en: "Active Projects",
+  },
+  {
+    key: "nearCompletion",
+    icon: <FaHourglassHalf />,
+    ar: "قربت تخلص",
+    en: "Near Completion",
+  },
+  { key: "completed", icon: <FaCircleCheck />, ar: "خلصت", en: "Completed" },
+  { key: "employees", icon: <FaUsers />, ar: "الموظفين", en: "Employees" },
 ];
 
 /**
@@ -36,7 +61,7 @@ export default function Sidebar({ open, language, onClose, onSelect }: Props) {
           onClick={onClose}
           aria-label={language === "ar" ? "إغلاق" : "Close"}
         >
-          ✕
+          <FaXmark />
         </button>
 
         <nav className="sidebar-menu">
@@ -51,7 +76,9 @@ export default function Sidebar({ open, language, onClose, onSelect }: Props) {
             >
               <span className="sidebar-menu-icon">{item.icon}</span>
               {language === "ar" ? item.ar : item.en}
-              <span className="sidebar-menu-arrow">{language === "ar" ? "←" : "→"}</span>
+              <span className="sidebar-menu-arrow">
+                {language === "ar" ? <FaChevronLeft /> : <FaChevronRight />}
+              </span>
             </button>
           ))}
         </nav>

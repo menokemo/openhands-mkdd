@@ -1814,7 +1814,6 @@ header button,
 
 .employee-avatar-upload.uploading {
   background: #23304a;
-  animation: avatar-upload-pulse 1s ease-in-out infinite;
 }
 
 .employee-avatar-upload.error {
@@ -1823,13 +1822,16 @@ header button,
   color: #f5618b;
 }
 
-@keyframes avatar-upload-pulse {
-  0%,
-  100% {
-    opacity: 1;
+.spin-icon {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
   }
-  50% {
-    opacity: 0.4;
+  to {
+    transform: rotate(360deg);
   }
 }
 

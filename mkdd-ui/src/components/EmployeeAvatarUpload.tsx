@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { FaCamera, FaSpinner, FaTriangleExclamation } from "react-icons/fa6";
 import type { AgentProfile } from "../types";
 
 type Props = {
@@ -80,7 +81,13 @@ export default function EmployeeAvatarUpload({
         }}
         aria-label={language === "ar" ? "تغيير صورة الموظف" : "Change employee photo"}
       >
-        {status === "uploading" ? "…" : status === "error" ? "!" : "📷"}
+        {status === "uploading" ? (
+          <FaSpinner className="spin-icon" />
+        ) : status === "error" ? (
+          <FaTriangleExclamation />
+        ) : (
+          <FaCamera />
+        )}
       </button>
 
       <input
