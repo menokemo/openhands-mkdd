@@ -19,22 +19,28 @@
 ```
 openhands-mkdd/
 ├── setup.sh                     ← يشغّل كل حاجة من الصفر (docker compose build + up)
-├── compose.yml                  ← تعريف الخدمات (agent-canvas + mkdd-ui)
+├── compose.yml                  ← تعريف الخدمات (agent-canvas + mkdd-ui)، قابل للتهيئة بالكامل
+├── deploy/                      ← نظام النشر التلقائي (auto-deploy من GitHub كل 20 ثانية)
+│   ├── auto-deploy.sh
+│   ├── install.sh
+│   └── .env.staging             ← بورتات/أسماء معزولة تمامًا عن الإنتاج
 ├── mkdd-ui/                     ← منتج MKDD نفسه (الواجهة + الـ backend)
 │   ├── src/                     ← React frontend
 │   └── server/                  ← Node.js backend
 │       ├── index.mjs            ← نقطة الدخول (رفيعة، تربط الـ routes)
-│       ├── lib/                 ← منطق مشترك (auth, normalize, work-plan)
-│       └── routes/              ← كل route في ملفه (branding, workflow, chat...)
+│       ├── lib/                 ← منطق مشترك (auth, normalize, work-plan, ws-bridge, time-context)
+│       ├── routes/              ← كل route في ملفه (branding, workflow, chat...)
+│       └── scripts/             ← bootstrap-employees.mjs
 ├── openhands-agent-canvas/      ← نسخة معدّلة من OpenHands (fork)
-├── company-agents-definitions/  ← تعريف كل موظف (اسم، دور، تعليمات)
+├── company-agents-definitions/  ← تعريف كل موظف (اسم، دور، تعليمات) + AGENTS.md (قواعد الشركة)
 ├── company-skills/              ← مهارات كل دور (SKILL.md لكل موظف)
 ├── mkdd-data/branding/          ← أصول العلامة التجارية
 ├── README.md                    ← التوثيق الكامل والمرجعي للمشروع
+├── ENGINEERING_PRINCIPLES.md    ← مبادئ هندسية ثابتة (زي: أساس حقيقي إلزامي لكل ميزة)
 ├── BUGS_AND_FIXES.md            ← كل مشكلة عُرفت وحلها (أو حالتها)
 ├── CHANGELOG.md                 ← سجل زمني لكل تغيير
 ├── PROJECT_AUDIT_REPORT.md      ← تقرير فحص شامل بأرقام فعلية
-└── REALTIME_CHAT_RESEARCH.md    ← بحث فني لحل الـ realtime chat
+└── REALTIME_CHAT_RESEARCH.md    ← بحث فني لحل الـ realtime chat (منفَّذ بالكامل)
 ```
 
 ---
@@ -48,11 +54,14 @@ openhands-mkdd/
 - استخراج التكلفة الحقيقية من إحصائيات المحادثة.
 - تطبيع آمن للأحداث (Activity) — بدون تسريب chain-of-thought.
 - **جديد (2026-08-13):** المشروع أصبح قابلاً للبناء والتشغيل من الصفر على أي جهاز عبر `./setup.sh` — تم التحقق فعليًا ببناء ناجح.
-- **جديد (2026-08-13):** `server/` منظّم في `lib/` + `routes/` بدل ملف واحد ضخم، مع 17 اختبار آلي.
+- **جديد (2026-08-13):** `server/` منظّم في `lib/` + `routes/` بدل ملف واحد ضخم، مع 37 اختبار آلي.
 - **جديد (2026-08-13):** نظام نشر تلقائي (`deploy/`) — أي commit يوصل لـ `main` على GitHub يتنزل ويتبني ويتشغّل تلقائيًا على الـ VM خلال 20 ثانية، مع rollback تلقائي عند الفشل. **معزول بالكامل عن الإنتاج** (بورتات/أسماء/صورة/volume منفصلة تمامًا). التركيب لمرة واحدة عبر `deploy/install.sh`.
 - **جديد (2026-08-13):** نظام تفعيل الموظفين (`bootstrap-employees.mjs`) — تم اكتشاف إن الموظفين (Agent Profiles) بيانات runtime مش مولّدة من الكود، وتم بناء سكريبت يُنشئهم من ملفات `company-agents-definitions/` مع تعليماتهم الكاملة، مربوطين بـ LLM profile يحدده المستخدم. **تم التأكيد الفعلي: 13/13 موظف اتعملوا بنجاح على الـ staging.**
 - **جديد (2026-08-13):** الـ realtime chat بقى شغال عبر WebSocket حقيقي (بدل الاعتماد الكلي على polling)، مع reconnect تلقائي ورسالة تفاؤلية فورية عند الإرسال. **تم التأكيد الفعلي: محادثة حية على staging، الردود بتوصل لحظيًا بدون refresh.** التفاصيل في `REALTIME_CHAT_RESEARCH.md`.
 - **جديد (2026-08-13):** زر "+ مشروع جديد" — ينشئ مجلد مشروع فعلي ويسجّله كـ Workspace حقيقي عند OpenHands، مبني على الآلية الحقيقية المؤكَّدة من كود Agent Canvas نفسه (طبقًا لـ `ENGINEERING_PRINCIPLES.md` #1).
+- **جديد (2026-08-13):** عنوان تلقائي لكل محادثة جديدة (اسم الموظف + اسم المشروع)، ظاهر في واجهة Agent Canvas نفسها كمان.
+- **جديد (2026-08-13):** الموظفين بقى عندهم وعي بالوقت الحقيقي (مع تحويل صحيح للمنطقة الزمنية المحلية)، عبر حقن وقت مخفي في كل رسالة — تفاصيل كاملة في `BUGS_AND_FIXES.md` #25.
+- **جديد (2026-08-13):** إعادة تصميم بصري لشاشات المشاريع/المشروع/المحادثة بناءً على مرجع تصميم من المستخدم — هيدر علامة تجارية موحّد، شريط أفاتار الموظفين، تحسينات للمحادثة.
 
 ## إيه اللي لسه ناقص (Not Complete)
 
@@ -89,7 +98,7 @@ npm run build # يتأكد من صحة الـ TypeScript والبناء
 
 مأخوذة من `README.md` (قسم 52) و`PROJECT_AUDIT_REPORT.md`:
 
-1. **P0:** إنهاء الـ WebSocket bridge الآمن (الخطة جاهزة في `REALTIME_CHAT_RESEARCH.md`)، حل مشكلة اختفاء بيانات الموظفين.
+1. **P0:** مراقبة استقرار اختفاء بيانات الموظفين بعد التحول للـ WebSocket (تحسّن ملحوظ لكن غير مؤكَّد رسميًا كسبب جذري — `BUGS_AND_FIXES.md` #4)، حل تحديث Work Plan اللحظي (لسه بيعتمد على resync كل 15 ثانية).
 2. **P1:** إضافة هوية مستخدم حقيقية (authentication)، فرض الموافقات من طرف الـ backend حصريًا.
 3. **P2:** آلية أسرار مستقرة (بدل `/proc`)، CI/CD، اختبارات أشمل.
 4. **P3:** تحسينات UX نهائية.
