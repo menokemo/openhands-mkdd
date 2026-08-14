@@ -87,23 +87,6 @@ export default function ProjectHomeScreen({
                 <div className="employee-card-info">
                   <strong>{label}</strong>
                   <span>{employee.role}</span>
-
-                  <div className="employee-card-meta">
-                    <span>
-                      {status?.executionStatus ??
-                        (language === "ar" ? "لا توجد محادثة" : "No conversation")}
-                    </span>
-
-                    {status?.workPlan && (
-                      <span>
-                        {status.workPlan.counts.done}/{status.workPlan.counts.total}
-                      </span>
-                    )}
-
-                    {status?.cost && (
-                      <span>${status.cost.accumulatedCost.toFixed(4)}</span>
-                    )}
-                  </div>
                 </div>
               </div>
             );

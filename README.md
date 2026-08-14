@@ -2072,3 +2072,4 @@ server/
 - **كل route في ملفه الخاص** تحت `server/routes/`، مربوط من `server/index.mjs` بس.
 - **الهيدر واحد بس:** `AppHeader.tsx` — أي تعديل عليه بيظهر في الشاشات التلاتة تلقائيًا. أي تنقل خاص بشاشة معيّنة (زي زر الرجوع) يروح في `BreadcrumbBar.tsx` أو داخل الشاشة نفسها، مش في الهيدر.
 - **قبل أي ميزة جديدة في `mkdd-ui`:** راجع `ENGINEERING_PRINCIPLES.md` #1 — لازم أساس حقيقي مؤكَّد في `openhands-agent-canvas` أو API حقيقي، مش واجهة مُختلَقة.
+- **نظام الألوان الرسمي:** `design/MKDD_Color_System_Light_Dark_AR_RTL.docx` — المرجع الوحيد لقيم الألوان (Tokens) في `mkdd-ui/src/App.css`. أي تعديل لوني لازم يرجع للملف ده الأول، ولازم يُستخدَم اسم التوكن (`var(--mkdd-*)`) في الكود، مش قيمة hex مباشرة.

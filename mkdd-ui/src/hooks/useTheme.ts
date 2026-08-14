@@ -10,13 +10,13 @@ export function useTheme() {
 
   useEffect(() => {
     localStorage.setItem("mkdd-theme", theme);
-    // Dark is the default and has no attribute (matches the :root tokens
-    // in App.css); light is opt-in via [data-theme="light"].
-    if (theme === "light") {
-      document.documentElement.setAttribute("data-theme", "light");
-    } else {
-      document.documentElement.removeAttribute("data-theme");
-    }
+    // The official token file (MKDD_Color_System_Light_Dark_AR_RTL.docx)
+    // defines light as the bare :root default and dark as an explicit
+    // [data-theme="dark"] override. We always set the attribute
+    // explicitly either way (rather than relying on the bare :root
+    // fallback for light), so the app's actual default - dark, unless
+    // the user has chosen light - is never ambiguous.
+    document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
   return { theme, setTheme };

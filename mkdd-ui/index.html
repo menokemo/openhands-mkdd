@@ -21,12 +21,16 @@
   </head>
   <body>
     <script>
-      // Applied before React mounts, so a saved "light" preference doesn't
-      // flash the default dark theme for a frame on load.
+      // Applied before React mounts, to avoid a flash of the wrong theme.
+      // The CSS's bare :root defaults to LIGHT (per the official token
+      // spec), so this must explicitly apply "dark" for the common case
+      // too - not just handle a saved "light" preference.
       try {
-        if (localStorage.getItem("mkdd-theme") === "light") {
-          document.documentElement.setAttribute("data-theme", "light");
-        }
+        var savedTheme = localStorage.getItem("mkdd-theme");
+        document.documentElement.setAttribute(
+          "data-theme",
+          savedTheme === "light" ? "light" : "dark",
+        );
       } catch {}
     </script>
     <div id="root"></div>
