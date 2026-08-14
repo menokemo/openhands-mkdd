@@ -62,26 +62,26 @@ export default function ProjectsScreen({
   };
 
   return (
-    <main className="app">
-      <header>
-        <div>
-          <div className="brand">
-            <img src="/api/branding/logo" alt="MKDD" />
+    <main className="app projects-screen">
+      <header className="brand-header">
+        <div className="brand">
+          <img src="/api/branding/logo" alt="MKDD" />
 
-            <div>
-              <small>MKDD</small>
-              <h1>{t.projects}</h1>
-            </div>
+          <div>
+            <h1>MKDD</h1>
+            <small>{language === "ar" ? "تصميم وتطوير" : "Design & Development"}</small>
           </div>
         </div>
 
-        <div className="header-actions">
-          <button onClick={() => setIsCreating(true)}>{t.newProject}</button>
-          <button onClick={() => setLanguage(language === "ar" ? "en" : "ar")}>
-            {t.language}
-          </button>
-        </div>
+        <button
+          className="lang-toggle"
+          onClick={() => setLanguage(language === "ar" ? "en" : "ar")}
+        >
+          {t.language}
+        </button>
       </header>
+
+      <div className="section-label">{t.projects}</div>
 
       <section className="chat">
         {loading && (
@@ -107,6 +107,12 @@ export default function ProjectsScreen({
           </article>
         ))}
       </section>
+
+      <div className="new-project-bar">
+        <button className="new-project-button" onClick={() => setIsCreating(true)}>
+          {t.newProject}
+        </button>
+      </div>
 
       {isCreating && (
         <div className="modal-backdrop" onClick={closeModal}>

@@ -84,8 +84,11 @@ export default function ProjectHomeScreen({
         </button>
 
         <div className="project-heading">
+          <div className="project-heading-brand">
+            <img src="/api/branding/logo" alt="MKDD" />
+            <small>MKDD</small>
+          </div>
           <h1>{project.name}</h1>
-          <small>{t.project}</small>
         </div>
 
         <button
@@ -95,6 +98,36 @@ export default function ProjectHomeScreen({
           {t.language}
         </button>
       </header>
+
+      <section className="employee-strip project-home-strip">
+        {employees.map((employee) => {
+          const status = teamStatusByEmployeeId.get(employee.id);
+          const label =
+            language === "ar" ? employee.displayNameAr : employee.displayNameEn;
+
+          return (
+            <button
+              className={`employee-chip${
+                status?.executionStatus === "running" ? " running" : ""
+              }`}
+              key={employee.id}
+              onClick={() => onOpenEmployee(employee)}
+            >
+              <div className="employee-avatar">
+                {employee.avatarUrl ? (
+                  <img src={employee.avatarUrl} alt={label ?? employee.name} />
+                ) : (
+                  (label?.slice(0, 1) ?? "?")
+                )}
+                {status?.executionStatus === "running" && (
+                  <span className="employee-status-dot" />
+                )}
+              </div>
+              <span>{label}</span>
+            </button>
+          );
+        })}
+      </section>
 
       <section className="project-summary-grid">
         <article className="project-summary-card">

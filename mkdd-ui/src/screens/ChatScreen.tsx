@@ -50,7 +50,13 @@ export default function ChatScreen({
         </button>
 
         <div className="chat-screen-person">
-          <div className="chat-employee-avatar">{employeeName?.slice(0, 1) ?? "?"}</div>
+          <div className="chat-employee-avatar">
+            {employee.avatarUrl ? (
+              <img src={employee.avatarUrl} alt={employeeName ?? employee.name} />
+            ) : (
+              (employeeName?.slice(0, 1) ?? "?")
+            )}
+          </div>
 
           <div className="chat-employee-info">
             <strong>{employeeName}</strong>
@@ -70,16 +76,29 @@ export default function ChatScreen({
         {messages.map((event) => {
           const text = event.llm_message.content.map((item) => item.text).join("\n");
           const time = formatMessageTime(event.timestamp, language);
+          const isUser = event.source === "user";
 
           return (
-            <article key={event.id} className={event.source === "user" ? "me" : ""}>
-              {event.source === "agent" && <b>{employeeName}</b>}
+            <article key={event.id} className={isUser ? "me" : "agent-message"}>
+              {!isUser && (
+                <div className="agent-message-avatar">
+                  {employee.avatarUrl ? (
+                    <img src={employee.avatarUrl} alt={employeeName ?? employee.name} />
+                  ) : (
+                    (employeeName?.slice(0, 1) ?? "?")
+                  )}
+                </div>
+              )}
 
-              <div className="message-markdown">
-                <ReactMarkdown>{text}</ReactMarkdown>
+              <div className="agent-message-body">
+                {!isUser && <b>{employeeName}</b>}
+
+                <div className="message-markdown">
+                  <ReactMarkdown>{text}</ReactMarkdown>
+                </div>
+
+                {time && <time className="message-time">{time}</time>}
               </div>
-
-              {time && <time className="message-time">{time}</time>}
             </article>
           );
         })}
@@ -98,8 +117,13 @@ export default function ChatScreen({
           placeholder={language === "ar" ? "اكتب رسالة..." : "Write a message..."}
         />
 
-        <button type="submit" disabled={sending}>
-          {sending ? "..." : language === "ar" ? "إرسال" : "Send"}
+        <button
+          type="submit"
+          className="composer-send"
+          disabled={sending}
+          aria-label="send"
+        >
+          {sending ? "…" : "↑"}
         </button>
       </form>
     </main>
