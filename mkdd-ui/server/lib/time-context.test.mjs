@@ -1,6 +1,22 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { withTimeContext, stripTimeContext } from "./time-context.mjs";
+import {
+  withTimeContext,
+  stripTimeContext,
+  buildTimeContextInstructions,
+} from "./time-context.mjs";
+
+test("buildTimeContextInstructions embeds the given timezone", () => {
+  const text = buildTimeContextInstructions("Europe/Amsterdam");
+  assert.ok(text.includes("Europe/Amsterdam"));
+  assert.ok(text.includes("<!--mkdd:time:"));
+});
+
+test("buildTimeContextInstructions reflects a different timezone when given one", () => {
+  const text = buildTimeContextInstructions("Africa/Cairo");
+  assert.ok(text.includes("Africa/Cairo"));
+  assert.ok(!text.includes("Europe/Amsterdam"));
+});
 
 test("withTimeContext prepends a marker line with a valid ISO timestamp", () => {
   const result = withTimeContext("hello");

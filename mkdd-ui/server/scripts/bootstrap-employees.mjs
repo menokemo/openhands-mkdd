@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { openhandsFetch } from "../lib/openhands-client.mjs";
 import { listEmployeeNames } from "../lib/list-employee-definitions.mjs";
-import { TIME_CONTEXT_INSTRUCTIONS } from "../lib/time-context.mjs";
+import { buildTimeContextInstructions } from "../lib/time-context.mjs";
 
 /**
  * Bootstrap script: creates (or updates) an OpenHands Agent Profile for
@@ -36,8 +36,16 @@ import { TIME_CONTEXT_INSTRUCTIONS } from "../lib/time-context.mjs";
  *
  * Usage (run inside the mkdd-ui container, which shares the agent-canvas
  * container's PID namespace and so can discover its session key):
- *   docker exec -e MKDD_BOOTSTRAP_LLM_PROFILE_REF=<your-llm-profile-name> \
+ *   docker exec \
+ *     -e MKDD_BOOTSTRAP_LLM_PROFILE_REF=<your-llm-profile-name> \
+ *     -e MKDD_TIMEZONE=<IANA timezone, e.g. Europe/Amsterdam> \
  *     mkdd-ui-staging node server/scripts/bootstrap-employees.mjs
+ *
+ * MKDD_TIMEZONE defaults to Europe/Amsterdam if not set. It tells each
+ * employee what local timezone to convert the injected UTC timestamp to
+ * when talking about "now" - the container's own clock is UTC internally
+ * even when the host VM's timezone is set correctly (BUGS_AND_FIXES.md
+ * #25 follow-up), so this must be explicit rather than inferred.
  */
 
 const DEFINITIONS_DIR = "/company-agents-definitions";
@@ -45,21 +53,22 @@ const DEFINITIONS_DIR = "/company-agents-definitions";
 /**
  * Splits a definition file into its frontmatter and body. The body (the
  * employee's actual instructions/persona) becomes system_message_suffix.
- * TIME_CONTEXT_INSTRUCTIONS (see server/lib/time-context.mjs) is appended
- * once here so every employee learns the same live-time marker format,
- * instead of duplicating that boilerplate across all 13 .md files.
+ * TIME_CONTEXT instructions (see server/lib/time-context.mjs) are appended
+ * once here so every employee learns the same live-time marker format and
+ * the correct local timezone to convert it to, instead of duplicating that
+ * boilerplate across all 13 .md files.
  */
-function readSystemMessageSuffix(name) {
+function readSystemMessageSuffix(name, timezone) {
   const file = path.join(DEFINITIONS_DIR, `${name}.md`);
   const content = fs.readFileSync(file, "utf8");
   const parts = content.split("---");
   // parts[0] is empty (content starts with "---"), parts[1] is frontmatter,
   // the rest (rejoined, in case the body itself contains "---") is the body.
   const body = parts.length >= 3 ? parts.slice(2).join("---") : content;
-  return `${body.trim()}\n\n${TIME_CONTEXT_INSTRUCTIONS}`;
+  return `${body.trim()}\n\n${buildTimeContextInstructions(timezone)}`;
 }
 
-async function createOrUpdateProfile(name, llmProfileRef) {
+async function createOrUpdateProfile(name, llmProfileRef, timezone) {
   const r = await openhandsFetch(`/api/agent-profiles/${name}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -67,7 +76,7 @@ async function createOrUpdateProfile(name, llmProfileRef) {
       agent_kind: "openhands",
       agent: "CodeActAgent",
       llm_profile_ref: llmProfileRef,
-      system_message_suffix: readSystemMessageSuffix(name),
+      system_message_suffix: readSystemMessageSuffix(name, timezone),
     }),
   });
 
@@ -77,6 +86,7 @@ async function createOrUpdateProfile(name, llmProfileRef) {
 
 async function main() {
   const llmProfileRef = process.env.MKDD_BOOTSTRAP_LLM_PROFILE_REF;
+  const timezone = process.env.MKDD_TIMEZONE || "Europe/Amsterdam";
 
   if (!llmProfileRef) {
     console.error(
@@ -94,7 +104,8 @@ async function main() {
 
   const names = listEmployeeNames(DEFINITIONS_DIR);
   console.log(`Found ${names.length} employee definitions: ${names.join(", ")}`);
-  console.log(`Using LLM profile: ${llmProfileRef}\n`);
+  console.log(`Using LLM profile: ${llmProfileRef}`);
+  console.log(`Using timezone: ${timezone}\n`);
 
   let ok = 0;
   let failed = 0;
@@ -102,7 +113,7 @@ async function main() {
   for (const name of names) {
     // eslint-disable-next-line no-await-in-loop -- intentionally sequential,
     // this runs once during bootstrap, not on a hot path.
-    const result = await createOrUpdateProfile(name, llmProfileRef);
+    const result = await createOrUpdateProfile(name, llmProfileRef, timezone);
     if (result.ok) {
       console.log(`[ok]     ${name}`);
       ok += 1;

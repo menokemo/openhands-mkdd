@@ -24,17 +24,22 @@ const MARKER_SUFFIX = "-->";
 const MARKER_LINE_REGEX = /^<!--mkdd:time:[^>]*-->\n?/;
 
 /** Instruction text every employee's system prompt gets, once (see bootstrap-employees.mjs). */
-export const TIME_CONTEXT_INSTRUCTIONS = `## Live Time Context
+export function buildTimeContextInstructions(timezone) {
+  return `## Live Time Context
 
 Each user message may begin with a hidden system line in the exact form:
-<!--mkdd:time:ISO_8601_TIMESTAMP-->
+<!--mkdd:time:ISO_8601_UTC_TIMESTAMP-->
 
-This line states the real current date and time when the user sent that
-specific message. Use it to reason accurately about elapsed time, "today",
-"this week", recency, and scheduling - never assume your own training
-cutoff or an earlier message's timestamp represents "now". Do not quote,
-repeat, or mention this line to the user; it is a system-only marker that
+This line states the real current date and time (in UTC) when the user sent
+that specific message. The user's local timezone is ${timezone} - always
+convert this UTC timestamp to that timezone before telling the user "now",
+"today", or any date/time; never present a raw UTC time as if it were their
+local time. Use it to reason accurately about elapsed time, "today", "this
+week", recency, and scheduling - never assume your own training cutoff or
+an earlier message's timestamp represents "now". Do not quote, repeat, or
+mention this raw marker line to the user; it is a system-only marker that
 has already been removed from what they see.`;
+}
 
 /** Prepends the current-time marker to an outgoing message. */
 export function withTimeContext(text) {
