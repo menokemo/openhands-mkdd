@@ -1364,73 +1364,6 @@ header button,
   font-size: 13px;
 }
 
-.project-home .workflow-gates-grid {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(148px, 72%);
-  gap: 8px;
-  margin: 0 -13px;
-  padding: 0 13px 8px;
-  overflow-x: auto;
-  scroll-snap-type: inline mandatory;
-  scrollbar-width: none;
-}
-
-.project-home .workflow-gates-grid::-webkit-scrollbar {
-  display: none;
-}
-
-.project-home .workflow-status-card {
-  min-height: 82px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  scroll-snap-align: start;
-  border: 1px solid #29364c;
-  border-radius: 15px;
-  background: #101826;
-}
-
-.project-home .workflow-status-card small {
-  color: #adb5c5;
-  font-size: 10px;
-  font-weight: 650;
-}
-
-.project-home .workflow-status-card strong {
-  width: fit-content;
-  margin-top: 13px;
-  padding: 5px 8px;
-  border-radius: 999px;
-  background: #182131;
-  color: #8590a5;
-  font-size: 9px;
-  text-transform: capitalize;
-}
-
-.project-home .workflow-status-pending {
-  border-color: rgba(221, 158, 52, 0.6);
-}
-
-.project-home .workflow-status-pending strong {
-  background: rgba(221, 158, 52, 0.13);
-  color: #e5ad4d;
-}
-
-.project-home .workflow-status-approved {
-  border-color: rgba(68, 190, 119, 0.42);
-}
-
-.project-home .workflow-status-approved strong {
-  background: rgba(68, 190, 119, 0.12);
-  color: #6fd39a;
-}
-
-.project-home .workflow-status-locked strong {
-  color: #6d7789;
-}
-
 .project-home .workflow-subheading {
   margin-top: 16px;
   margin-bottom: 9px;
@@ -1616,15 +1549,6 @@ header button,
 @media (min-width: 980px) {
   .project-home {
     padding: 24px 24px 48px;
-  }
-
-  .project-home .project-header {
-    position: relative;
-    top: auto;
-    margin: 0 0 18px;
-    padding: 0 0 16px;
-    background: transparent;
-    backdrop-filter: none;
   }
 }
 
@@ -2186,4 +2110,117 @@ header button,
   margin: 0;
   color: #9aa2b6;
   font-size: 13px;
+}
+
+/* =========================
+   Workflow Stepper (numbered gate progression)
+   ========================= */
+
+.workflow-stepper {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin: 4px 0 14px;
+}
+
+.workflow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.workflow-step-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.workflow-step-circle {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  background: #151b28;
+  border: 2px solid #2b3346;
+  color: #7f879a;
+  margin: 0 auto;
+}
+
+.workflow-step-line {
+  flex: 1 1 auto;
+  height: 2px;
+  background: #232c40;
+  margin-inline: -4px;
+}
+
+.workflow-step-line-done {
+  background: #45c178;
+}
+
+.workflow-step:first-child .workflow-step-row {
+  margin-inline-start: 16px;
+}
+
+.workflow-step:last-child .workflow-step-line {
+  display: none;
+}
+
+.workflow-step-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.workflow-step-label strong {
+  font-size: 11px;
+  color: #cfd4e2;
+  font-weight: 700;
+}
+
+.workflow-step-label span {
+  font-size: 10px;
+  color: #7f879a;
+}
+
+.workflow-step-approved .workflow-step-circle {
+  background: #133424;
+  border-color: #45c178;
+  color: #6fd29a;
+}
+
+.workflow-step-current .workflow-step-circle {
+  background: #7c6bff;
+  border-color: #7c6bff;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(124, 107, 255, 0.18);
+}
+
+.workflow-step-current .workflow-step-label strong {
+  color: #fff;
+}
+
+@media (min-width: 700px) {
+  .workflow-stepper {
+    gap: 0;
+  }
+
+  .workflow-step-label strong {
+    font-size: 13px;
+  }
+
+  .workflow-step-label span {
+    font-size: 11px;
+  }
+
+  .workflow-step-circle {
+    width: 40px;
+    height: 40px;
+    font-size: 15px;
+  }
 }

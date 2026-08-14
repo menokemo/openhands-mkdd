@@ -1,7 +1,9 @@
 import type { AgentProfile } from "../types";
 import type { ProjectEmployeeStatus } from "../hooks/useProjectTeamStatus";
-import type { WorkflowGateName, WorkflowReviewRole, WorkflowState } from "../api/client";
+import type { WorkflowState } from "../api/client";
 import EmployeeAvatarUpload from "../components/EmployeeAvatarUpload";
+import WorkflowStepper from "../components/WorkflowStepper";
+import { REVIEW_ROLES, getGateLabel, getReviewLabel } from "../utils/workflowLabels";
 
 type Props = {
   employees: AgentProfile[];
@@ -14,15 +16,6 @@ type Props = {
   onOpenEmployee: (employee: AgentProfile) => void;
   onUploadAvatar: (employeeSlug: string, imageDataUrl: string) => Promise<void>;
 };
-
-const GATES: WorkflowGateName[] = ["requirements", "ui_ux", "architecture", "production"];
-
-const REVIEW_ROLES: WorkflowReviewRole[] = [
-  "qa",
-  "test_automation",
-  "code_review",
-  "security_review",
-];
 
 /**
  * Body content for the Project Home screen. The header and back
@@ -49,28 +42,6 @@ export default function ProjectHomeScreen({
 
   const unverifiedFindings =
     workflow?.findings.filter((item) => item.status !== "verified").length ?? 0;
-
-  const gateLabel = (gate: WorkflowGateName) => {
-    const labels = {
-      requirements: language === "ar" ? "المتطلبات" : "Requirements",
-      ui_ux: language === "ar" ? "واجهة وتجربة المستخدم" : "UI/UX",
-      architecture: language === "ar" ? "المعمارية" : "Architecture",
-      production: language === "ar" ? "الإنتاج" : "Production",
-    };
-
-    return labels[gate];
-  };
-
-  const reviewLabel = (role: WorkflowReviewRole) => {
-    const labels = {
-      qa: "QA",
-      test_automation: language === "ar" ? "الاختبارات الآلية" : "Test Automation",
-      code_review: language === "ar" ? "مراجعة الكود" : "Code Review",
-      security_review: language === "ar" ? "مراجعة الأمان" : "Security Review",
-    };
-
-    return labels[role];
-  };
 
   return (
     <main className="app project-home">
@@ -154,7 +125,11 @@ export default function ProjectHomeScreen({
         <article className="project-summary-card">
           <small>{language === "ar" ? "المرحلة الحالية" : "Current gate"}</small>
           <strong>
-            {workflowLoading ? "…" : workflow ? gateLabel(workflow.currentGate) : "—"}
+            {workflowLoading
+              ? "…"
+              : workflow
+                ? getGateLabel(workflow.currentGate, language)
+                : "—"}
           </strong>
         </article>
       </section>
@@ -167,21 +142,11 @@ export default function ProjectHomeScreen({
           </div>
         </div>
 
-        <div className="workflow-gates-grid">
-          {GATES.map((gate) => {
-            const gateState = workflow?.gates[gate];
-
-            return (
-              <article
-                className={`workflow-status-card workflow-status-${gateState?.status ?? "unknown"}`}
-                key={gate}
-              >
-                <small>{gateLabel(gate)}</small>
-                <strong>{workflowLoading ? "…" : (gateState?.status ?? "—")}</strong>
-              </article>
-            );
-          })}
-        </div>
+        <WorkflowStepper
+          workflow={workflow}
+          loading={workflowLoading}
+          language={language}
+        />
 
         <div className="section-heading workflow-subheading">
           <div>
@@ -199,7 +164,7 @@ export default function ProjectHomeScreen({
                 className={`workflow-review-card workflow-review-${review?.status ?? "unknown"}`}
                 key={reviewRole}
               >
-                <small>{reviewLabel(reviewRole)}</small>
+                <small>{getReviewLabel(reviewRole, language)}</small>
                 <strong>{workflowLoading ? "…" : (review?.status ?? "—")}</strong>
                 {review?.reviewedBy && <span>{review.reviewedBy}</span>}
               </article>
