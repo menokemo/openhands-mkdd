@@ -72,6 +72,18 @@ echo "    MKDD_PROJECTS_DIR  = ${MKDD_PROJECTS_DIR}"
 mkdir -p "${MKDD_PROJECTS_DIR}"
 mkdir -p mkdd-data/branding
 
+# The agent-canvas image's own Dockerfile chowns /projects to its
+# non-root "openhands" user - but that chown only ever applies to a path
+# INSIDE the image at build time. At runtime, docker compose bind-mounts
+# this HOST directory over that same path, completely shadowing whatever
+# ownership the image set - so the container's non-root user ends up
+# unable to write into a directory owned by whoever ran this script
+# (root, via sudo). This is why employees could be created but couldn't
+# write project files (BUGS_AND_FIXES.md #36). Fixed by making the host
+# directory writable by any UID, since it only ever holds project
+# workspace files, not credentials.
+chmod -R 777 "${MKDD_PROJECTS_DIR}"
+
 # ---------------------------------------------------------------------------
 # 4. Build + start
 # ---------------------------------------------------------------------------

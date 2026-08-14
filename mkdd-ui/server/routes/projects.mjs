@@ -93,18 +93,43 @@ export async function handleCreateProject(req, res) {
   }
 
   fs.mkdirSync(projectPath, { recursive: true });
+  // mkdirSync's `mode` option is still reduced by the process umask, so it
+  // can't reliably guarantee write access - chmod explicitly instead.
+  // Without this, the OpenHands agent-server's non-root "openhands" user
+  // cannot write files into a project this container (running as root)
+  // just created, since ownership/permissions default to whoever created
+  // the directory (see BUGS_AND_FIXES.md #36 - this was reported live:
+  // an employee could be assigned work but couldn't create project
+  // files). The directory only ever holds project workspace files, never
+  // credentials, so 777 is an acceptable trade-off here.
+  fs.chmodSync(projectPath, 0o777);
 
   // The agent-server expects {"workspaces": [...]}, not a bare array -
   // confirmed via the live openapi.json's AddWorkspacesRequest schema
   // (an initial guess without this envelope failed with a real 422:
   // "Input should be a valid dictionary or object to extract fields from").
-  const r = await openhandsFetch("/api/workspaces", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      workspaces: [{ id: projectPath, name: name.trim(), path: projectPath }],
-    }),
-  });
+  let r;
+  try {
+    r = await openhandsFetch("/api/workspaces", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        workspaces: [{ id: projectPath, name: name.trim(), path: projectPath }],
+      }),
+    });
+  } catch (e) {
+    // A total network failure (OpenHands unreachable) throws rather than
+    // resolving with a non-ok response - without this catch, the rollback
+    // below would never run and an orphaned, unregistered directory would
+    // be left behind. Found and fixed live while testing BUGS_AND_FIXES.md
+    // #36's permission fix.
+    fs.rmSync(projectPath, { recursive: true, force: true });
+    res.writeHead(502, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({ error: "workspace_registration_failed", detail: e.message }),
+    );
+    return true;
+  }
 
   if (!r.ok) {
     // Roll back the directory we just created so a failed registration
