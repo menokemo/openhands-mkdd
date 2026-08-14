@@ -1,3 +1,4 @@
+import { FaCheck } from "react-icons/fa6";
 import type { WorkflowState } from "../api/client";
 import { GATES, getGateLabel } from "../utils/workflowLabels";
 
@@ -41,7 +42,9 @@ export default function WorkflowStepper({ workflow, loading, language }: Props) 
         return (
           <div className={`workflow-step workflow-step-${stepStatus}`} key={gate}>
             <div className="workflow-step-row">
-              <div className="workflow-step-circle">{isApproved ? "✓" : index + 1}</div>
+              <div className="workflow-step-circle">
+                {isApproved ? <FaCheck /> : index + 1}
+              </div>
 
               {index < GATES.length - 1 && (
                 <div

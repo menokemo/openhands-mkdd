@@ -24,6 +24,8 @@
   --mkdd-warning: #dfa742;
   --mkdd-danger: #f5618b;
   --mkdd-bg-translucent: rgba(8, 13, 23, 0.94);
+  --mkdd-success-bg: #133424;
+  --mkdd-accent-glow: rgba(124, 107, 255, 0.18);
 }
 
 [data-theme="light"] {
@@ -46,6 +48,8 @@
   --mkdd-warning: #b3730f;
   --mkdd-danger: #d43f6b;
   --mkdd-bg-translucent: rgba(245, 246, 250, 0.92);
+  --mkdd-success-bg: #e3f6ea;
+  --mkdd-accent-glow: rgba(108, 75, 255, 0.14);
 }
 
 * {
@@ -2061,6 +2065,13 @@ header button,
   gap: 20px;
 }
 
+@media (min-width: 700px) {
+  .sidebar {
+    width: 340px;
+    padding: 24px 20px 28px;
+  }
+}
+
 .sidebar-close {
   align-self: flex-end;
   width: 32px;
@@ -2081,24 +2092,32 @@ header button,
 .sidebar-menu-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 13px 12px;
+  gap: 14px;
+  padding: 15px 14px;
   border: 1px solid var(--mkdd-border-subtle);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--mkdd-surface);
   color: var(--mkdd-text-secondary);
+  font-family: "Segoe UI", system-ui, sans-serif;
   font-size: 14px;
   font-weight: 600;
   text-align: start;
 }
 
 .sidebar-menu-item:active {
-  background: #151d2b;
+  background: var(--mkdd-surface-hover);
 }
 
 .sidebar-menu-icon {
-  font-size: 17px;
   flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  background: var(--mkdd-surface-raised);
+  color: var(--mkdd-accent);
 }
 
 .sidebar-menu-arrow {
@@ -2191,8 +2210,8 @@ header button,
 .workflow-stepper {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  margin: 4px 0 14px;
+  gap: 8px;
+  margin: 8px 0 18px;
 }
 
 .workflow-step {
@@ -2200,7 +2219,7 @@ header button,
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .workflow-step-row {
@@ -2211,15 +2230,16 @@ header button,
 
 .workflow-step-circle {
   flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 13px;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
   font-weight: 700;
   background: var(--mkdd-surface-raised);
-  border: 2px solid #2b3346;
+  border: 2px solid var(--mkdd-border-strong);
   color: var(--mkdd-text-muted);
   margin: 0 auto;
 }
@@ -2227,7 +2247,7 @@ header button,
 .workflow-step-line {
   flex: 1 1 auto;
   height: 2px;
-  background: #232c40;
+  background: var(--mkdd-border-subtle);
   margin-inline: -4px;
 }
 
@@ -2236,7 +2256,7 @@ header button,
 }
 
 .workflow-step:first-child .workflow-step-row {
-  margin-inline-start: 16px;
+  margin-inline-start: 18px;
 }
 
 .workflow-step:last-child .workflow-step-line {
@@ -2246,22 +2266,24 @@ header button,
 .workflow-step-label {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .workflow-step-label strong {
-  font-size: 11px;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 12px;
   color: var(--mkdd-text-secondary);
   font-weight: 700;
 }
 
 .workflow-step-label span {
+  font-family: "Segoe UI", system-ui, sans-serif;
   font-size: 10px;
   color: var(--mkdd-text-muted);
 }
 
 .workflow-step-approved .workflow-step-circle {
-  background: #133424;
+  background: var(--mkdd-success-bg);
   border-color: var(--mkdd-success);
   color: var(--mkdd-success-text);
 }
@@ -2269,8 +2291,8 @@ header button,
 .workflow-step-current .workflow-step-circle {
   background: var(--mkdd-accent);
   border-color: var(--mkdd-accent);
-  color: var(--mkdd-text);
-  box-shadow: 0 0 0 4px rgba(124, 107, 255, 0.18);
+  color: #fff;
+  box-shadow: 0 0 0 4px var(--mkdd-accent-glow);
 }
 
 .workflow-step-current .workflow-step-label strong {
@@ -2280,20 +2302,21 @@ header button,
 @media (min-width: 700px) {
   .workflow-stepper {
     gap: 0;
+    margin: 12px 0 22px;
   }
 
   .workflow-step-label strong {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .workflow-step-label span {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .workflow-step-circle {
-    width: 40px;
-    height: 40px;
-    font-size: 15px;
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
   }
 }
 
