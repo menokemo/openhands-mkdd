@@ -96,8 +96,10 @@ export async function handleUploadAvatar(req, res) {
   if (!(req.method === "POST" && match)) return false;
 
   const employeeId = decodeURIComponent(match[1]);
+  console.log(`[avatar upload] request received for employeeId=${employeeId}`);
 
   if (!listEmployeeNames().includes(employeeId)) {
+    console.log(`[avatar upload] rejected: unknown employee "${employeeId}"`);
     res.writeHead(404, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "employee_not_found" }));
     return true;
@@ -109,6 +111,10 @@ export async function handleUploadAvatar(req, res) {
     imageDataUrl.match(/^data:(image\/(?:png|jpeg|webp));base64,(.+)$/);
 
   if (!dataUrlMatch) {
+    console.log(
+      `[avatar upload] rejected: invalid image data URL for "${employeeId}" ` +
+        `(received ${typeof imageDataUrl === "string" ? `${imageDataUrl.length} chars` : typeof imageDataUrl})`,
+    );
     res.writeHead(400, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "invalid_image_data_url" }));
     return true;
@@ -118,6 +124,9 @@ export async function handleUploadAvatar(req, res) {
   const buffer = Buffer.from(base64Payload, "base64");
 
   if (buffer.byteLength > MAX_AVATAR_BYTES) {
+    console.log(
+      `[avatar upload] rejected: "${employeeId}" image too large (${buffer.byteLength} bytes)`,
+    );
     res.writeHead(413, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "image_too_large" }));
     return true;
@@ -134,6 +143,10 @@ export async function handleUploadAvatar(req, res) {
   const ext = ALLOWED_MIME_TO_EXT[mime];
   const file = path.join(AVATARS_DIR, `${employeeId}.${ext}`);
   fs.writeFileSync(file, buffer);
+
+  console.log(
+    `[avatar upload] saved "${employeeId}" -> ${file} (${buffer.byteLength} bytes, ${mime})`,
+  );
 
   res.writeHead(200, { "content-type": "application/json" });
   res.end(JSON.stringify({ avatarUrl: buildEmployeeAvatarUrl(employeeId) }));

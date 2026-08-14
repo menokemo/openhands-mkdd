@@ -1,6 +1,7 @@
 import type { AgentProfile, Workspace } from "../types";
 import type { ProjectEmployeeStatus } from "../hooks/useProjectTeamStatus";
 import type { WorkflowGateName, WorkflowReviewRole, WorkflowState } from "../api/client";
+import EmployeeAvatarUpload from "../components/EmployeeAvatarUpload";
 
 type Props = {
   project: Workspace;
@@ -133,44 +134,12 @@ export default function ProjectHomeScreen({
                   }
                 }}
               >
-                <div className="employee-avatar-wrap">
-                  <div className="employee-avatar">
-                    {employee.avatarUrl ? (
-                      <img src={employee.avatarUrl} alt={label ?? employee.name} />
-                    ) : (
-                      (label?.slice(0, 1) ?? "?")
-                    )}
-                  </div>
-
-                  <label
-                    className="employee-avatar-upload"
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label={
-                      language === "ar" ? "تغيير صورة الموظف" : "Change employee photo"
-                    }
-                  >
-                    📷
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp"
-                      hidden
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        e.target.value = "";
-                        if (!file) return;
-
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          const dataUrl = reader.result;
-                          if (typeof dataUrl === "string") {
-                            void onUploadAvatar(employee.name, dataUrl);
-                          }
-                        };
-                        reader.readAsDataURL(file);
-                      }}
-                    />
-                  </label>
-                </div>
+                <EmployeeAvatarUpload
+                  employee={employee}
+                  label={label}
+                  language={language}
+                  onUpload={onUploadAvatar}
+                />
 
                 <div className="employee-card-info">
                   <strong>{label}</strong>

@@ -2007,6 +2007,7 @@ header button,
   right: -4px;
   width: 20px;
   height: 20px;
+  padding: 0;
   border-radius: 50%;
   background: #171d2a;
   border: 1.5px solid #0b0f18;
@@ -2014,7 +2015,29 @@ header button,
   place-items: center;
   font-size: 10px;
   line-height: 1;
+  color: inherit;
   cursor: pointer;
+}
+
+.employee-avatar-upload.uploading {
+  background: #23304a;
+  animation: avatar-upload-pulse 1s ease-in-out infinite;
+}
+
+.employee-avatar-upload.error {
+  background: #4a2330;
+  border-color: #f5618b;
+  color: #f5618b;
+}
+
+@keyframes avatar-upload-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .employee-avatar-upload:hover {
