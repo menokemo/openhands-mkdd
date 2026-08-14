@@ -1,7 +1,7 @@
 import { openhands } from "../lib/openhands-client.mjs";
 import { listEmployeeNames } from "../lib/list-employee-definitions.mjs";
 import { readEmployeeDisplayInfo } from "../lib/employee-display-info.mjs";
-import { findEmployeeAvatarFile } from "./avatars.mjs";
+import { buildEmployeeAvatarUrl } from "./avatars.mjs";
 import { getProjectColor } from "../lib/project-metadata.mjs";
 
 export async function handleProjects(req, res) {
@@ -33,11 +33,10 @@ export async function handleEmployees(req, res) {
     .filter((p) => allowed.has(p.name))
     .map((profile) => {
       const info = readEmployeeDisplayInfo(profile.name);
-      const avatar = findEmployeeAvatarFile(profile.name);
       return {
         ...profile,
         ...info,
-        avatarUrl: avatar ? `/avatars/${profile.name}` : null,
+        avatarUrl: buildEmployeeAvatarUrl(profile.name),
       };
     })
     .sort((a, b) => a.order - b.order);

@@ -193,8 +193,6 @@ export default function ProjectHomeScreen({
                     )}
                   </div>
                 </div>
-
-                <span className="employee-open-arrow">→</span>
               </div>
             );
           })}

@@ -40,11 +40,30 @@ export function findEmployeeAvatarFile(employeeId) {
   return null;
 }
 
-/** GET /avatars/{employeeId} — serves the uploaded avatar, if any. */
+/**
+ * Builds the public avatar URL with a cache-busting `?v=` query param
+ * (the file's last-modified time). Without this, a browser that already
+ * tried (and failed, e.g. 404'd before the file existed) to load
+ * /avatars/{id} once may keep serving that cached failure even after a
+ * successful re-upload, since the URL string never changes otherwise.
+ * Confirmed live on staging: the backend correctly served the uploaded
+ * file (200, correct content-type, correct size) while the browser still
+ * showed a broken image - a classic stale-cache symptom this fixes.
+ */
+export function buildEmployeeAvatarUrl(employeeId) {
+  const found = findEmployeeAvatarFile(employeeId);
+  if (!found) return null;
+
+  const mtimeMs = Math.round(fs.statSync(found.file).mtimeMs);
+  return `/avatars/${employeeId}?v=${mtimeMs}`;
+}
+
+/** GET /avatars/{employeeId}[?v=...] — serves the uploaded avatar, if any. */
 export async function handleServeAvatar(req, res) {
   if (!(req.method === "GET" && req.url?.startsWith("/avatars/"))) return false;
 
-  const employeeId = decodeURIComponent(req.url.slice("/avatars/".length));
+  const url = new URL(req.url, "http://mkdd.local");
+  const employeeId = decodeURIComponent(url.pathname.slice("/avatars/".length));
   const found = findEmployeeAvatarFile(employeeId);
 
   if (!found) {
@@ -53,7 +72,13 @@ export async function handleServeAvatar(req, res) {
     return true;
   }
 
-  res.writeHead(200, { "content-type": CONTENT_TYPE_BY_EXT[found.ext] });
+  // The URL is version-stamped (see buildEmployeeAvatarUrl) - a given
+  // exact URL only ever points at one immutable file, so it's safe to
+  // let the browser cache it aggressively instead of re-checking.
+  res.writeHead(200, {
+    "content-type": CONTENT_TYPE_BY_EXT[found.ext],
+    "cache-control": "public, max-age=31536000, immutable",
+  });
   fs.createReadStream(found.file).pipe(res);
   return true;
 }
@@ -111,6 +136,6 @@ export async function handleUploadAvatar(req, res) {
   fs.writeFileSync(file, buffer);
 
   res.writeHead(200, { "content-type": "application/json" });
-  res.end(JSON.stringify({ avatarUrl: `/avatars/${employeeId}` }));
+  res.end(JSON.stringify({ avatarUrl: buildEmployeeAvatarUrl(employeeId) }));
   return true;
 }
