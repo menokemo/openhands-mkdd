@@ -51,13 +51,19 @@ echo "    docker compose: OK"
 # ---------------------------------------------------------------------------
 # 2. Build-time configuration
 #
-# These defaults were confirmed working by an actual local build+run test
-# on 2026-08-13 (see BUGS_AND_FIXES.md #7). They can be overridden by
-# exporting the same variable names before running this script, or via a
-# .env file next to compose.yml (docker compose reads .env automatically).
+# Upgraded to Agent Canvas v1.13.0's own official defaults (confirmed
+# directly from that source tree's config/defaults.json - not guessed) on
+# 2026-08-14. The PREVIOUS pair (agent-server 1.40.1 / automation 1.6.0,
+# matching the 1.12.0-mkdd2 base) was the one actually build+run tested on
+# 2026-08-13 (see BUGS_AND_FIXES.md #7) - THIS pair has not yet had that
+# same live build+run confirmation and should get one before this reaches
+# production, per ENGINEERING_PRINCIPLES.md #1.
+# Overridable by exporting the same variable names before running this
+# script, or via a .env file next to compose.yml (docker compose reads
+# .env automatically).
 # ---------------------------------------------------------------------------
-export AGENT_SERVER_IMAGE="${AGENT_SERVER_IMAGE:-ghcr.io/openhands/agent-server:1.40.1-python}"
-export AUTOMATION_VERSION="${AUTOMATION_VERSION:-1.6.0}"
+export AGENT_SERVER_IMAGE="${AGENT_SERVER_IMAGE:-ghcr.io/openhands/agent-server:1.42.1-python}"
+export AUTOMATION_VERSION="${AUTOMATION_VERSION:-1.7.1}"
 export MKDD_PROJECTS_DIR="${MKDD_PROJECTS_DIR:-./projects}"
 
 echo "==> Build configuration:"
