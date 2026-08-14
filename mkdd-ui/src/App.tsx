@@ -19,6 +19,7 @@ import EmployeeListModal from "./components/EmployeeListModal";
 import EmployeeProfileModal from "./components/EmployeeProfileModal";
 import "./App.css";
 import { useLanguage } from "./i18n/useLanguage";
+import { useTheme } from "./hooks/useTheme";
 import { useProjectNavigation } from "./hooks/useProjectNavigation";
 import { useConversation } from "./hooks/useConversation";
 import { useProjectTeamStatus } from "./hooks/useProjectTeamStatus";
@@ -27,6 +28,7 @@ import { groupProjectsByGateStatus } from "./utils/projectGateStatus";
 
 export default function App() {
   const { language, setLanguage, t } = useLanguage();
+  const { theme, setTheme } = useTheme();
   const [projects, setProjects] = useState<Workspace[]>([]);
   const [employees, setEmployees] = useState<AgentProfile[]>([]);
   const [workflowSummaries, setWorkflowSummaries] = useState<
@@ -169,6 +171,8 @@ export default function App() {
         language={language}
         languageLabel={t.language}
         setLanguage={setLanguage}
+        theme={theme}
+        setTheme={setTheme}
         onOpenSidebar={() => {
           refreshWorkflowSummaries();
           setSidebarOpen(true);

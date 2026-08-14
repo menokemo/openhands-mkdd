@@ -20,6 +20,15 @@
     />
   </head>
   <body>
+    <script>
+      // Applied before React mounts, so a saved "light" preference doesn't
+      // flash the default dark theme for a frame on load.
+      try {
+        if (localStorage.getItem("mkdd-theme") === "light") {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      } catch {}
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -1,7 +1,12 @@
+import { FaBars, FaSun, FaMoon } from "react-icons/fa6";
+import type { Theme } from "../hooks/useTheme";
+
 type Props = {
   language: "ar" | "en";
   languageLabel: string;
   setLanguage: (language: "ar" | "en") => void;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
   onOpenSidebar: () => void;
 };
 
@@ -21,6 +26,8 @@ export default function AppHeader({
   language,
   languageLabel,
   setLanguage,
+  theme,
+  setTheme,
   onOpenSidebar,
 }: Props) {
   return (
@@ -30,9 +37,7 @@ export default function AppHeader({
         onClick={onOpenSidebar}
         aria-label={language === "ar" ? "القائمة" : "Menu"}
       >
-        <span />
-        <span />
-        <span />
+        <FaBars />
       </button>
 
       <div className="app-header-brand">
@@ -45,12 +50,30 @@ export default function AppHeader({
         </div>
       </div>
 
-      <button
-        className="lang-toggle"
-        onClick={() => setLanguage(language === "ar" ? "en" : "ar")}
-      >
-        {languageLabel}
-      </button>
+      <div className="app-header-actions">
+        <button
+          className="app-header-icon-button"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          aria-label={
+            theme === "dark"
+              ? language === "ar"
+                ? "الوضع الفاتح"
+                : "Light mode"
+              : language === "ar"
+                ? "الوضع الداكن"
+                : "Dark mode"
+          }
+        >
+          {theme === "dark" ? <FaSun /> : <FaMoon />}
+        </button>
+
+        <button
+          className="lang-toggle"
+          onClick={() => setLanguage(language === "ar" ? "en" : "ar")}
+        >
+          {languageLabel}
+        </button>
+      </div>
     </header>
   );
 }
