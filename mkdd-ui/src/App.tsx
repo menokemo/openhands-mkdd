@@ -149,7 +149,6 @@ export default function App() {
         workflowLoading={workflowLoading}
         language={language}
         onOpenEmployee={openEmployee}
-        onUploadAvatar={handleUploadAvatar}
       />
     );
   } else {

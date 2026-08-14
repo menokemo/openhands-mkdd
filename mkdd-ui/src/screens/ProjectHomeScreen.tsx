@@ -1,7 +1,6 @@
 import type { AgentProfile } from "../types";
 import type { ProjectEmployeeStatus } from "../hooks/useProjectTeamStatus";
 import type { WorkflowState } from "../api/client";
-import EmployeeAvatarUpload from "../components/EmployeeAvatarUpload";
 import WorkflowStepper from "../components/WorkflowStepper";
 import { REVIEW_ROLES, getGateLabel, getReviewLabel } from "../utils/workflowLabels";
 
@@ -14,7 +13,6 @@ type Props = {
   workflowLoading: boolean;
   language: "ar" | "en";
   onOpenEmployee: (employee: AgentProfile) => void;
-  onUploadAvatar: (employeeSlug: string, imageDataUrl: string) => Promise<void>;
 };
 
 /**
@@ -31,7 +29,6 @@ export default function ProjectHomeScreen({
   workflowLoading,
   language,
   onOpenEmployee,
-  onUploadAvatar,
 }: Props) {
   const workingCount = Array.from(teamStatusByEmployeeId.values()).filter(
     (item) => item.executionStatus === "running",
@@ -77,12 +74,13 @@ export default function ProjectHomeScreen({
                   }
                 }}
               >
-                <EmployeeAvatarUpload
-                  employee={employee}
-                  label={label}
-                  language={language}
-                  onUpload={onUploadAvatar}
-                />
+                <div className="employee-avatar">
+                  {employee.avatarUrl ? (
+                    <img src={employee.avatarUrl} alt={label ?? employee.name} />
+                  ) : (
+                    (label?.slice(0, 1) ?? "?")
+                  )}
+                </div>
 
                 <div className="employee-card-info">
                   <strong>{label}</strong>
