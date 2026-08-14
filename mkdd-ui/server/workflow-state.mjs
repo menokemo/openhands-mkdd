@@ -83,6 +83,34 @@ export function getWorkflowState(project) {
   return normalizeProjectState(project, store.projects?.[project]);
 }
 
+/**
+ * Returns a lightweight {project: {currentGate, productionApproved}} map
+ * for every project that has ANY persisted workflow state. Used by the
+ * sidebar to group projects into active (gates 1-3) / near-completion
+ * (reached the production gate but not yet approved) / completed
+ * (production gate approved), without fetching each project's full
+ * workflow state one request at a time.
+ *
+ * A project with no persisted state at all (brand new, never touched its
+ * workflow) is NOT included here - the frontend treats "not present"
+ * the same as the real default (currentGate: "requirements"), since
+ * that's exactly what getWorkflowState() would return for it anyway.
+ */
+export function listWorkflowSummaries() {
+  const store = readStore();
+  const summaries = {};
+
+  for (const [project, state] of Object.entries(store.projects ?? {})) {
+    const normalized = normalizeProjectState(project, state);
+    summaries[project] = {
+      currentGate: normalized.currentGate,
+      productionApproved: normalized.gates.production.status === "approved",
+    };
+  }
+
+  return summaries;
+}
+
 export function updateWorkflowState(project, updater) {
   const store = readStore();
 

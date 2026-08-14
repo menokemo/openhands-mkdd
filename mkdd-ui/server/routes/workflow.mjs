@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
   getWorkflowState,
+  listWorkflowSummaries,
   updateWorkflowState,
   GATES,
   REVIEW_ROLES,
@@ -10,6 +11,20 @@ async function readJsonBody(req) {
   let body = "";
   for await (const chunk of req) body += chunk;
   return JSON.parse(body || "{}");
+}
+
+/**
+ * GET /api/workflow/summary — returns gate status for every project that
+ * has any persisted workflow state, for the sidebar's project grouping
+ * (active / near-completion / completed). See listWorkflowSummaries() for
+ * why projects with no persisted state at all are simply absent here.
+ */
+export async function handleWorkflowSummary(req, res) {
+  if (!(req.method === "GET" && req.url === "/api/workflow/summary")) return false;
+
+  res.writeHead(200, { "content-type": "application/json" });
+  res.end(JSON.stringify({ summaries: listWorkflowSummaries() }));
+  return true;
 }
 
 export async function handleWorkflowGet(req, res) {

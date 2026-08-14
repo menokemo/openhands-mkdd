@@ -1985,3 +1985,90 @@ This document should be updated whenever one of the following changes:
 - Workflow rules.
 - Docker layout.
 - Production deployment design.
+
+---
+
+## 59. خريطة الملفات (File Map) — تحديث 2026-08-13
+
+هذا القسم مرجع سريع لأي حد جديد ينضم للمشروع: كل ملف بيعمل إيه، ومكانه فين. مُحدَّث ليعكس الحالة الفعلية للكود بعد إعادة الهيكلة والميزات المضافة اليوم (وليس الوصف الأصلي/الأولي في القسم 12).
+
+### 59.1 الواجهة الأمامية (`mkdd-ui/src/`)
+
+```
+src/
+├── main.tsx                        ← نقطة الدخول (ReactDOM.render)
+├── App.tsx                         ← المكوّن الجذر: يستضيف الهيدر/الـ Sidebar/التنقل بين الشاشات
+│
+├── components/                     ← مكوّنات قابلة لإعادة الاستخدام
+│   ├── AppHeader.tsx                  الهيدر الموحّد — نفسه بالحرف في كل شاشة (لوجو + MKDD + زر منيو)
+│   ├── BreadcrumbBar.tsx              شريط الرجوع (مشروع/موظف) — منفصل عن الهيدر عمدًا
+│   ├── Sidebar.tsx                    القائمة الجانبية: مشاريع (حالية/قربت تخلص/خلصت) + الموظفين
+│   ├── EmployeeProfileModal.tsx       بروفايل موظف (من الـ Sidebar) — اسم/دور/تغيير الصورة
+│   ├── EmployeeAvatarUpload.tsx       زر رفع صورة الموظف (أفاتار + كاميرا)، بمؤشرات تحميل/خطأ مرئية
+│   ├── EmployeeInsightsPanel.tsx      لوحة معلومات الموظف في شاشة المحادثة (حالة، تكلفة، خطة عمل)
+│   └── WorkPlanPanel.tsx              عرض تفاصيل خطة العمل (Work Plan)
+│
+├── screens/                        ← محتوى كل شاشة (بدون هيدر — الهيدر في App.tsx)
+│   ├── ProjectsScreen.tsx             قائمة المشاريع + Modal إنشاء مشروع جديد (بلون غلاف)
+│   ├── ProjectHomeScreen.tsx          صفحة المشروع: فريق العمل، حالة الـ workflow، البوابات
+│   └── ChatScreen.tsx                 شاشة المحادثة مع موظف واحد (لا يوجد group chat)
+│
+├── hooks/                          ← منطق حالة قابل لإعادة الاستخدام
+│   ├── useConversation.ts             المحادثة الحية (WebSocket + REST fallback) — انظر REALTIME_CHAT_RESEARCH.md
+│   ├── useProjectNavigation.ts        التنقل بين المشاريع/الموظفين (متزامن مع الـ URL)
+│   ├── useProjectTeamStatus.ts        حالة كل أعضاء الفريق (شغالين الآن، تكلفة، خطة عمل) لكل مشروع
+│   └── useProjectWorkflow.ts          حالة الـ workflow (البوابات) لمشروع واحد
+│
+├── utils/                          ← دوال مساعدة نقية (pure functions)
+│   ├── formatMessageTime.ts           تنسيق وقت الرسالة (اليوم = وقت بس، غير كده = تاريخ+وقت)
+│   └── projectGateStatus.ts           تصنيف المشروع (نشط/قربت تخلص/خلصت) بناءً على بيانات الـ workflow الحقيقية
+│
+├── i18n/                           ← الترجمة (عربي/إنجليزي)
+│   ├── translations.ts                كل النصوص المترجمة
+│   └── useLanguage.ts                 hook لإدارة اللغة الحالية
+│
+├── api/
+│   └── client.ts                   ← كل استدعاءات الـ REST API من الواجهة (fetch* / create* / upload*)
+│
+└── types/
+    └── index.ts                    ← كل الأنواع (types) المشتركة (Workspace, AgentProfile, ChatMessage...)
+```
+
+### 59.2 الـ Backend (`mkdd-ui/server/`)
+
+```
+server/
+├── index.mjs                       ← نقطة الدخول: يربط كل الـ routes + الـ WebSocket bridge
+├── workflow-state.mjs              ← تخزين حالة الـ workflow (بوابات، مراجعات، عوائق) — ملف JSON واحد لكل المشاريع
+│
+├── lib/                            ← منطق مشترك بين أكتر من route
+│   ├── openhands-client.mjs           اكتشاف مفتاح الجلسة + استدعاء API الخاص بـ OpenHands
+│   ├── authorize-conversation.mjs     التحقق من ملكية المحادثة (project + employee) — مصدر واحد للحقيقة
+│   ├── normalize-event.mjs            تطبيع أحداث OpenHands (نفس الدالة لـ REST و WebSocket)
+│   ├── normalize-conversation.mjs     تطبيع بيانات المحادثة (تكلفة، حالة تنفيذ)
+│   ├── work-plan.mjs                  استخراج خطة العمل من أحداث task_tracker الحقيقية
+│   ├── ws-bridge.mjs                  جسر WebSocket الآمن (متصفح ↔ MKDD ↔ OpenHands)
+│   ├── list-employee-definitions.mjs  قائمة أسماء الموظفين من ملفات .md (يستثني AGENTS.md وorchestrator)
+│   ├── employee-display-info.mjs      قراءة اسم/دور الموظف من ملف تعريفه
+│   ├── time-context.mjs               حقن/تجريد علامة الوقت الحالي (لوعي الموظف بالوقت)
+│   └── project-metadata.mjs           تخزين لون غلاف كل مشروع (بيانات خاصة بـ MKDD، مش من OpenHands)
+│
+├── routes/                         ← كل route في ملفه، حسب الموضوع
+│   ├── branding.mjs                   شعار الشركة + health check
+│   ├── workflow.mjs                   بوابات المشروع، الموافقات، العوائق، المراجعات، ملخص كل المشاريع
+│   ├── directory.mjs                  قائمة المشاريع (GET) وقائمة الموظفين
+│   ├── projects.mjs                   إنشاء مشروع جديد (مجلد فعلي + تسجيل عند OpenHands)
+│   ├── avatars.mjs                    رفع وعرض صور الموظفين (مع بصمة إصدار لمنع مشاكل الكاش)
+│   ├── conversation.mjs               البحث عن محادثة موظف في مشروع معيّن
+│   └── chat.mjs                       إرسال رسالة + جلب تاريخ المحادثة (REST)
+│
+└── scripts/
+    └── bootstrap-employees.mjs     ← سكريبت تشغيل يدوي: ينشئ/يحدّث الـ 13 Agent Profile من ملفات التعريف
+```
+
+### 59.3 قاعدة تنظيمية للمساهمين الجدد
+
+- **مفيش منطق مكرر مسموح:** لو دالة محتاجة في مكانين، تتحط في `lib/` أو `utils/` وتُستورد، مش تُنسخ (زي `list-employee-definitions.mjs` و`employee-display-info.mjs` اللي كانوا مكررين وتم توحيدهم).
+- **كل route في ملفه الخاص** تحت `server/routes/`، مربوط من `server/index.mjs` بس.
+- **الهيدر واحد بس:** `AppHeader.tsx` — أي تعديل عليه بيظهر في الشاشات التلاتة تلقائيًا. أي تنقل خاص بشاشة معيّنة (زي زر الرجوع) يروح في `BreadcrumbBar.tsx` أو داخل الشاشة نفسها، مش في الهيدر.
+- **قبل أي ميزة جديدة في `mkdd-ui`:** راجع `ENGINEERING_PRINCIPLES.md` #1 — لازم أساس حقيقي مؤكَّد في `openhands-agent-canvas` أو API حقيقي، مش واجهة مُختلَقة.

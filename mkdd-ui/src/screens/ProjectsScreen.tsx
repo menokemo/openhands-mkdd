@@ -13,7 +13,6 @@ type Props = {
   language: "ar" | "en";
   t: {
     projects: string;
-    language: string;
     loadingProjects: string;
     noProjects: string;
     newProject: string;
@@ -26,17 +25,19 @@ type Props = {
     creatingProject: string;
     projectCreationFailed: string;
   };
-  setLanguage: (language: "ar" | "en") => void;
   onOpenProject: (project: Workspace) => void;
   onCreateProject: (name: string, color: string) => Promise<void>;
 };
 
+/**
+ * Body content for the Projects screen (list + "new project" flow).
+ * The header lives in AppHeader (rendered once by App.tsx, identical on
+ * every screen) - this component only owns what's specific to this page.
+ */
 export default function ProjectsScreen({
   projects,
   loading,
-  language,
   t,
-  setLanguage,
   onOpenProject,
   onCreateProject,
 }: Props) {
@@ -72,24 +73,6 @@ export default function ProjectsScreen({
 
   return (
     <main className="app projects-screen">
-      <header className="brand-header">
-        <div className="brand">
-          <img src="/api/branding/logo" alt="MKDD" />
-
-          <div>
-            <h1>MKDD</h1>
-            <small>{language === "ar" ? "تصميم وتطوير" : "Design & Development"}</small>
-          </div>
-        </div>
-
-        <button
-          className="lang-toggle"
-          onClick={() => setLanguage(language === "ar" ? "en" : "ar")}
-        >
-          {t.language}
-        </button>
-      </header>
-
       <div className="section-label">{t.projects}</div>
 
       <section className="chat">

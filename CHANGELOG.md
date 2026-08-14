@@ -6,6 +6,32 @@
 
 ---
 
+## 2026-08-13 — هيدر موحّد + Sidebar + خطوط مخصصة + إعادة تنظيم + توثيق خريطة الملفات
+
+### إضافات
+- `server/routes/workflow.mjs`: endpoint جديد `GET /api/workflow/summary` (حالة كل المشاريع دفعة واحدة).
+- `server/workflow-state.mjs`: دالة `listWorkflowSummaries()`.
+- `src/utils/projectGateStatus.ts`: تصنيف المشروع (نشط/قربت تخلص/خلصت) — دالة نقية، مُختبَرة يدويًا على كل السيناريوهات.
+- `src/components/AppHeader.tsx`: الهيدر الموحّد الوحيد في التطبيق كله (خط Bodoni Moda).
+- `src/components/BreadcrumbBar.tsx`: التنقل الخاص بكل شاشة، منفصل عن الهيدر عمدًا.
+- `src/components/Sidebar.tsx`: تصنيف المشاريع + قائمة الموظفين.
+- `src/components/EmployeeProfileModal.tsx`: بروفايل موظف (اسم/دور/صورة) من الـ Sidebar.
+- خط Cormorant Garamond لباقي التطبيق (Google Fonts في `index.html`).
+- `README.md` قسم 59: خريطة كاملة لكل ملفات الواجهة والـ backend ومسؤولية كل واحد.
+
+### إعادة هيكلة
+- `App.tsx`: بقى يستضيف الهيدر/الـ Sidebar/بروفايل الموظف مرة واحدة، بدل تكرارهم في كل شاشة.
+- `ProjectsScreen.tsx`, `ProjectHomeScreen.tsx`, `ChatScreen.tsx`: اتشال منهم كود الهيدر الخاص بيهم بالكامل.
+- حذف 16 قاعدة CSS ميتة (هيدرات قديمة منفصلة)، وprop غير مُستخدَم (`project` في `ProjectHomeScreen`).
+
+### التحقق الذي تم إجراؤه فعليًا
+- اختبار حي لـ `/api/workflow/summary` (موافقة بوابة → الملخص يعكسها بدقة).
+- اختبار يدوي لمنطق التصنيف على 4 سيناريوهات حقيقية.
+- `npm test` → 42/42، `tsc -b` → نظيف من أول مرة، `npm run build` → ناجح، `oxlint` → 0 أخطاء.
+- اختبار تكامل حي: مسارات قديمة وجديدة تعمل مع بعض بدون تعارض.
+
+---
+
 ## 2026-08-13 — كروت الموظفين أفقية + إصلاح كاش صورة الموظف
 
 ### إصلاحات

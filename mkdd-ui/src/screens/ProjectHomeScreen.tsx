@@ -1,10 +1,9 @@
-import type { AgentProfile, Workspace } from "../types";
+import type { AgentProfile } from "../types";
 import type { ProjectEmployeeStatus } from "../hooks/useProjectTeamStatus";
 import type { WorkflowGateName, WorkflowReviewRole, WorkflowState } from "../api/client";
 import EmployeeAvatarUpload from "../components/EmployeeAvatarUpload";
 
 type Props = {
-  project: Workspace;
   employees: AgentProfile[];
   teamStatusByEmployeeId: Map<string, ProjectEmployeeStatus>;
   totalProjectCost: number;
@@ -12,13 +11,6 @@ type Props = {
   workflow: WorkflowState | null;
   workflowLoading: boolean;
   language: "ar" | "en";
-  t: {
-    back: string;
-    project: string;
-    language: string;
-  };
-  setLanguage: (language: "ar" | "en") => void;
-  onBack: () => void;
   onOpenEmployee: (employee: AgentProfile) => void;
   onUploadAvatar: (employeeSlug: string, imageDataUrl: string) => Promise<void>;
 };
@@ -32,8 +24,12 @@ const REVIEW_ROLES: WorkflowReviewRole[] = [
   "security_review",
 ];
 
+/**
+ * Body content for the Project Home screen. The header and back
+ * navigation live in AppHeader/BreadcrumbBar (rendered once by App.tsx) -
+ * this component only owns what's specific to a single project's page.
+ */
 export default function ProjectHomeScreen({
-  project,
   employees,
   teamStatusByEmployeeId,
   totalProjectCost,
@@ -41,9 +37,6 @@ export default function ProjectHomeScreen({
   workflow,
   workflowLoading,
   language,
-  t,
-  setLanguage,
-  onBack,
   onOpenEmployee,
   onUploadAvatar,
 }: Props) {
@@ -81,27 +74,6 @@ export default function ProjectHomeScreen({
 
   return (
     <main className="app project-home">
-      <header className="project-header">
-        <button className="header-icon-button" onClick={onBack} aria-label={t.back}>
-          ←
-        </button>
-
-        <div className="project-heading">
-          <div className="project-heading-brand">
-            <img src="/api/branding/logo" alt="MKDD" />
-            <small>MKDD</small>
-          </div>
-          <h1>{project.name}</h1>
-        </div>
-
-        <button
-          className="header-language-button"
-          onClick={() => setLanguage(language === "ar" ? "en" : "ar")}
-        >
-          {t.language}
-        </button>
-      </header>
-
       <section className="project-home-section project-team-section">
         <div className="section-heading">
           <div>

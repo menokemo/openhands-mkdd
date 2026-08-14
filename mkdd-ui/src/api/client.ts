@@ -150,11 +150,23 @@ export type WorkflowState = {
   updatedAt: string;
 };
 
+export type WorkflowSummary = {
+  currentGate: WorkflowGateName;
+  productionApproved: boolean;
+};
+
 export async function fetchWorkflow(project: string): Promise<WorkflowState> {
   const qs = new URLSearchParams({ project });
   const r = await fetch(`/api/workflow?${qs}`);
   const data = await r.json();
   return data.workflow;
+}
+
+/** Gate status for every project with any persisted workflow state - used by the sidebar to group projects. */
+export async function fetchWorkflowSummaries(): Promise<Record<string, WorkflowSummary>> {
+  const r = await fetch("/api/workflow/summary");
+  const data = await r.json();
+  return data.summaries ?? {};
 }
 
 export async function approveWorkflowGate(

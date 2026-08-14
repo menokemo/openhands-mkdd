@@ -22,9 +22,15 @@ type Props = {
   sending: boolean;
   setMessage: (value: string) => void;
   sendMessage: () => Promise<void>;
-  onBack: () => void;
 };
 
+/**
+ * Body content for the chat screen. The global header and back
+ * navigation live in AppHeader/BreadcrumbBar (rendered once by App.tsx).
+ * This component keeps a small employee-identity bar (avatar/name/role)
+ * since that's chat-specific context, not general navigation - but it's
+ * a plain div, not a second <header>, to avoid two headers on one page.
+ */
 export default function ChatScreen({
   language,
   employee,
@@ -37,33 +43,26 @@ export default function ChatScreen({
   sending,
   setMessage,
   sendMessage,
-  onBack,
 }: Props) {
   const employeeName =
     language === "ar" ? employee.displayNameAr : employee.displayNameEn;
 
   return (
     <main className="app project-view chat-screen">
-      <header className="chat-screen-header">
-        <button className="header-icon-button" onClick={onBack}>
-          ←
-        </button>
-
-        <div className="chat-screen-person">
-          <div className="chat-employee-avatar">
-            {employee.avatarUrl ? (
-              <img src={employee.avatarUrl} alt={employeeName ?? employee.name} />
-            ) : (
-              (employeeName?.slice(0, 1) ?? "?")
-            )}
-          </div>
-
-          <div className="chat-employee-info">
-            <strong>{employeeName}</strong>
-            <span>{employee.role}</span>
-          </div>
+      <div className="chat-screen-person">
+        <div className="chat-employee-avatar">
+          {employee.avatarUrl ? (
+            <img src={employee.avatarUrl} alt={employeeName ?? employee.name} />
+          ) : (
+            (employeeName?.slice(0, 1) ?? "?")
+          )}
         </div>
-      </header>
+
+        <div className="chat-employee-info">
+          <strong>{employeeName}</strong>
+          <span>{employee.role}</span>
+        </div>
+      </div>
 
       <EmployeeInsightsPanel
         language={language}

@@ -2,6 +2,7 @@ import http from "node:http";
 import { handleBranding, handleHealth } from "./routes/branding.mjs";
 import {
   handleWorkflowGet,
+  handleWorkflowSummary,
   handleApproveGate,
   handleBlockers,
   handleReviews,
@@ -24,6 +25,7 @@ const ROUTES = [
   handleBranding,
   handleHealth,
   handleWorkflowGet,
+  handleWorkflowSummary,
   handleApproveGate,
   handleBlockers,
   handleReviews,
