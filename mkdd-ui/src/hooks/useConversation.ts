@@ -241,17 +241,22 @@ export function useConversation({ project, employee }: Params) {
     };
   }, [project, employee, conversationId]);
 
-  async function sendMessage() {
-    if (!project || !employee || !message.trim() || sending) return;
+  async function sendMessage(imageDataUrls?: string[]) {
+    const hasImages = imageDataUrls && imageDataUrls.length > 0;
+    if (!project || !employee || (!message.trim() && !hasImages) || sending) return;
 
     const text = message.trim();
     const optimisticId = `${OPTIMISTIC_ID_PREFIX}${Date.now()}`;
+    const optimisticContent: ChatMessage["llm_message"]["content"] = [];
+    if (text) optimisticContent.push({ type: "text", text });
+    if (hasImages) optimisticContent.push({ type: "image", image_urls: imageDataUrls });
+
     const optimisticMessage: ChatMessage = {
       id: optimisticId,
       kind: "MessageEvent",
       source: "user",
       timestamp: new Date().toISOString(),
-      llm_message: { content: [{ type: "text", text }] },
+      llm_message: { content: optimisticContent },
     };
 
     setSending(true);
@@ -264,6 +269,7 @@ export function useConversation({ project, employee }: Params) {
         employee.id,
         employee.name,
         text,
+        imageDataUrls,
       );
 
       const id = sendData.conversation?.id ?? sendData.conversation_id;
@@ -276,7 +282,10 @@ export function useConversation({ project, employee }: Params) {
       // resync will eventually reconcile it as a fallback.
     } catch {
       // Sending genuinely failed - remove the optimistic bubble and give
-      // the user their text back instead of silently losing it.
+      // the user their text back instead of silently losing it. (Also
+      // now correctly triggered for server-reported errors, not just
+      // network failures - sendChatMessage used to silently return an
+      // error body as if it were success; it now throws, see client.ts.)
       setMessages((current) => current.filter((m) => m.id !== optimisticId));
       setMessage(text);
     } finally {

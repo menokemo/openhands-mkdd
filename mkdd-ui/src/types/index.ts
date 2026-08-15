@@ -27,10 +27,8 @@ export type ConversationExecutionStatus =
   | "stuck"
   | "deleting";
 
-export type MessageContentItem = {
-  type: "text";
-  text: string;
-};
+export type MessageContentItem =
+  { type: "text"; text: string } | { type: "image"; image_urls: string[] };
 
 export type ConversationEventBase = {
   id: string;

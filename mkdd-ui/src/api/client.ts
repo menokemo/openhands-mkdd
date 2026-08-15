@@ -84,6 +84,7 @@ export async function sendChatMessage(
   employeeId: string,
   employeeName: string,
   message: string,
+  imageDataUrls?: string[],
 ): Promise<SendMessageResponse> {
   const r = await fetch("/api/chat/send", {
     method: "POST",
@@ -93,10 +94,13 @@ export async function sendChatMessage(
       employeeId,
       employeeName,
       message,
+      imageDataUrls,
     }),
   });
 
-  return r.json();
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error ?? "send_message_failed");
+  return data;
 }
 
 export type WorkflowGateName = "requirements" | "ui_ux" | "architecture" | "production";

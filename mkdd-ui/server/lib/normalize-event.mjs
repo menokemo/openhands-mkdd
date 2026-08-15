@@ -35,6 +35,41 @@ export function textContent(content) {
 }
 
 /**
+ * Like textContent, but also preserves image content items (real shape
+ * confirmed from openhands-agent-canvas's own MessageImageContent type:
+ * {type:"image", image_urls: string[]}). Used specifically for chat
+ * MessageEvent content, since users/employees can now attach images
+ * (BUGS_AND_FIXES.md #43) - kept separate from textContent, which stays
+ * text-only for tool/observation output, where we deliberately don't
+ * forward arbitrary internal image blobs.
+ */
+export function messageContent(content) {
+  if (typeof content === "string") {
+    return content.trim() ? [{ type: "text", text: content }] : [];
+  }
+
+  if (Array.isArray(content)) {
+    return content
+      .filter(
+        (item) =>
+          item &&
+          ((item.type === "text" && typeof item.text === "string") ||
+            (item.type === "image" && Array.isArray(item.image_urls))),
+      )
+      .map((item) =>
+        item.type === "text"
+          ? { type: "text", text: item.text }
+          : {
+              type: "image",
+              image_urls: item.image_urls.filter((u) => typeof u === "string"),
+            },
+      );
+  }
+
+  return [];
+}
+
+/**
  * Reduces a raw OpenHands event down to the safe fields the MKDD Activity
  * UI is allowed to show (see README section 16). Returns null for event
  * kinds that are not in the supported/safe category list, so the caller
@@ -50,16 +85,19 @@ export function normalizeEvent(event) {
 
   switch (event.kind) {
     case "MessageEvent": {
-      const content = textContent(event.llm_message?.content);
+      const content = messageContent(event.llm_message?.content);
       // Only user messages ever carry the time-context marker (see
       // server/lib/time-context.mjs) - strip it here so neither transport
       // (REST or WebSocket, both routed through this same function) ever
       // shows it to the browser. It's only injected on the first content
-      // item, matching how it's always constructed on the way out.
+      // item, and only when that item is text (an attached image can be
+      // the first item too, per BUGS_AND_FIXES.md #43).
       const cleaned =
         base.source === "user"
           ? content.map((item, i) =>
-              i === 0 ? { ...item, text: stripTimeContext(item.text) } : item,
+              i === 0 && item.type === "text"
+                ? { ...item, text: stripTimeContext(item.text) }
+                : item,
             )
           : content;
 

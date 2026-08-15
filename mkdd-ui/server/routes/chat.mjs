@@ -37,15 +37,72 @@ function resolveEmployeeDisplayName(employeeId, employeeName) {
   }
 }
 
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB, matches avatars.mjs
+const MAX_IMAGES_PER_MESSAGE = 4;
+
+export function validateImageDataUrls(imageDataUrls) {
+  if (!Array.isArray(imageDataUrls) || imageDataUrls.length === 0) return null;
+
+  if (imageDataUrls.length > MAX_IMAGES_PER_MESSAGE) {
+    return "too_many_images";
+  }
+
+  for (const dataUrl of imageDataUrls) {
+    const match =
+      typeof dataUrl === "string" &&
+      dataUrl.match(/^data:image\/(?:png|jpeg|webp|gif);base64,(.+)$/);
+
+    if (!match) return "invalid_image_data_url";
+
+    // Rough size check from the base64 payload length rather than
+    // decoding every image up front - base64 expands data by ~4/3, so
+    // this is a safe (slightly conservative) upper-bound estimate.
+    const approxBytes = (match[1].length * 3) / 4;
+    if (approxBytes > MAX_IMAGE_BYTES) return "image_too_large";
+  }
+
+  return null;
+}
+
+export function buildOutgoingContent(message, imageDataUrls) {
+  const content = [];
+
+  // The time-context marker always goes on a text block, even an empty
+  // one, so the employee still gets live time-awareness on image-only
+  // messages (BUGS_AND_FIXES.md #25 remains in effect for every message).
+  content.push({ type: "text", text: withTimeContext(message?.trim() ?? "") });
+
+  if (Array.isArray(imageDataUrls) && imageDataUrls.length > 0) {
+    // Real shape confirmed from openhands-agent-canvas's own
+    // MessageImageContent type: {type:"image", image_urls: string[]}.
+    content.push({ type: "image", image_urls: imageDataUrls });
+  }
+
+  return content;
+}
+
 export async function handleChatSend(req, res) {
   if (!(req.method === "POST" && req.url === "/api/chat/send")) return false;
 
-  const { project, employeeId, employeeName, message } = await readJsonBody(req);
+  const { project, employeeId, employeeName, message, imageDataUrls } =
+    await readJsonBody(req);
 
-  if (!project || !employeeId || !employeeName || !message?.trim()) {
+  const hasText = typeof message === "string" && message.trim().length > 0;
+  const hasImages = Array.isArray(imageDataUrls) && imageDataUrls.length > 0;
+
+  if (!project || !employeeId || !employeeName || (!hasText && !hasImages)) {
     res.writeHead(400, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "invalid_request" }));
     return true;
+  }
+
+  if (hasImages) {
+    const imageError = validateImageDataUrls(imageDataUrls);
+    if (imageError) {
+      res.writeHead(400, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: imageError }));
+      return true;
+    }
   }
 
   const conversation = await findAuthorizedConversation({
@@ -86,7 +143,7 @@ export async function handleChatSend(req, res) {
         },
         initial_message: {
           role: "user",
-          content: [{ type: "text", text: withTimeContext(message) }],
+          content: buildOutgoingContent(message, imageDataUrls),
           run: true,
         },
       }),
@@ -107,7 +164,7 @@ export async function handleChatSend(req, res) {
     },
     body: JSON.stringify({
       role: "user",
-      content: [{ type: "text", text: withTimeContext(message) }],
+      content: buildOutgoingContent(message, imageDataUrls),
       run: true,
     }),
   });

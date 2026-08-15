@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { FaPaperclip, FaXmark } from "react-icons/fa6";
 import type {
   ActivityEvent,
   AgentProfile,
@@ -22,7 +23,7 @@ type Props = {
   message: string;
   sending: boolean;
   setMessage: (value: string) => void;
-  sendMessage: () => Promise<void>;
+  sendMessage: (imageDataUrls?: string[]) => Promise<void>;
 };
 
 /**
@@ -51,6 +52,19 @@ export default function ChatScreen({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composerRef = useRef<HTMLFormElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingImages, setPendingImages] = useState<string[]>([]);
+
+  const readFileAsDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") resolve(reader.result);
+        else reject(new Error("file_read_failed"));
+      };
+      reader.onerror = () => reject(reader.error ?? new Error("file_read_failed"));
+      reader.readAsDataURL(file);
+    });
 
   // Land on the latest message whenever the conversation opens or a new
   // message arrives, instead of showing the top and requiring a manual
@@ -115,7 +129,18 @@ export default function ChatScreen({
       />
       <section className="chat">
         {messages.map((event) => {
-          const text = event.llm_message.content.map((item) => item.text).join("\n");
+          const textParts = event.llm_message.content
+            .filter(
+              (item): item is { type: "text"; text: string } => item.type === "text",
+            )
+            .map((item) => item.text)
+            .join("\n");
+          const imageUrls = event.llm_message.content
+            .filter(
+              (item): item is { type: "image"; image_urls: string[] } =>
+                item.type === "image",
+            )
+            .flatMap((item) => item.image_urls);
           const time = formatMessageTime(event.timestamp, language);
           const isUser = event.source === "user";
 
@@ -134,9 +159,19 @@ export default function ChatScreen({
                 </div>
               )}
 
-              <div className="message-markdown">
-                <ReactMarkdown>{text}</ReactMarkdown>
-              </div>
+              {imageUrls.length > 0 && (
+                <div className="message-images">
+                  {imageUrls.map((src, i) => (
+                    <img key={i} src={src} alt="" className="message-image" />
+                  ))}
+                </div>
+              )}
+
+              {textParts && (
+                <div className="message-markdown">
+                  <ReactMarkdown>{textParts}</ReactMarkdown>
+                </div>
+              )}
 
               {time && <time className="message-time">{time}</time>}
             </article>
@@ -151,25 +186,74 @@ export default function ChatScreen({
         className="composer"
         onSubmit={async (event) => {
           event.preventDefault();
-          await sendMessage();
+          const images = pendingImages;
+          setPendingImages([]);
+          await sendMessage(images.length > 0 ? images : undefined);
         }}
       >
-        <textarea
-          ref={textareaRef}
-          rows={1}
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          placeholder={language === "ar" ? "اكتب رسالة..." : "Write a message..."}
-        />
+        {pendingImages.length > 0 && (
+          <div className="composer-attachments">
+            {pendingImages.map((src, i) => (
+              <div className="composer-attachment" key={i}>
+                <img src={src} alt="" />
+                <button
+                  type="button"
+                  className="composer-attachment-remove"
+                  onClick={() =>
+                    setPendingImages((current) => current.filter((_, idx) => idx !== i))
+                  }
+                  aria-label={language === "ar" ? "إزالة" : "Remove"}
+                >
+                  <FaXmark />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
-        <button
-          type="submit"
-          className="composer-send"
-          disabled={sending}
-          aria-label="send"
-        >
-          {sending ? "…" : "↑"}
-        </button>
+        <div className="composer-row">
+          <button
+            type="button"
+            className="composer-attach"
+            onClick={() => fileInputRef.current?.click()}
+            aria-label={language === "ar" ? "إرفاق صورة" : "Attach image"}
+          >
+            <FaPaperclip />
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            multiple
+            hidden
+            onChange={async (event) => {
+              const files = Array.from(event.target.files ?? []);
+              event.target.value = "";
+              if (files.length === 0) return;
+
+              const dataUrls = await Promise.all(files.map(readFileAsDataUrl));
+              setPendingImages((current) => [...current, ...dataUrls].slice(0, 4));
+            }}
+          />
+
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            placeholder={language === "ar" ? "اكتب رسالة..." : "Write a message..."}
+          />
+
+          <button
+            type="submit"
+            className="composer-send"
+            disabled={sending}
+            aria-label="send"
+          >
+            {sending ? "…" : "↑"}
+          </button>
+        </div>
       </form>
     </main>
   );
