@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import type {
   ActivityEvent,
@@ -46,6 +47,47 @@ export default function ChatScreen({
 }: Props) {
   const employeeName =
     language === "ar" ? employee.displayNameAr : employee.displayNameEn;
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const composerRef = useRef<HTMLFormElement>(null);
+
+  // Land on the latest message whenever the conversation opens or a new
+  // message arrives, instead of showing the top and requiring a manual
+  // scroll every time - matches normal chat-app behavior.
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: "end" });
+  }, [messages.length]);
+
+  // The composer grows with its content (see the textarea below); resize
+  // it here since a plain CSS `height:auto` doesn't work for a fixed-
+  // position element sized by its own scrollHeight.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [message]);
+
+  // The composer's actual rendered height changes as it grows/shrinks
+  // with content - track it via ResizeObserver and expose it as a CSS
+  // variable, so the message list's bottom padding always matches
+  // exactly (a fixed padding guess would either waste space or let the
+  // composer cover the last message, which is exactly what was
+  // reported).
+  useEffect(() => {
+    const el = composerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver(([entry]) => {
+      document.documentElement.style.setProperty(
+        "--composer-height",
+        `${entry.contentRect.height}px`,
+      );
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <main className="app project-view chat-screen">
@@ -100,16 +142,21 @@ export default function ChatScreen({
             </article>
           );
         })}
+
+        <div ref={messagesEndRef} />
       </section>
 
       <form
+        ref={composerRef}
         className="composer"
         onSubmit={async (event) => {
           event.preventDefault();
           await sendMessage();
         }}
       >
-        <input
+        <textarea
+          ref={textareaRef}
+          rows={1}
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           placeholder={language === "ar" ? "اكتب رسالة..." : "Write a message..."}

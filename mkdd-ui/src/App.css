@@ -315,7 +315,7 @@ header button,
   z-index: 20;
 }
 
-.composer input {
+.composer textarea {
   flex: 1;
   min-width: 0;
   padding: 14px 16px;
@@ -324,6 +324,10 @@ header button,
   background: var(--mkdd-page);
   color: inherit;
   font: inherit;
+  resize: none;
+  max-height: 160px;
+  overflow-y: auto;
+  line-height: 1.4;
 }
 
 .composer button {
@@ -455,7 +459,7 @@ header button,
 }
 .project-view .chat {
   gap: 10px;
-  padding: 4px 2px calc(84px + env(safe-area-inset-bottom));
+  padding: 4px 2px calc(var(--composer-height, 84px) + 16px + env(safe-area-inset-bottom));
 }
 
 .project-view .chat article {
@@ -510,10 +514,10 @@ header button,
   gap: 8px;
   padding: 8px 0 4px;
   background: var(--mkdd-page);
-  align-items: center;
+  align-items: flex-end;
 }
 
-.project-view .composer input {
+.project-view .composer textarea {
   min-height: 48px;
   padding: 12px 14px;
   border-radius: 14px;

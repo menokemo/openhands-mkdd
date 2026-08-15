@@ -22,6 +22,10 @@ export default defineConfig({
         target: "http://localhost:8787",
         changeOrigin: true,
       },
+      "/preview": {
+        target: "http://localhost:8787",
+        changeOrigin: true,
+      },
       "/ws": {
         target: "ws://localhost:8787",
         ws: true,
