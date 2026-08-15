@@ -71,6 +71,30 @@ echo "    AGENT_SERVER_IMAGE = ${AGENT_SERVER_IMAGE}"
 echo "    AUTOMATION_VERSION = ${AUTOMATION_VERSION}"
 echo "    MKDD_PROJECTS_DIR  = ${MKDD_PROJECTS_DIR}"
 
+if [ -z "${AUTOMATION_BASE_URL:-}" ]; then
+  cat <<'EOF'
+
+WARNING: AUTOMATION_BASE_URL is not set.
+
+    Agent Canvas's own entrypoint then defaults it to
+    http://127.0.0.1:<port> - only reachable from inside the container
+    itself. Every other feature works fine (chat, WebSocket, REST), but
+    file/image uploads in Agent Canvas's native UI will show a loading
+    spinner FOREVER with no error (BUGS_AND_FIXES.md #44), because the
+    upload client is told to connect to an address only the container
+    can reach.
+
+    If this deployment is only ever accessed from the same machine
+    (true localhost), this is harmless and can be ignored. Otherwise
+    (accessed via a LAN IP or domain from another device), set it to
+    this deployment's real externally-reachable address before
+    re-running this script, e.g.:
+
+      AUTOMATION_BASE_URL=http://<this-host's-real-IP>:<agent-canvas-UI-port> ./setup.sh up
+
+EOF
+fi
+
 # ---------------------------------------------------------------------------
 # 3. Runtime directories that must exist before `docker compose up`
 #    (bind mounts fail if the host path does not exist yet).

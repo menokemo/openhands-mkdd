@@ -19,6 +19,17 @@ services:
     image: ${MKDD_AGENT_CANVAS_IMAGE:-mkdd/agent-canvas:1.12.0-mkdd2}
     container_name: ${MKDD_AGENT_CANVAS_CONTAINER_NAME:-openhands-agent-canvas}
     restart: unless-stopped
+    environment:
+      # Confirmed root cause of BUGS_AND_FIXES.md #44 (file/image uploads
+      # hang forever): entrypoint.sh defaults AUTOMATION_BASE_URL to
+      # http://127.0.0.1:$PORT, which is only reachable from inside this
+      # exact container - useless for any remote browser (LAN IP,
+      # domain, etc.). entrypoint.sh's own comment says explicitly:
+      # "Override in production when the external URL differs." Empty
+      # default here preserves the old (broken-for-LAN) behavior for
+      # anyone who hasn't set it; deployments accessed via a LAN IP MUST
+      # set this to http://<that-ip>:<MKDD_AGENT_CANVAS_UI_PORT>.
+      AUTOMATION_BASE_URL: ${AUTOMATION_BASE_URL:-}
     ports:
       - "${MKDD_AGENT_CANVAS_PORT:-8000}:8000"
       - "${MKDD_AGENT_CANVAS_UI_PORT:-3000}:3000"
