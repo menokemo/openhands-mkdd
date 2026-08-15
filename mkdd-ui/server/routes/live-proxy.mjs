@@ -19,6 +19,37 @@ function agentCanvasHost() {
   return new URL(process.env.OPENHANDS_URL).hostname;
 }
 
+// Common absolute-root path prefixes modern frameworks use for their own
+// static assets (Next.js's /_next/, Nuxt's /__nuxt/, and the generic
+// /static/ and /assets/ conventions many others use). When an employee's
+// app is mounted under /live/{project}/ instead of the site root, these
+// absolute references break unless rewritten - this is what makes a
+// live-mounted app actually render with styling/interactivity instead of
+// loading as a blank page, without requiring every employee to
+// special-case their framework's own basePath/publicPath config.
+const REWRITABLE_ROOT_PREFIXES = ["/_next/", "/__nuxt/", "/static/", "/assets/"];
+
+/**
+ * Rewrites occurrences of REWRITABLE_ROOT_PREFIXES that immediately
+ * follow a quote or opening parenthesis (how they appear in HTML
+ * href/src attributes and in embedded JSON/JS string literals alike -
+ * Next.js's own RSC payload reuses the same literal path strings inside
+ * <script> blocks, not just in tag attributes) to be relative to
+ * /live/{projectSlug}/ instead of the site root.
+ *
+ * Exported separately so this can be unit-tested against real captured
+ * HTML without needing a live server.
+ */
+export function rewriteLiveAppHtml(html, projectSlug) {
+  let result = html;
+  for (const prefix of REWRITABLE_ROOT_PREFIXES) {
+    const escaped = prefix.replace(/[/]/g, "\\/");
+    const pattern = new RegExp(`(["'(])${escaped}`, "g");
+    result = result.replace(pattern, `$1/live/${projectSlug}${prefix}`);
+  }
+  return result;
+}
+
 /**
  * Splits a raw /live/{projectSlug}/{...path} request path into its
  * project slug and the path to forward to the live server. Exported
@@ -47,6 +78,14 @@ export function parseLiveProxyPath(rawPath) {
  * against the real /projects directory (reusing the same helper as
  * preview.mjs) mainly for consistency/sanity, not because it changes
  * the proxy target - the target is always the same shared port.
+ *
+ * HTML responses are rewritten (see rewriteLiveAppHtml) so common
+ * framework asset paths resolve correctly under the /live/{project}/
+ * mount point - this is what makes the live app actually render
+ * correctly (BUGS_AND_FIXES.md #52), not just return a 200 with broken
+ * styling. Non-HTML responses (the assets themselves, once correctly
+ * requested at their rewritten /live/{project}/... URL) are streamed
+ * through unmodified, since they're already reached at the right path.
  */
 export async function handleLiveProxy(req, res) {
   if (!req.url?.startsWith("/live/")) return false;
@@ -67,11 +106,41 @@ export async function handleLiveProxy(req, res) {
       port: LIVE_APP_PORT,
       path: forwardPath || "/",
       method: req.method,
-      headers: { ...req.headers, host: `${agentCanvasHost()}:${LIVE_APP_PORT}` },
+      headers: {
+        ...req.headers,
+        host: `${agentCanvasHost()}:${LIVE_APP_PORT}`,
+        // The HTML-rewrite step below reads the response body as UTF-8
+        // text - a compressed (gzip/br) body would be corrupted by that.
+        // Requesting identity encoding avoids needing to decompress and
+        // recompress the response ourselves.
+        "accept-encoding": "identity",
+      },
     },
     (proxyRes) => {
-      res.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers);
-      proxyRes.pipe(res);
+      const isHtml = (proxyRes.headers["content-type"] ?? "").includes("text/html");
+
+      if (!isHtml) {
+        res.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers);
+        proxyRes.pipe(res);
+        return;
+      }
+
+      // HTML needs the full body in memory to rewrite it - can't stream
+      // and rewrite at the same time without risking splitting a match
+      // across chunk boundaries.
+      const chunks = [];
+      proxyRes.on("data", (chunk) => chunks.push(chunk));
+      proxyRes.on("end", () => {
+        const original = Buffer.concat(chunks).toString("utf8");
+        const rewritten = rewriteLiveAppHtml(original, projectSlug);
+
+        const headers = { ...proxyRes.headers };
+        delete headers["content-encoding"];
+        headers["content-length"] = Buffer.byteLength(rewritten);
+
+        res.writeHead(proxyRes.statusCode ?? 502, headers);
+        res.end(rewritten);
+      });
     },
   );
 
