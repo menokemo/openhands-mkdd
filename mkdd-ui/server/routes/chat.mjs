@@ -151,6 +151,23 @@ export async function handleChatSend(req, res) {
 
     const created = await r.json();
 
+    if (!r.ok) {
+      // BUGS_AND_FIXES.md #48: this branch used to blindly wrap whatever
+      // OpenHands returned as {conversation: created} regardless of
+      // success/failure - so a real creation failure (e.g. a 422 from
+      // OpenHands) had no top-level .error field, and the frontend fell
+      // back to a generic "send_message_failed" string that hid the
+      // actual reason. Surface it properly instead.
+      res.writeHead(r.status, { "content-type": "application/json" });
+      res.end(
+        JSON.stringify({
+          error: created?.detail ?? created?.error ?? "conversation_creation_failed",
+          detail: created,
+        }),
+      );
+      return true;
+    }
+
     res.writeHead(r.status, { "content-type": "application/json" });
     res.end(JSON.stringify({ conversation: created }));
     return true;
