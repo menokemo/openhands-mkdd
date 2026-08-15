@@ -1236,6 +1236,8 @@ header button,
   flex-direction: column;
   gap: 10px;
   padding: 0 10px 10px;
+  max-height: 40vh;
+  overflow-y: auto;
 }
 
 .employee-insights-trigger .execution-status-dot {
