@@ -35,6 +35,20 @@ export async function handleEmployees(req, res) {
       const info = readEmployeeDisplayInfo(profile.name);
       return {
         ...profile,
+        // BUGS_AND_FIXES.md #48 (round 2): OpenHands' own /api/agent-profiles
+        // list returns a real internal UUID as `id` - but every other part
+        // of MKDD (bootstrap-employees.mjs, the company-agents-definitions/
+        // *.md filenames, chat.mjs's resolveAgentProfileUuid path lookup,
+        // README/BUGS_AND_FIXES history) treats the stable human-readable
+        // name (e.g. "architect") as THE employee identifier. Overriding
+        // `id` here to the name (after spreading `profile`, so this line
+        // wins) keeps that single consistent identifier everywhere else in
+        // the codebase, instead of leaking OpenHands' internal UUID into
+        // MKDD's own logic. Root-caused live: the frontend was sending
+        // that UUID as employeeId, which every downstream lookup that
+        // expects the name (file paths, path parameters) then failed to
+        // resolve - a real 404 confirmed via browser-side diagnostics.
+        id: profile.name,
         ...info,
         avatarUrl: buildEmployeeAvatarUrl(profile.name),
       };

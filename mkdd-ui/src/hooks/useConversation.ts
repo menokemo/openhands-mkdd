@@ -243,13 +243,7 @@ export function useConversation({ project, employee }: Params) {
 
   async function sendMessage(imageDataUrls?: string[]) {
     const hasImages = imageDataUrls && imageDataUrls.length > 0;
-    if (!project || !employee || (!message.trim() && !hasImages) || sending) {
-      // TEMPORARY DIAGNOSTIC (BUGS_AND_FIXES.md #48, second round)
-      alert(
-        `DEBUG: guard blocked - project=${!!project} employee=${!!employee} message="${message}" sending=${sending}`,
-      );
-      return;
-    }
+    if (!project || !employee || (!message.trim() && !hasImages) || sending) return;
 
     const text = message.trim();
     const optimisticId = `${OPTIMISTIC_ID_PREFIX}${Date.now()}`;
@@ -286,9 +280,7 @@ export function useConversation({ project, employee }: Params) {
       // clears the optimistic placeholder once it does (see
       // applyIncomingEvents). If the WebSocket is down, the 15s REST
       // resync will eventually reconcile it as a fallback.
-    } catch (err) {
-      // TEMPORARY DIAGNOSTIC (BUGS_AND_FIXES.md #48, second round)
-      alert(`DEBUG: sendMessage caught - ${err instanceof Error ? err.message : String(err)}`);
+    } catch {
       // Sending genuinely failed - remove the optimistic bubble and give
       // the user their text back instead of silently losing it.
       setMessages((current) => current.filter((m) => m.id !== optimisticId));

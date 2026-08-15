@@ -98,37 +98,19 @@ export async function sendChatMessage(
   message: string,
   imageDataUrls?: string[],
 ): Promise<SendMessageResponse> {
-  // TEMPORARY DIAGNOSTIC (BUGS_AND_FIXES.md #48, second investigation
-  // round) - the direct API calls all succeed when tested manually, but
-  // the real browser request still never reaches the server at all
-  // (confirmed via live docker logs during a retry). This traces exactly
-  // what fetch() itself does/throws before any of our own error handling.
-  let r: Response;
-  try {
-    r = await fetch("/api/chat/send", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        project,
-        employeeId,
-        employeeName,
-        message,
-        imageDataUrls,
-      }),
-    });
-  } catch (fetchErr) {
-    alert(
-      `DEBUG: fetch() itself threw - ${fetchErr instanceof Error ? fetchErr.message : String(fetchErr)}`,
-    );
-    throw fetchErr;
-  }
+  const r = await fetch("/api/chat/send", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      project,
+      employeeId,
+      employeeName,
+      message,
+      imageDataUrls,
+    }),
+  });
 
-  alert(`DEBUG: fetch responded - status=${r.status} ok=${r.ok}`);
-
-  const rawText = await r.text();
-  alert(`DEBUG: response body - ${rawText.slice(0, 300)}`);
-
-  const data = JSON.parse(rawText || "{}");
+  const data = await r.json();
   if (!r.ok) throw new Error(data.error ?? "send_message_failed");
   return data;
 }
