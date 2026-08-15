@@ -242,17 +242,8 @@ export function useConversation({ project, employee }: Params) {
   }, [project, employee, conversationId]);
 
   async function sendMessage(imageDataUrls?: string[]) {
-    // TEMPORARY DIAGNOSTIC (BUGS_AND_FIXES.md #48) - confirms the function
-    // is actually being invoked at all before anything else runs.
-    alert("DEBUG: sendMessage() called");
-
     const hasImages = imageDataUrls && imageDataUrls.length > 0;
-    if (!project || !employee || (!message.trim() && !hasImages) || sending) {
-      alert(
-        `DEBUG: guard blocked send - project=${!!project} employee=${!!employee} message="${message}" sending=${sending}`,
-      );
-      return;
-    }
+    if (!project || !employee || (!message.trim() && !hasImages) || sending) return;
 
     const text = message.trim();
     const optimisticId = `${OPTIMISTIC_ID_PREFIX}${Date.now()}`;
@@ -289,15 +280,9 @@ export function useConversation({ project, employee }: Params) {
       // clears the optimistic placeholder once it does (see
       // applyIncomingEvents). If the WebSocket is down, the 15s REST
       // resync will eventually reconcile it as a fallback.
-    } catch (err) {
-      // TEMPORARY DIAGNOSTIC (BUGS_AND_FIXES.md #48) - reveals the actual
-      // error instead of silently swallowing it.
-      alert(`DEBUG: send failed - ${err instanceof Error ? err.message : String(err)}`);
+    } catch {
       // Sending genuinely failed - remove the optimistic bubble and give
-      // the user their text back instead of silently losing it. (Also
-      // now correctly triggered for server-reported errors, not just
-      // network failures - sendChatMessage used to silently return an
-      // error body as if it were success; it now throws, see client.ts.)
+      // the user their text back instead of silently losing it.
       setMessages((current) => current.filter((m) => m.id !== optimisticId));
       setMessage(text);
     } finally {

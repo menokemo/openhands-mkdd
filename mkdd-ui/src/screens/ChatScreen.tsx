@@ -205,8 +205,6 @@ export default function ChatScreen({
         className="composer"
         onSubmit={async (event) => {
           event.preventDefault();
-          // TEMPORARY DIAGNOSTIC (BUGS_AND_FIXES.md #48)
-          alert("DEBUG: composer form onSubmit fired");
           const images = pendingImages;
           setPendingImages([]);
           await sendMessage(images.length > 0 ? images : undefined);

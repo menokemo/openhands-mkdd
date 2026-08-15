@@ -37,6 +37,27 @@ function resolveEmployeeDisplayName(employeeId, employeeName) {
   }
 }
 
+/**
+ * Resolves an employee's human-readable id (e.g. "architect") to the
+ * real UUID agent-server assigned that profile internally.
+ *
+ * BUGS_AND_FIXES.md #48: after the v1.13.0 upgrade (agent-server 1.42.1),
+ * POST /api/conversations started rejecting the plain name/slug for
+ * agent_profile_id with a real 422 ("Input should be a valid UUID") -
+ * confirmed live via a direct curl reproducing our exact request. Older
+ * conversations (created before the upgrade) kept working since they
+ * were never re-validated; every brand-new conversation failed silently
+ * until this was traced. GET /api/agent-profiles/{name} returns
+ * {name, profile: {id: <uuid>, ...}} - that id is what conversations
+ * actually need now.
+ */
+async function resolveAgentProfileUuid(employeeId) {
+  const r = await openhands(`/api/agent-profiles/${employeeId}`);
+  if (!r.ok) return null;
+  const data = await r.json();
+  return data?.profile?.id ?? null;
+}
+
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB, matches avatars.mjs
 const MAX_IMAGES_PER_MESSAGE = 4;
 
@@ -112,10 +133,19 @@ export async function handleChatSend(req, res) {
   });
 
   if (!conversation) {
-    const [employeeDisplayName, projectDisplayName] = await Promise.all([
-      Promise.resolve(resolveEmployeeDisplayName(employeeId, employeeName)),
-      resolveProjectDisplayName(project),
-    ]);
+    const [employeeDisplayName, projectDisplayName, agentProfileUuid] = await Promise.all(
+      [
+        Promise.resolve(resolveEmployeeDisplayName(employeeId, employeeName)),
+        resolveProjectDisplayName(project),
+        resolveAgentProfileUuid(employeeId),
+      ],
+    );
+
+    if (!agentProfileUuid) {
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "agent_profile_not_found" }));
+      return true;
+    }
 
     const r = await fetch(OPENHANDS_URL + "/api/conversations", {
       method: "POST",
@@ -128,7 +158,7 @@ export async function handleChatSend(req, res) {
           working_dir: project,
           kind: "LocalWorkspace",
         },
-        agent_profile_id: employeeId,
+        agent_profile_id: agentProfileUuid,
         autotitle: false,
         // Confirmed real field (README/ENGINEERING_PRINCIPLES.md #1): the
         // real Agent Canvas create-conversation payload sends `title`
