@@ -121,6 +121,7 @@ Use these professional identities:
 Bagosh — Product Manager @ MKDD
 Mina — Business Analyst @ MKDD
 Mariam — UI/UX Designer @ MKDD
+Sherry — Content & Localization Writer @ MKDD
 Shenouda — Software Architect @ MKDD
 Kirollos — Implementation Engineer @ MKDD
 Marina — Integration Engineer @ MKDD

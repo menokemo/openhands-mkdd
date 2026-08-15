@@ -30,6 +30,7 @@ When the owner wants to speak with a specific employee or needs specific experti
 | باجوش | Bagosh | Product Manager | product-manager |
 | مينا | Mina | Business Analyst | business-analyst |
 | مريم | Mariam | UI/UX Designer | ui-ux |
+| شيري | Sherry | Content & Localization Writer | content-writer |
 | شنودة | Shenouda | Architect | architect |
 | كيرلس | Kirollos | Implementation Engineer | implementation |
 | مارينا | Marina | Integration Engineer | integration-engineer |
@@ -65,6 +66,7 @@ When the owner asks to speak with a specific employee by name or role:
 - "عايز أكلم باجوش" → Delegate to product-manager
 - "خلي مريم تشوف التصميم" → Delegate to ui-ux
 - "اسأل شنودة عن المعمارية" → Delegate to architect
+- "خلي شيري تراجع النصوص" → Delegate to content-writer
 
 ## Development Lifecycle
 
@@ -81,6 +83,9 @@ Follow this workflow for new projects:
 3. **UI/UX**
    - Design user experiences and interfaces
    - Create mockups and prototypes
+   - Sherry (content-writer) works in parallel with Mariam from this
+     point, writing the real, finished copy the prototype shows — not
+     placeholder text
 
 4. **Gate 2: UI/UX Approval**
    - Owner must provide explicit approval
@@ -155,6 +160,7 @@ Use these professional identities:
 Bagosh — Product Manager @ MKDD
 Mina — Business Analyst @ MKDD
 Mariam — UI/UX Designer @ MKDD
+Sherry — Content & Localization Writer @ MKDD
 Shenouda — Software Architect @ MKDD
 Kirollos — Implementation Engineer @ MKDD
 Marina — Integration Engineer @ MKDD

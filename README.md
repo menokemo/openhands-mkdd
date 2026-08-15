@@ -117,23 +117,24 @@ Employee Chat
 
 An MKDD employee is a named software role backed by an OpenHands Agent Profile.
 
-The 13 primary employees are:
+The 14 primary employees are:
 
 | # | Employee | Role ID | Responsibility |
 |---|---|---|---|
 | 1 | Bagosh | `product-manager` | Product Manager |
 | 2 | Mina | `business-analyst` | Business Analyst |
 | 3 | Mariam | `ui-ux` | UI/UX |
-| 4 | Shenouda | `architect` | Software Architect |
-| 5 | Kirollos | `implementation` | Implementation Engineer |
-| 6 | Marina | `integration-engineer` | Integration Engineer |
-| 7 | Fady | `qa` | QA |
-| 8 | George | `test-automation` | Test Automation |
-| 9 | Verena | `code-review` | Code Review |
-| 10 | Mikhail | `security-review` | Security Review |
-| 11 | Antonious | `devops` | DevOps / SRE |
-| 12 | Nader | `technical-writer` | Technical Writer |
-| 13 | Abanoub | `release-manager` | Release Manager |
+| 4 | Sherry | `content-writer` | Content & Localization Writer |
+| 5 | Shenouda | `architect` | Software Architect |
+| 6 | Kirollos | `implementation` | Implementation Engineer |
+| 7 | Marina | `integration-engineer` | Integration Engineer |
+| 8 | Fady | `qa` | QA |
+| 9 | George | `test-automation` | Test Automation |
+| 10 | Verena | `code-review` | Code Review |
+| 11 | Mikhail | `security-review` | Security Review |
+| 12 | Antonious | `devops` | DevOps / SRE |
+| 13 | Nader | `technical-writer` | Technical Writer |
+| 14 | Abanoub | `release-manager` | Release Manager |
 
 The runtime assets also currently contain:
 
@@ -141,7 +142,7 @@ The runtime assets also currently contain:
 company-agents-definitions/company-orchestrator.md
 ```
 
-That definition exists in the project assets, but its final product-level role should remain explicit rather than silently counting it as one of the 13 primary visible employees.
+That definition exists in the project assets, but its final product-level role should remain explicit rather than silently counting it as one of the 14 primary visible employees.
 
 ---
 
@@ -1742,7 +1743,7 @@ No blind large scripted replacement should be applied if source anchors do not m
 - Projects UI.
 - Project Home.
 - Employee-specific navigation.
-- 13 employee model.
+- 14 employee model.
 - Dedicated project/employee conversations.
 - Conversation tagging/isolation.
 - Workflow gates.
@@ -2063,7 +2064,7 @@ server/
 │   └── chat.mjs                       إرسال رسالة + جلب تاريخ المحادثة (REST)
 │
 └── scripts/
-    └── bootstrap-employees.mjs     ← سكريبت تشغيل يدوي: ينشئ/يحدّث الـ 13 Agent Profile من ملفات التعريف
+    └── bootstrap-employees.mjs     ← سكريبت تشغيل يدوي: ينشئ/يحدّث الـ 14 Agent Profile من ملفات التعريف
 ```
 
 ### 59.3 قاعدة تنظيمية للمساهمين الجدد
