@@ -243,7 +243,14 @@ export function useConversation({ project, employee }: Params) {
 
   async function sendMessage(imageDataUrls?: string[]) {
     const hasImages = imageDataUrls && imageDataUrls.length > 0;
-    if (!project || !employee || (!message.trim() && !hasImages) || sending) return;
+    if (!project || !employee || (!message.trim() && !hasImages) || sending) {
+      // TEMPORARY DIAGNOSTIC (BUGS_AND_FIXES.md #48 investigation) - remove
+      // once the root cause of the silent no-op send is confirmed.
+      alert(
+        `DEBUG: project=${!!project} employee=${!!employee} message="${message}" sending=${sending}`,
+      );
+      return;
+    }
 
     const text = message.trim();
     const optimisticId = `${OPTIMISTIC_ID_PREFIX}${Date.now()}`;
