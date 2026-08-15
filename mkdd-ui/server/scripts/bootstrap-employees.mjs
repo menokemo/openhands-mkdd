@@ -3,6 +3,7 @@ import path from "node:path";
 import { openhandsFetch } from "../lib/openhands-client.mjs";
 import { listEmployeeNames } from "../lib/list-employee-definitions.mjs";
 import { buildTimeContextInstructions } from "../lib/time-context.mjs";
+import { PREVIEW_INSTRUCTIONS } from "../lib/preview-instructions.mjs";
 
 /**
  * Bootstrap script: creates (or updates) an OpenHands Agent Profile for
@@ -53,10 +54,10 @@ const DEFINITIONS_DIR = "/company-agents-definitions";
 /**
  * Splits a definition file into its frontmatter and body. The body (the
  * employee's actual instructions/persona) becomes system_message_suffix.
- * TIME_CONTEXT instructions (see server/lib/time-context.mjs) are appended
- * once here so every employee learns the same live-time marker format and
- * the correct local timezone to convert it to, instead of duplicating that
- * boilerplate across all 13 .md files.
+ * TIME_CONTEXT and PREVIEW instructions (see server/lib/time-context.mjs
+ * and server/lib/preview-instructions.mjs) are appended once here so
+ * every employee learns the same shared rules, instead of duplicating
+ * that boilerplate across all 13 .md files.
  */
 function readSystemMessageSuffix(name, timezone) {
   const file = path.join(DEFINITIONS_DIR, `${name}.md`);
@@ -65,7 +66,7 @@ function readSystemMessageSuffix(name, timezone) {
   // parts[0] is empty (content starts with "---"), parts[1] is frontmatter,
   // the rest (rejoined, in case the body itself contains "---") is the body.
   const body = parts.length >= 3 ? parts.slice(2).join("---") : content;
-  return `${body.trim()}\n\n${buildTimeContextInstructions(timezone)}`;
+  return `${body.trim()}\n\n${buildTimeContextInstructions(timezone)}\n\n${PREVIEW_INSTRUCTIONS}`;
 }
 
 async function createOrUpdateProfile(name, llmProfileRef, timezone) {
