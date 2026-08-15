@@ -6,6 +6,18 @@ import type {
   Workspace,
 } from "../types";
 
+export type ProjectFile = {
+  path: string;
+  type: "file" | "directory";
+  size?: number;
+};
+
+export async function fetchProjectFiles(projectSlug: string): Promise<ProjectFile[]> {
+  const r = await fetch(`/api/projects/${encodeURIComponent(projectSlug)}/files`);
+  const data = await r.json();
+  return data.files ?? [];
+}
+
 export async function fetchProjects(): Promise<Workspace[]> {
   const r = await fetch("/api/projects");
   const data = await r.json();

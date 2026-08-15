@@ -11,6 +11,7 @@ import type {
 } from "../types";
 import EmployeeInsightsPanel from "../components/EmployeeInsightsPanel";
 import { formatMessageTime } from "../utils/formatMessageTime";
+import { detectPreviewLinks } from "../utils/detectPreviewLinks";
 
 type Props = {
   language: "ar" | "en";
@@ -172,6 +173,24 @@ export default function ChatScreen({
                   <ReactMarkdown>{textParts}</ReactMarkdown>
                 </div>
               )}
+
+              {detectPreviewLinks(textParts).map((link) => (
+                <a
+                  key={link.url}
+                  className="preview-link-card"
+                  href={link.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <iframe
+                    src={link.url}
+                    title={link.filePath}
+                    className="preview-link-frame"
+                    sandbox=""
+                  />
+                  <span className="preview-link-label">{link.filePath}</span>
+                </a>
+              ))}
 
               {time && <time className="message-time">{time}</time>}
             </article>

@@ -141,6 +141,7 @@ export default function App() {
   } else if (selectedProject) {
     screen = (
       <ProjectHomeScreen
+        project={selectedProject}
         employees={employees}
         teamStatusByEmployeeId={teamStatusByEmployeeId}
         totalProjectCost={totalProjectCost}

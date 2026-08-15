@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-
-const PROJECTS_DIR = "/projects";
+import { PROJECTS_DIR, resolveProjectDir } from "../lib/project-paths.mjs";
 
 const CONTENT_TYPE_BY_EXT = {
   ".html": "text/html; charset=utf-8",
@@ -52,23 +51,12 @@ const CONTENT_TYPE_BY_EXT = {
  */
 export function resolvePreviewFile(rawPath, projectsDir = PROJECTS_DIR) {
   const [projectSlug, ...restParts] = rawPath.split("/");
-  if (!projectSlug) return null;
+  const projectDir = resolveProjectDir(projectSlug, projectsDir);
+  if (!projectDir) return null;
 
-  const projectsDirWithSep = projectsDir.endsWith(path.sep)
-    ? projectsDir
-    : projectsDir + path.sep;
-  const projectDir = path.join(projectsDir, projectSlug);
   const projectDirWithSep = projectDir.endsWith(path.sep)
     ? projectDir
     : projectDir + path.sep;
-
-  // The project directory itself must be a genuine direct child of
-  // projectsDir. Without this check, a slug like ".." collapses
-  // projectDir to projectsDir's own PARENT - and every later
-  // "resolvedFile.startsWith(projectDirWithSep)" check then trivially
-  // passes for literally any path, defeating the whole guard. Found by
-  // the "blocks a project slug that is itself a traversal attempt" test.
-  if (!projectDir.startsWith(projectsDirWithSep)) return null;
 
   let requestedPath = restParts.join("/") || "index.html";
   if (requestedPath.endsWith("/")) requestedPath += "index.html";

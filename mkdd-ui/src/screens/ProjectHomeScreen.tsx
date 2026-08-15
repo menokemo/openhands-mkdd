@@ -1,10 +1,13 @@
-import type { AgentProfile } from "../types";
+import { useEffect, useState } from "react";
+import type { AgentProfile, Workspace } from "../types";
 import type { ProjectEmployeeStatus } from "../hooks/useProjectTeamStatus";
-import type { WorkflowState } from "../api/client";
+import type { ProjectFile, WorkflowState } from "../api/client";
+import { fetchProjectFiles } from "../api/client";
 import WorkflowStepper from "../components/WorkflowStepper";
 import { REVIEW_ROLES, getGateLabel, getReviewLabel } from "../utils/workflowLabels";
 
 type Props = {
+  project: Workspace;
   employees: AgentProfile[];
   teamStatusByEmployeeId: Map<string, ProjectEmployeeStatus>;
   totalProjectCost: number;
@@ -21,6 +24,7 @@ type Props = {
  * this component only owns what's specific to a single project's page.
  */
 export default function ProjectHomeScreen({
+  project,
   employees,
   teamStatusByEmployeeId,
   totalProjectCost,
@@ -30,6 +34,22 @@ export default function ProjectHomeScreen({
   language,
   onOpenEmployee,
 }: Props) {
+  const [projectFiles, setProjectFiles] = useState<ProjectFile[]>([]);
+  const [filesLoading, setFilesLoading] = useState(true);
+
+  // The project's slug on disk is the last path segment (e.g.
+  // "/projects/test-site" -> "test-site") - matches how projects.mjs
+  // names the directory it creates, and how preview.mjs/project-files.mjs
+  // resolve it back.
+  const projectSlug = project.path.split("/").filter(Boolean).pop() ?? "";
+
+  useEffect(() => {
+    setFilesLoading(true);
+    fetchProjectFiles(projectSlug)
+      .then(setProjectFiles)
+      .finally(() => setFilesLoading(false));
+  }, [projectSlug]);
+
   const workingCount = Array.from(teamStatusByEmployeeId.values()).filter(
     (item) => item.executionStatus === "running",
   ).length;
@@ -164,6 +184,55 @@ export default function ProjectHomeScreen({
             <strong>{workflowLoading ? "…" : unverifiedFindings}</strong>
           </article>
         </div>
+      </section>
+
+      <section className="project-home-section project-files-section">
+        <div className="section-heading">
+          <div>
+            <small>MKDD</small>
+            <h2>{language === "ar" ? "ملفات المشروع" : "Project Files"}</h2>
+          </div>
+        </div>
+
+        {filesLoading && (
+          <p className="modal-hint">
+            {language === "ar" ? "جاري التحميل..." : "Loading..."}
+          </p>
+        )}
+
+        {!filesLoading && projectFiles.length === 0 && (
+          <p className="modal-hint">
+            {language === "ar" ? "لا توجد ملفات بعد" : "No files yet"}
+          </p>
+        )}
+
+        <ul className="project-files-list">
+          {projectFiles.map((file) => {
+            const depth = file.path.split("/").length - 1;
+            const name = file.path.split("/").pop();
+
+            return (
+              <li
+                key={file.path}
+                className={`project-file-row project-file-${file.type}`}
+                style={{ paddingInlineStart: `${depth * 16}px` }}
+              >
+                {file.type === "directory" ? (
+                  <span className="project-file-name">{name}</span>
+                ) : (
+                  <a
+                    className="project-file-name project-file-link"
+                    href={`/preview/${projectSlug}/${file.path}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {name}
+                  </a>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </section>
     </main>
   );
