@@ -2551,3 +2551,49 @@ header button,
   color: var(--mkdd-text-secondary);
   border-top: 1px solid var(--mkdd-border-subtle);
 }
+
+/* =========================
+   Live app card (chat messages) - a real running application,
+   not a static file, so this is a clear link/button rather than
+   a sandboxed thumbnail iframe.
+   ========================= */
+
+.live-app-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--mkdd-success);
+  border-radius: 12px;
+  background: var(--mkdd-success-tint);
+  text-decoration: none;
+}
+
+.live-app-badge {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--mkdd-success);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.live-app-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--mkdd-text-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.live-app-open {
+  flex: 0 0 auto;
+  color: var(--mkdd-success);
+  font-size: 12px;
+  font-weight: 700;
+}

@@ -174,23 +174,41 @@ export default function ChatScreen({
                 </div>
               )}
 
-              {detectPreviewLinks(textParts).map((link) => (
-                <a
-                  key={link.url}
-                  className="preview-link-card"
-                  href={link.url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <iframe
-                    src={link.url}
-                    title={link.filePath}
-                    className="preview-link-frame"
-                    sandbox=""
-                  />
-                  <span className="preview-link-label">{link.filePath}</span>
-                </a>
-              ))}
+              {detectPreviewLinks(textParts).map((link) =>
+                link.kind === "live" ? (
+                  <a
+                    key={link.url}
+                    className="live-app-card"
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className="live-app-badge">
+                      {language === "ar" ? "شغال الآن" : "Live now"}
+                    </span>
+                    <span className="live-app-label">{link.projectSlug}</span>
+                    <span className="live-app-open">
+                      {language === "ar" ? "افتح التطبيق ←" : "Open app →"}
+                    </span>
+                  </a>
+                ) : (
+                  <a
+                    key={link.url}
+                    className="preview-link-card"
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <iframe
+                      src={link.url}
+                      title={link.filePath}
+                      className="preview-link-frame"
+                      sandbox=""
+                    />
+                    <span className="preview-link-label">{link.filePath}</span>
+                  </a>
+                ),
+              )}
 
               {time && <time className="message-time">{time}</time>}
             </article>

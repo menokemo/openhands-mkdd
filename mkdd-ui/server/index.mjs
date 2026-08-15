@@ -14,6 +14,7 @@ import { handleCreateProject } from "./routes/projects.mjs";
 import { handleServeAvatar, handleUploadAvatar } from "./routes/avatars.mjs";
 import { handlePreview } from "./routes/preview.mjs";
 import { handleProjectFiles } from "./routes/project-files.mjs";
+import { handleLiveProxy } from "./routes/live-proxy.mjs";
 import { handleConversation } from "./routes/conversation.mjs";
 import { handleChatSend, handleChatEvents } from "./routes/chat.mjs";
 import { attachChatWebSocketBridge } from "./lib/ws-bridge.mjs";
@@ -38,6 +39,7 @@ const ROUTES = [
   handleServeAvatar,
   handlePreview,
   handleProjectFiles,
+  handleLiveProxy,
   handleUploadAvatar,
   handleConversation,
   handleChatSend,
