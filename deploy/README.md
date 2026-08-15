@@ -20,7 +20,7 @@
 | MKDD UI port | 5173 / 8787 | **15173 / 18787** |
 | اسم حاوية agent-canvas | `openhands-agent-canvas` | `openhands-agent-canvas-staging` |
 | اسم حاوية mkdd-ui | `mkdd-ui` | `mkdd-ui-staging` |
-| اسم صورة agent-canvas | `mkdd/agent-canvas:1.12.0-mkdd2` | `mkdd/agent-canvas:staging` |
+| اسم صورة agent-canvas | `mkdd/agent-canvas:1.13.0-mkdd1` (تعريف الكود) — **لكن الإنتاج الفعلي الشغال على الـ VM لسه معملوش تحديث خالص، لسه على نسخته القديمة** | `mkdd/agent-canvas:staging` (فعليًا شغال على 1.13.0 ومُتحقَّق منه حيًا) |
 | اسم الـ volume | `openhands_agent_canvas_state` | `openhands_agent_canvas_state_staging` |
 | شبكة Docker | مشروع `openhands` (افتراضي) | مشروع `mkdd-staging` (`COMPOSE_PROJECT_NAME`) |
 

@@ -316,10 +316,12 @@ MKDD is responsible for:
 
 ### 8.2 Current OpenHands service
 
-Docker Compose currently uses:
+Docker Compose currently uses (as of the code, i.e. what a fresh install
+gets — see section 58's snapshot warning for how this can drift from
+any already-running production deployment on the VM):
 
 ```yaml
-image: mkdd/agent-canvas:1.12.0-mkdd2
+image: mkdd/agent-canvas:1.13.0-mkdd1
 ```
 
 Container:
@@ -1506,37 +1508,33 @@ This address is environment-specific and should not be hard-coded into applicati
 
 ---
 
-## 44. Current Compose Reproducibility Gap
+## 44. Compose Reproducibility — Resolved
 
-The current Compose file references:
+**Historical note (originally written when this really was a gap):**
+the Compose file used to only reference a pre-built image tag with no
+build context, meaning a clean machine couldn't reproduce the
+environment without that image already existing somewhere.
 
-```text
-mkdd/agent-canvas:1.12.0-mkdd2
+**Current state:** this gap is resolved. `compose.yml`'s `agent-canvas`
+service now defines a real build context:
+
+```yaml
+build:
+  context: ./openhands-agent-canvas
 ```
 
-as an image.
+so the image (`mkdd/agent-canvas:1.13.0-mkdd1` by default — see
+section 58's snapshot warning for how this can drift from an
+already-running deployment) is built from the source actually checked
+into this repository, not pulled from an external registry.
 
-It does not currently define a build context for that custom Agent Canvas image.
-
-Therefore a clean machine cannot necessarily reproduce the full environment from `compose.yml` alone unless that image:
-
-- already exists locally, or
-- is available from an accessible image registry.
-
-### Required future improvement
-
-Document and automate the custom Agent Canvas image build from:
-
-```text
-openhands-mkdd-src
-```
-
-A clean restore should eventually be possible using only:
+A clean restore is confirmed working (live, on the staging VM
+deployment, more than once) using exactly:
 
 1. Git clone.
-2. Environment/secret setup.
-3. Image build.
-4. `docker compose up`.
+2. Environment/secret setup (`MKDD_BOOTSTRAP_LLM_PROFILE_REF`, etc.).
+3. `./setup.sh up` (builds the image from source, starts everything).
+4. `bootstrap-employees.mjs` (creates the Agent Profiles).
 
 ---
 

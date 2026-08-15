@@ -16,7 +16,7 @@ services:
       args:
         AGENT_SERVER_IMAGE: ${AGENT_SERVER_IMAGE:-ghcr.io/openhands/agent-server:1.42.1-python}
         AUTOMATION_VERSION: ${AUTOMATION_VERSION:-1.7.1}
-    image: ${MKDD_AGENT_CANVAS_IMAGE:-mkdd/agent-canvas:1.12.0-mkdd2}
+    image: ${MKDD_AGENT_CANVAS_IMAGE:-mkdd/agent-canvas:1.13.0-mkdd1}
     container_name: ${MKDD_AGENT_CANVAS_CONTAINER_NAME:-openhands-agent-canvas}
     restart: unless-stopped
     environment:
