@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { FaFolder, FaFileLines, FaFileCode, FaFileImage, FaFile } from "react-icons/fa6";
 import type { AgentProfile, Workspace } from "../types";
 import type { ProjectEmployeeStatus } from "../hooks/useProjectTeamStatus";
 import type { ProjectFile, WorkflowState } from "../api/client";
@@ -17,6 +18,28 @@ type Props = {
   language: "ar" | "en";
   onOpenEmployee: (employee: AgentProfile) => void;
 };
+
+const CODE_EXTENSIONS = new Set([
+  "html",
+  "htm",
+  "css",
+  "js",
+  "mjs",
+  "ts",
+  "tsx",
+  "jsx",
+  "json",
+]);
+const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "svg", "gif", "webp", "ico"]);
+const TEXT_EXTENSIONS = new Set(["md", "txt"]);
+
+function fileIcon(name: string) {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  if (IMAGE_EXTENSIONS.has(ext)) return <FaFileImage />;
+  if (CODE_EXTENSIONS.has(ext)) return <FaFileCode />;
+  if (TEXT_EXTENSIONS.has(ext)) return <FaFileLines />;
+  return <FaFile />;
+}
 
 /**
  * Body content for the Project Home screen. The header and back
@@ -190,7 +213,10 @@ export default function ProjectHomeScreen({
         <div className="section-heading">
           <div>
             <small>MKDD</small>
-            <h2>{language === "ar" ? "ملفات المشروع" : "Project Files"}</h2>
+            <h2>
+              <FaFolder className="section-heading-icon" />
+              {language === "ar" ? "ملفات المشروع" : "Project Files"}
+            </h2>
           </div>
         </div>
 
@@ -209,14 +235,18 @@ export default function ProjectHomeScreen({
         <ul className="project-files-list">
           {projectFiles.map((file) => {
             const depth = file.path.split("/").length - 1;
-            const name = file.path.split("/").pop();
+            const name = file.path.split("/").pop() ?? "";
 
             return (
               <li
                 key={file.path}
                 className={`project-file-row project-file-${file.type}`}
-                style={{ paddingInlineStart: `${depth * 16}px` }}
+                style={{ paddingInlineStart: `${depth * 20}px` }}
               >
+                <span className="project-file-icon">
+                  {file.type === "directory" ? <FaFolder /> : fileIcon(name)}
+                </span>
+
                 {file.type === "directory" ? (
                   <span className="project-file-name">{name}</span>
                 ) : (
