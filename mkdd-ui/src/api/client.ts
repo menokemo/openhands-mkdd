@@ -18,6 +18,43 @@ export async function fetchProjectFiles(projectSlug: string): Promise<ProjectFil
   return data.files ?? [];
 }
 
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Uploads real files (e.g. real product photos) directly into a
+ * project's own shared directory - not tied to any single employee's
+ * conversation, so any employee can see and use them immediately.
+ */
+export async function uploadProjectFiles(
+  projectSlug: string,
+  files: File[],
+): Promise<void> {
+  const payload = await Promise.all(
+    files.map(async (file) => ({
+      name: file.name,
+      dataUrl: await readFileAsDataUrl(file),
+    })),
+  );
+
+  const r = await fetch(`/api/projects/${encodeURIComponent(projectSlug)}/upload`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ files: payload }),
+  });
+
+  if (!r.ok) {
+    const data = await r.json().catch(() => ({}));
+    throw new Error(data.error ?? "upload_failed");
+  }
+}
+
 export async function fetchProjects(): Promise<Workspace[]> {
   const r = await fetch("/api/projects");
   const data = await r.json();

@@ -2597,3 +2597,32 @@ header button,
   font-size: 12px;
   font-weight: 700;
 }
+
+/* =========================
+   Project file upload
+   ========================= */
+
+.project-upload-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--mkdd-border-subtle);
+  border-radius: 999px;
+  background: var(--mkdd-surface-raised);
+  color: var(--mkdd-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.project-upload-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.project-upload-error {
+  margin: 4px 0 0;
+  color: var(--mkdd-danger);
+  font-size: 12px;
+}

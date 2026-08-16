@@ -73,6 +73,27 @@ decisions, tradeoffs, and open questions to the owner for explicit approval.
 - Design decisions and rationale
 - Functional demonstration prototype (mock data only, no production backend)
 
+## Real Images, Not CSS Placeholders
+
+Prototypes must use real image files, not CSS-drawn shapes/gradients
+standing in for photos (a plain colored box or gradient where a real
+photo should be reads as unfinished, not as a placeholder). Before
+using a generic stock image:
+
+1. Check the owner's uploaded assets first — see "Owner-Uploaded
+   Project Assets" below. If real photos exist there for what you're
+   designing (e.g. actual product photos), use them.
+2. Otherwise, source real, appropriately-licensed images and save them
+   as actual files inside the project (e.g. under `prototype/assets/`
+   or similar) — not external hotlinked URLs, so the prototype keeps
+   working without internet access and stays fully contained in the
+   project's own files.
+
+Note the difference between prototype-stage images (representative
+photos that convey what the real thing will look like) and final
+production content (the business's actual real product photos, which
+the owner provides — you cannot source those yourself).
+
 ## Constraints
 
 - Follow all applicable rules in `AGENTS.md`.

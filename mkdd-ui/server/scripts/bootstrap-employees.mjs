@@ -5,6 +5,7 @@ import { listEmployeeNames } from "../lib/list-employee-definitions.mjs";
 import { buildTimeContextInstructions } from "../lib/time-context.mjs";
 import { PREVIEW_INSTRUCTIONS } from "../lib/preview-instructions.mjs";
 import { LIVE_APP_INSTRUCTIONS } from "../lib/live-app-instructions.mjs";
+import { OWNER_UPLOADS_INSTRUCTIONS } from "../lib/owner-uploads-instructions.mjs";
 
 /**
  * Bootstrap script: creates (or updates) an OpenHands Agent Profile for
@@ -67,7 +68,7 @@ function readSystemMessageSuffix(name, timezone) {
   // parts[0] is empty (content starts with "---"), parts[1] is frontmatter,
   // the rest (rejoined, in case the body itself contains "---") is the body.
   const body = parts.length >= 3 ? parts.slice(2).join("---") : content;
-  return `${body.trim()}\n\n${buildTimeContextInstructions(timezone)}\n\n${PREVIEW_INSTRUCTIONS}\n\n${LIVE_APP_INSTRUCTIONS}`;
+  return `${body.trim()}\n\n${buildTimeContextInstructions(timezone)}\n\n${PREVIEW_INSTRUCTIONS}\n\n${LIVE_APP_INSTRUCTIONS}\n\n${OWNER_UPLOADS_INSTRUCTIONS}`;
 }
 
 async function createOrUpdateProfile(name, llmProfileRef, timezone) {

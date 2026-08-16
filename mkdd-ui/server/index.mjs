@@ -11,6 +11,7 @@ import {
 } from "./routes/workflow.mjs";
 import { handleProjects, handleEmployees } from "./routes/directory.mjs";
 import { handleCreateProject } from "./routes/projects.mjs";
+import { handleProjectUpload } from "./routes/project-upload.mjs";
 import { handleServeAvatar, handleUploadAvatar } from "./routes/avatars.mjs";
 import { handlePreview } from "./routes/preview.mjs";
 import { handleProjectFiles } from "./routes/project-files.mjs";
@@ -36,6 +37,7 @@ const ROUTES = [
   handleFindings,
   handleProjects,
   handleCreateProject,
+  handleProjectUpload,
   handleEmployees,
   handleServeAvatar,
   handlePreview,

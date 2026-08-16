@@ -1,9 +1,17 @@
-import { useEffect, useState } from "react";
-import { FaFolder, FaFileLines, FaFileCode, FaFileImage, FaFile } from "react-icons/fa6";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  FaFolder,
+  FaFileLines,
+  FaFileCode,
+  FaFileImage,
+  FaFile,
+  FaUpload,
+  FaSpinner,
+} from "react-icons/fa6";
 import type { AgentProfile, Workspace } from "../types";
 import type { ProjectEmployeeStatus } from "../hooks/useProjectTeamStatus";
 import type { ProjectFile, WorkflowState } from "../api/client";
-import { fetchProjectFiles } from "../api/client";
+import { fetchProjectFiles, uploadProjectFiles } from "../api/client";
 import WorkflowStepper from "../components/WorkflowStepper";
 import { REVIEW_ROLES, getGateLabel, getReviewLabel } from "../utils/workflowLabels";
 
@@ -59,6 +67,9 @@ export default function ProjectHomeScreen({
 }: Props) {
   const [projectFiles, setProjectFiles] = useState<ProjectFile[]>([]);
   const [filesLoading, setFilesLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // The project's slug on disk is the last path segment (e.g.
   // "/projects/test-site" -> "test-site") - matches how projects.mjs
@@ -66,12 +77,35 @@ export default function ProjectHomeScreen({
   // resolve it back.
   const projectSlug = project.path.split("/").filter(Boolean).pop() ?? "";
 
-  useEffect(() => {
+  function reloadProjectFiles() {
     setFilesLoading(true);
-    fetchProjectFiles(projectSlug)
+    return fetchProjectFiles(projectSlug)
       .then(setProjectFiles)
       .finally(() => setFilesLoading(false));
-  }, [projectSlug]);
+  }
+  const memoizedReloadProjectFiles = useCallback(reloadProjectFiles, [projectSlug]);
+
+  useEffect(() => {
+    memoizedReloadProjectFiles();
+  }, [memoizedReloadProjectFiles]);
+
+  async function handleFilesSelected(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return;
+
+    setUploading(true);
+    setUploadError(null);
+    try {
+      await uploadProjectFiles(projectSlug, Array.from(fileList));
+      await reloadProjectFiles();
+    } catch {
+      setUploadError(
+        language === "ar" ? "فشل الرفع، حاول تاني" : "Upload failed, try again",
+      );
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   const workingCount = Array.from(teamStatusByEmployeeId.values()).filter(
     (item) => item.executionStatus === "running",
@@ -218,7 +252,26 @@ export default function ProjectHomeScreen({
               {language === "ar" ? "ملفات المشروع" : "Project Files"}
             </h2>
           </div>
+
+          <button
+            type="button"
+            className="project-upload-button"
+            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {uploading ? <FaSpinner className="spin-icon" /> : <FaUpload />}
+            {language === "ar" ? "ارفع ملفات" : "Upload files"}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            hidden
+            onChange={(event) => handleFilesSelected(event.target.files)}
+          />
         </div>
+
+        {uploadError && <p className="project-upload-error">{uploadError}</p>}
 
         {filesLoading && (
           <p className="modal-hint">
