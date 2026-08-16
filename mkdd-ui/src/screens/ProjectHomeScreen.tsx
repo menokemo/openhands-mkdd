@@ -7,6 +7,20 @@ import {
   FaFile,
   FaUpload,
   FaSpinner,
+  FaClipboardList,
+  FaChartLine,
+  FaPalette,
+  FaCompassDrafting,
+  FaCode,
+  FaPlug,
+  FaClipboardCheck,
+  FaVial,
+  FaCodeBranch,
+  FaShieldHalved,
+  FaServer,
+  FaPen,
+  FaRocket,
+  FaLanguage,
 } from "react-icons/fa6";
 import type { AgentProfile, Workspace } from "../types";
 import type { ProjectEmployeeStatus } from "../hooks/useProjectTeamStatus";
@@ -40,6 +54,27 @@ const CODE_EXTENSIONS = new Set([
 ]);
 const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "svg", "gif", "webp", "ico"]);
 const TEXT_EXTENSIONS = new Set(["md", "txt"]);
+
+// Maps each employee's stable id (AgentProfile.id, e.g. "architect") to an
+// icon representing their role - shown as a small badge on their avatar
+// in the team strip, since the role text itself can be visually crowded
+// at the strip's compact card width.
+const ROLE_ICONS: Record<string, React.ComponentType> = {
+  "product-manager": FaClipboardList,
+  "business-analyst": FaChartLine,
+  "ui-ux": FaPalette,
+  architect: FaCompassDrafting,
+  implementation: FaCode,
+  "integration-engineer": FaPlug,
+  qa: FaClipboardCheck,
+  "test-automation": FaVial,
+  "code-review": FaCodeBranch,
+  "security-review": FaShieldHalved,
+  devops: FaServer,
+  "technical-writer": FaPen,
+  "release-manager": FaRocket,
+  "content-writer": FaLanguage,
+};
 
 function fileIcon(name: string) {
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
@@ -157,6 +192,15 @@ export default function ProjectHomeScreen({
                   ) : (
                     (label?.slice(0, 1) ?? "?")
                   )}
+                  {ROLE_ICONS[employee.id] &&
+                    (() => {
+                      const RoleIcon = ROLE_ICONS[employee.id];
+                      return (
+                        <span className="employee-role-badge" title={employee.role ?? ""}>
+                          <RoleIcon />
+                        </span>
+                      );
+                    })()}
                 </div>
 
                 <div className="employee-card-info">

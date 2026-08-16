@@ -1593,14 +1593,15 @@ header button,
   flex: 0 0 76px;
   width: 76px;
   min-height: auto;
-  padding: 2px;
+  padding: 8px 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 6px;
-  border: none;
-  background: transparent;
+  border: 1px solid var(--mkdd-border-subtle);
+  border-radius: 14px;
+  background: var(--mkdd-surface);
   scroll-snap-align: start;
 }
 
@@ -1632,6 +1633,8 @@ header button,
 }
 
 .project-home .employee-avatar {
+  position: relative;
+  overflow: visible;
   width: 42px;
   height: 42px;
   display: grid;
@@ -1646,6 +1649,7 @@ header button,
 
 .project-home .employee-card-info {
   min-width: 0;
+  width: 100%;
 }
 
 .project-home .employee-open-arrow {
@@ -2647,4 +2651,23 @@ header button,
 .chat-new-conversation-button:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+/* =========================
+   Team strip role badge
+   ========================= */
+
+.employee-role-badge {
+  position: absolute;
+  bottom: -2px;
+  inset-inline-end: -2px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--mkdd-accent);
+  color: #fff;
+  font-size: 9px;
+  border: 2px solid var(--mkdd-page);
 }
