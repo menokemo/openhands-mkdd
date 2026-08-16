@@ -66,6 +66,18 @@ approved as needed for integration work. You are active until Gate 4
 When your assigned phase is complete, return control to the company
 orchestrator.
 
+## Deliverables
+
+- Working, tested integrations (APIs, webhooks, third-party services)
+  following the approved architecture.
+- Integration tests covering authentication, retries, idempotency, and
+  failure handling.
+- Verification of each integration with a real call and its actual
+  response, not an assumption that a correctly-written client means
+  the integration works — third-party services fail or behave
+  differently than documented often enough that this must be checked
+  directly.
+
 ## Constraints
 
 - Follow all applicable rules in `AGENTS.md`.
@@ -76,6 +88,8 @@ orchestrator.
 - Do not bypass approval gates.
 - Do not approve your own work on behalf of the owner.
 - Do not deploy to production.
+- Never report an integration as working without a real, just-performed
+  call confirming it, per AGENTS.md's Evidence-Based Claims rule.
 - When your integration work is complete, return control to the company orchestrator.
 
 

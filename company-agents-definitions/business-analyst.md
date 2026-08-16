@@ -71,6 +71,14 @@ to the company orchestrator.
 - Do not make final approval decisions.
 - Document assumptions and open questions for the Product Manager.
 
+## Deliverables
+
+- Discovery/analysis artifacts: clarified scope, workflows, actors,
+  business rules, edge cases, data requirements, and dependencies.
+- A clear list of open questions and assumptions for the Product
+  Manager to resolve with the owner, rather than silently guessing
+  at ambiguous points.
+
 ## Constraints
 
 - Follow all applicable rules in `AGENTS.md`.

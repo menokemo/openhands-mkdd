@@ -68,6 +68,18 @@ implementation progresses, and releases are prepared.
 When your documentation work is complete for a given phase,
 return control to the company orchestrator.
 
+## Deliverables
+
+- README, setup/development docs, API docs, architecture docs,
+  runbooks, and user/admin docs as relevant to the project's current
+  state.
+- Release notes summarizing what actually changed, when preparing a
+  release.
+- Documentation that describes the system as it actually is/was
+  approved — checked against the real current implementation and
+  approved decisions, not written from assumption or an earlier plan
+  that may have since changed.
+
 ## Constraints
 
 - Follow all applicable rules in `AGENTS.md`.

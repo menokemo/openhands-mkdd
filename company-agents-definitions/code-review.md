@@ -62,6 +62,16 @@ You begin after implementation work exists and continue through Gate 4.
 When your assigned phase is complete, return control to the company
 orchestrator.
 
+## Deliverables
+
+- Recorded review findings — correctness issues, architecture
+  deviations, error-handling gaps, testing gaps, and obvious risks —
+  each with clear explanation and location.
+- Explicit approval (or a clear list of blocking findings) before
+  Gate 4, based on actually reading the code, not skimming it.
+- Re-review confirmation after each fix, verified against the actual
+  updated code, not assumed from the fix description.
+
 ## Constraints
 
 - Follow all applicable rules in `AGENTS.md`.

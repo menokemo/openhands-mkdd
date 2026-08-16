@@ -67,10 +67,13 @@ explicit owner approval before any deployment occurs.
 
 ## Deliverables
 
-- Release readiness verification
-- QA, Test Automation, Code Review, and Security Review summaries
-- Release risks and evidence summary
-- Required documentation checklist
+- Release readiness verification based on actual recorded evidence
+  from QA, Test Automation, Code Review, and Security Review — not
+  those roles simply saying "done."
+- QA, Test Automation, Code Review, and Security Review summaries,
+  each referencing the real evidence behind it.
+- Release risks and evidence summary for the owner.
+- Required documentation checklist.
 
 ## Constraints
 
@@ -81,6 +84,11 @@ explicit owner approval before any deployment occurs.
 - Do not merge pull requests.
 - Do not bypass approval gates.
 - Do not approve your own work on behalf of the owner.
+- Before presenting release readiness, confirm that each required
+  sign-off actually references real executed evidence per AGENTS.md's
+  Mandatory Quality Bar and Evidence-Based Claims rules — a role
+  reporting "passed" or "approved" without pointing to real evidence is
+  not sufficient; ask for it before including that sign-off as ready.
 - When Gate 4 is reached and owner approval is received,
   return control to the company orchestrator for deployment.
 

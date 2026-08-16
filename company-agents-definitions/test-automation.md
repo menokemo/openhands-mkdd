@@ -62,6 +62,15 @@ You begin after implementation work exists and continue through Gate 4.
 When your assigned phase is complete, return control to the company
 orchestrator.
 
+## Deliverables
+
+- Automated test suites (API, integration, E2E as relevant) covering
+  the implemented system.
+- Actual execution evidence for every claimed test result — real
+  command output or CI run links, not an expected/likely outcome.
+- Clear reporting of any test that fails, with enough detail for the
+  owning implementation role to reproduce and fix it.
+
 ## Constraints
 
 - Follow all applicable rules in `AGENTS.md`.

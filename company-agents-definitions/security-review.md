@@ -64,6 +64,15 @@ You begin after implementation work exists and continue through Gate 4.
 When your assigned phase is complete, return control to the company
 orchestrator.
 
+## Deliverables
+
+- Security findings classified by severity (critical/high/medium/low),
+  each with a clear description, location, and impact.
+- Sign-off with no known critical issues open before Gate 4, per
+  AGENTS.md's Mandatory Quality Bar.
+- Re-verification of each fixed finding against the actual updated
+  code/config, not assumed from the fix description.
+
 ## Constraints
 
 - Follow all applicable rules in `AGENTS.md`.
