@@ -57,6 +57,16 @@ services:
     ports:
       - "${MKDD_UI_PORT:-5173}:5173"
       - "${MKDD_UI_BACKEND_PORT:-8787}:8787"
+      # Live-app preview ports (BUGS_AND_FIXES.md #56): each project gets
+      # its own dedicated port from this range (see
+      # server/lib/live-port-registry.mjs), reached directly with zero
+      # content rewriting. Deliberately NOT independently configurable
+      # like the other published ports above - the frontend builds the
+      # actual clickable URL directly from the port number an employee
+      # shares (the registry's true internal port), so the externally
+      # published range MUST match the internal 4001-4020 range exactly,
+      # or the frontend-constructed link would point at the wrong port.
+      - "4001-4020:4001-4020"
     volumes:
       - ./company-agents-definitions:/company-agents-definitions:ro
       - ./mkdd-data:/mkdd-data

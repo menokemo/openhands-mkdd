@@ -175,18 +175,18 @@ export default function ChatScreen({
               )}
 
               {detectPreviewLinks(textParts).map((link) =>
-                link.kind === "live" ? (
+                link.kind === "live-port" ? (
                   <a
-                    key={link.url}
+                    key={`live-port-${link.port}-${link.path}`}
                     className="live-app-card"
-                    href={link.url}
+                    href={`${window.location.protocol}//${window.location.hostname}:${link.port}/${link.path}`}
                     target="_blank"
                     rel="noreferrer"
                   >
                     <span className="live-app-badge">
                       {language === "ar" ? "شغال الآن" : "Live now"}
                     </span>
-                    <span className="live-app-label">{link.projectSlug}</span>
+                    <span className="live-app-label">:{link.port}</span>
                     <span className="live-app-open">
                       {language === "ar" ? "افتح التطبيق ←" : "Open app →"}
                     </span>

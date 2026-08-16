@@ -14,7 +14,8 @@ import { handleCreateProject } from "./routes/projects.mjs";
 import { handleServeAvatar, handleUploadAvatar } from "./routes/avatars.mjs";
 import { handlePreview } from "./routes/preview.mjs";
 import { handleProjectFiles } from "./routes/project-files.mjs";
-import { handleLiveProxy } from "./routes/live-proxy.mjs";
+import { handleProjectLivePort } from "./routes/project-live-port.mjs";
+import { startLivePortProxies } from "./live-port-proxy.mjs";
 import { handleConversation } from "./routes/conversation.mjs";
 import { handleChatSend, handleChatEvents } from "./routes/chat.mjs";
 import { attachChatWebSocketBridge } from "./lib/ws-bridge.mjs";
@@ -39,7 +40,7 @@ const ROUTES = [
   handleServeAvatar,
   handlePreview,
   handleProjectFiles,
-  handleLiveProxy,
+  handleProjectLivePort,
   handleUploadAvatar,
   handleConversation,
   handleChatSend,
@@ -66,3 +67,4 @@ const server = http.createServer(async (req, res) => {
 attachChatWebSocketBridge(server);
 
 server.listen(8787, "0.0.0.0", () => console.log("MKDD backend ready on 8787"));
+startLivePortProxies();

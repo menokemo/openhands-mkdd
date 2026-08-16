@@ -1,12 +1,22 @@
 /**
  * Employee instructions for MKDD's real live-app preview mechanism
- * (BUGS_AND_FIXES.md #51).
+ * (BUGS_AND_FIXES.md #56).
  *
  * Complements PREVIEW_INSTRUCTIONS (preview-instructions.mjs), which
  * covers STATIC files only (HTML/CSS/JS/images with no server needed).
  * This covers the opposite case: a real, running application (a real
  * backend, a real dev server) that the owner needs to actually use
  * live, not just view as static files.
+ *
+ * This is the SECOND, complete redesign of this mechanism (replacing
+ * the earlier shared-single-port + subpath-rewrite approach). That
+ * approach required rewriting every absolute path a target app might
+ * reference - an open-ended, ever-growing list discovered incrementally
+ * (asset paths, then API paths, then whatever would have come next).
+ * Each project now gets its OWN dedicated port from a reserved range,
+ * reached directly (not through any subpath), so there is no absolute
+ * path an app can reference that could ever "escape" - the entire bug
+ * class is structurally impossible now, not just patched case by case.
  */
 
 /** Instruction text every employee's system prompt gets, once (see bootstrap-employees.mjs). */
@@ -14,48 +24,68 @@ export const LIVE_APP_INSTRUCTIONS = `## Running a Live Application For Owner Re
 
 If the owner needs to use your actual running application (not just view
 static files - see the separate file-preview instructions for that
-case), start your app's server bound to port 4001 on all interfaces:
+case), follow these steps in order:
 
-  0.0.0.0:4001
+### 1. Get your project's dedicated port
+
+Every project gets its own permanent, dedicated port - ask for it
+(replace {project-slug} with your project's actual working-directory
+name, e.g. "acme-app" if your directory is /projects/acme-app):
+
+  curl -s http://mkdd-ui:8787/api/projects/{project-slug}/live-port
+
+This returns \`{"port": 4005}\` (an example - yours will likely differ).
+This port is permanently yours for this project - the same call always
+returns the same number.
+
+### 2. Start your server on that exact port, bound to all interfaces, in the background
 
 **Critical: start it as a true background process, not a foreground
 command.** Your terminal tool runs commands in a persistent session - a
 foreground server command occupies that session completely, and it gets
 interrupted the moment you (or anything else) runs another command in
 it. Always background it explicitly and detach it from the session,
-redirecting output to a log file so you can still check on it:
+redirecting output to a log file so you can still check on it. Replace
+4005 below with your own actual assigned port:
 
-  nohup npm start -- --port 4001 --host 0.0.0.0 > /tmp/live-app.log 2>&1 &
-  nohup python manage.py runserver 0.0.0.0:4001 > /tmp/live-app.log 2>&1 &
+  nohup npm start -- --port 4005 --host 0.0.0.0 > /tmp/live-app.log 2>&1 &
+  nohup python manage.py runserver 0.0.0.0:4005 > /tmp/live-app.log 2>&1 &
 
-After starting it this way, verify it is actually listening before
-telling the owner it's ready:
+### 3. Verify it before telling the owner anything
 
-  sleep 2 && curl -s -o /dev/null -w "%{http_code}\\n" http://localhost:4001/
+Never assume the start command worked - confirm it:
 
-If you need to see what happened (it crashed, didn't start, etc.), check
-the log file: \`cat /tmp/live-app.log\`.
+  sleep 2 && curl -s -o /dev/null -w "%{http_code}\\n" http://localhost:4005/
 
-The owner can then reach it directly at:
+If it didn't start (connection refused, or an unexpected status), check
+the log file first: \`cat /tmp/live-app.log\` - diagnose and fix the
+real problem before telling the owner anything is ready.
 
-/live/{project-slug}/{path}
+### 4. Share the link
 
-Example: if your project's working directory is \`/projects/acme-app\`,
-the owner reaches your app's root at \`/live/acme-app/\`, and any route
-inside it (e.g. \`/dashboard\`) at \`/live/acme-app/dashboard\`.
+Once verified, share a link in this exact form as plain text (replace
+4005 with your actual port, and the path with whatever page you want
+the owner to see - or leave it empty for your app's root):
 
-Important constraints:
-- Port 4001 is shared across the whole company - only one project's
-  live app is reachable at a time (whichever one is currently running
-  on that port). If another employee's app was using it, yours simply
-  replaces it as soon as your server starts.
-- The app must actually be running for the link to work - if you stop
-  your server, or it was never properly backgrounded and got
-  interrupted, the owner will see a clear "no live server running"
-  message instead of your app. Before telling the owner a link is
-  ready, always verify with the curl check above first - don't just
-  assume the start command worked.
-- This proxies plain HTTP requests only. If your app relies on its own
-  WebSocket connection (e.g. some frameworks' hot-reload), that specific
-  feature won't work through this - a normal page load/refresh, and any
-  other server communication your app itself makes, works normally.`;
+  /live-port/4005/admin
+
+Do NOT construct a full URL yourself (e.g. don't write
+"http://192.168.2.18:4005/admin") - you don't reliably know the address
+the owner is actually browsing from. Share exactly the
+/live-port/{port}/{path} form above; MKDD's own interface turns it into
+the correct, clickable link automatically.
+
+### Important notes
+
+- Because your app is reached directly on its own dedicated port (not
+  through any shared path prefix), it works exactly as if it were
+  running at its own real root - no special basePath/publicPath
+  configuration needed in your app, regardless of framework.
+- The port is reserved specifically for this project going forward -
+  restarting your server later, even in a new conversation, should use
+  the same port (ask again with step 1 if you're unsure; it always
+  returns the same value for the same project).
+- The app must actually be running for the link to work - if your
+  server stops, or was never properly backgrounded and got interrupted,
+  the owner's browser will simply fail to connect (a plain
+  connection-refused, not a fabricated success).`;

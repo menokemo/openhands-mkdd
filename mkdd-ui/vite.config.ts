@@ -26,14 +26,6 @@ export default defineConfig({
         target: "http://localhost:8787",
         changeOrigin: true,
       },
-      // Live app reverse proxy (server/routes/live-proxy.mjs). First
-      // version covers plain HTTP requests only - the target app's own
-      // WebSocket-based hot-reload (if any) won't work through this,
-      // since the backend doesn't handle WS upgrades on this path yet.
-      "/live": {
-        target: "http://localhost:8787",
-        changeOrigin: true,
-      },
       "/ws": {
         target: "ws://localhost:8787",
         ws: true,

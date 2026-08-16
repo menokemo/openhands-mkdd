@@ -1,24 +1,33 @@
-export type DetectedPreviewLink = {
-  url: string;
-  kind: "preview" | "live";
-  projectSlug: string;
-  filePath: string;
-};
+export type DetectedPreviewLink =
+  | { kind: "preview"; url: string; projectSlug: string; filePath: string }
+  | { kind: "live-port"; port: number; path: string };
 
-// Matches an absolute /preview/{project}/{path} or /live/{project}/{path}
-// URL, whether written as a bare relative path or a full origin URL
-// pointing at this same app (an employee might paste either form).
-// Deliberately only matches OUR OWN links (server/routes/preview.mjs and
-// server/routes/live-proxy.mjs), not arbitrary external URLs - rendering
-// a card/iframe for any random link a message happens to contain would
-// be a real security/privacy risk (leaking the visitor's IP/cookies to
-// third parties, or embedding unexpected content).
-const LINK_PATTERN =
-  /(?:https?:\/\/[^/\s]+)?\/(preview|live)\/([a-z0-9-]+)(?:\/([^\s)"'<>]*))?/gi;
+// Matches our own /preview/{project}/{path} links (server/routes/preview.mjs
+// - static files, served from MKDD's own origin) and /live-port/{port}/{path}
+// markers (BUGS_AND_FIXES.md #56 - a project's own dedicated live-app port,
+// reached directly rather than through a subpath, so its own absolute
+// paths never break). Deliberately only matches these two OWN link
+// shapes, not arbitrary external URLs - rendering a card/iframe for any
+// random link a message happens to contain would be a real security/
+// privacy risk (leaking the visitor's IP/cookies to third parties, or
+// embedding unexpected content).
+const PREVIEW_PATTERN =
+  /(?:https?:\/\/[^/\s]+)?\/preview\/([a-z0-9-]+)(?:\/([^\s)"'<>]*))?/gi;
+const LIVE_PORT_PATTERN = /\/live-port\/(\d+)(?:\/([^\s)"'<>]*))?/gi;
 
 /**
- * Finds every /preview/{project}/{path} or /live/{project}/{path} link
- * in a block of message text. Returns an empty array if none are
+ * Strips trailing sentence punctuation a human would naturally type
+ * right after a pasted link (e.g. "...palette.html." at the end of a
+ * sentence) - without this, a captured path would include the period
+ * and never resolve to the real file/route.
+ */
+function stripTrailingPunctuation(value: string): string {
+  return value.replace(/[.,!?;:]+$/, "");
+}
+
+/**
+ * Finds every /preview/{project}/{path} and /live-port/{port}/{path}
+ * link in a block of message text. Returns an empty array if none are
  * present - callers should treat that as "nothing special to render",
  * not an error.
  */
@@ -26,29 +35,34 @@ export function detectPreviewLinks(text: string): DetectedPreviewLink[] {
   const results: DetectedPreviewLink[] = [];
   const seen = new Set<string>();
 
-  for (const match of text.matchAll(LINK_PATTERN)) {
-    const [, rawKind, projectSlug, rawFilePath] = match;
+  for (const match of text.matchAll(PREVIEW_PATTERN)) {
+    const [, projectSlug, rawFilePath] = match;
     if (!projectSlug) continue;
-    const kind = rawKind === "live" ? "live" : "preview";
 
-    // Strip trailing sentence punctuation a human would naturally type
-    // right after a pasted link (e.g. "...palette.html." at the end of
-    // a sentence) - without this, the captured path would include the
-    // period and never resolve to a real file. A bare root link (no
-    // path segment at all, e.g. "/live/acme-app/") is valid too - most
-    // live-app links are exactly this.
-    const filePath = (rawFilePath ?? "").replace(/[.,!?;:]+$/, "");
-
-    const key = `${kind}/${projectSlug}/${filePath}`;
+    const filePath = stripTrailingPunctuation(rawFilePath ?? "");
+    const key = `preview/${projectSlug}/${filePath}`;
     if (seen.has(key)) continue;
     seen.add(key);
 
     results.push({
-      url: `/${kind}/${projectSlug}/${filePath}`,
-      kind,
+      kind: "preview",
+      url: `/preview/${projectSlug}/${filePath}`,
       projectSlug,
       filePath,
     });
+  }
+
+  for (const match of text.matchAll(LIVE_PORT_PATTERN)) {
+    const [, rawPort, rawPath] = match;
+    const port = Number(rawPort);
+    if (!Number.isInteger(port) || port <= 0) continue;
+
+    const path = stripTrailingPunctuation(rawPath ?? "");
+    const key = `live-port/${port}/${path}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    results.push({ kind: "live-port", port, path });
   }
 
   return results;
