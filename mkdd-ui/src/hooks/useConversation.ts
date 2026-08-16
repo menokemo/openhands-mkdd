@@ -10,7 +10,12 @@ import type {
   Workspace,
   WorkPlan,
 } from "../types";
-import { fetchConversation, fetchEvents, sendChatMessage } from "../api/client";
+import {
+  fetchConversation,
+  fetchEvents,
+  sendChatMessage,
+  startNewConversation,
+} from "../api/client";
 
 type Params = {
   project: Workspace | null;
@@ -290,6 +295,42 @@ export function useConversation({ project, employee }: Params) {
     }
   }
 
+  /**
+   * Always starts a brand-new conversation with this employee, even if
+   * one already exists - for when an existing conversation is stuck in
+   * an unrecoverable state (BUGS_AND_FIXES.md #61). Clears the current
+   * message list since this is a genuinely fresh conversation, not a
+   * continuation of the old one - the old conversation and its history
+   * remain intact and reachable directly in OpenHands's own UI, just no
+   * longer the one MKDD resolves to for this project+employee.
+   */
+  async function startFreshConversation(imageDataUrls?: string[]) {
+    const hasImages = imageDataUrls && imageDataUrls.length > 0;
+    if (!project || !employee || (!message.trim() && !hasImages) || sending) return;
+
+    const text = message.trim();
+    setSending(true);
+    setMessage("");
+
+    try {
+      const sendData = await startNewConversation(
+        project.path,
+        employee.id,
+        employee.name,
+        text,
+        imageDataUrls,
+      );
+
+      const id = sendData.conversation?.id ?? sendData.conversation_id;
+      setMessages([]);
+      if (id) setConversationId(id);
+    } catch {
+      setMessage(text);
+    } finally {
+      setSending(false);
+    }
+  }
+
   return {
     messages,
     activity,
@@ -300,5 +341,6 @@ export function useConversation({ project, employee }: Params) {
     sending,
     setMessage,
     sendMessage,
+    startFreshConversation,
   };
 }

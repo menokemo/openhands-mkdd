@@ -25,6 +25,7 @@ type Props = {
   sending: boolean;
   setMessage: (value: string) => void;
   sendMessage: (imageDataUrls?: string[]) => Promise<void>;
+  startFreshConversation: (imageDataUrls?: string[]) => Promise<void>;
 };
 
 /**
@@ -46,6 +47,7 @@ export default function ChatScreen({
   sending,
   setMessage,
   sendMessage,
+  startFreshConversation,
 }: Props) {
   const employeeName =
     language === "ar" ? employee.displayNameAr : employee.displayNameEn;
@@ -119,6 +121,34 @@ export default function ChatScreen({
           <strong>{employeeName}</strong>
           <span>{employee.role}</span>
         </div>
+
+        <button
+          type="button"
+          className="chat-new-conversation-button"
+          disabled={sending}
+          onClick={() => {
+            if (!message.trim() && pendingImages.length === 0) {
+              alert(
+                language === "ar"
+                  ? "اكتب رسالتك الأولى في صندوق الكتابة الأول، وبعدين دوس محادثة جديدة"
+                  : "Type your first message in the composer first, then press New conversation",
+              );
+              return;
+            }
+
+            const confirmed = window.confirm(
+              language === "ar"
+                ? "هتبدأ محادثة جديدة تمامًا مع الموظف ده. المحادثة الحالية هتفضل موجودة (تقدر توصلها من واجهة OpenHands الأصلية)، بس هتبقى مش النشطة بعد كده. متأكد؟"
+                : "This will start a completely new conversation with this employee. The current conversation stays intact (reachable from OpenHands's own UI) but will no longer be the active one. Continue?",
+            );
+            if (confirmed)
+              startFreshConversation(
+                pendingImages.length > 0 ? pendingImages : undefined,
+              );
+          }}
+        >
+          {language === "ar" ? "محادثة جديدة" : "New conversation"}
+        </button>
       </div>
 
       <EmployeeInsightsPanel

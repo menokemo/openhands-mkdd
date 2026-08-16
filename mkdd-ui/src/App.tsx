@@ -58,6 +58,7 @@ export default function App() {
     sending,
     setMessage,
     sendMessage,
+    startFreshConversation,
   } = useConversation({
     project: selectedProject,
     employee: selectedEmployee,
@@ -136,6 +137,7 @@ export default function App() {
         sending={sending}
         setMessage={setMessage}
         sendMessage={sendMessage}
+        startFreshConversation={startFreshConversation}
       />
     );
   } else if (selectedProject) {

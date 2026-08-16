@@ -18,7 +18,7 @@ import { handleProjectFiles } from "./routes/project-files.mjs";
 import { handleProjectLivePort } from "./routes/project-live-port.mjs";
 import { startLivePortProxies } from "./live-port-proxy.mjs";
 import { handleConversation } from "./routes/conversation.mjs";
-import { handleChatSend, handleChatEvents } from "./routes/chat.mjs";
+import { handleChatSend, handleChatNew, handleChatEvents } from "./routes/chat.mjs";
 import { attachChatWebSocketBridge } from "./lib/ws-bridge.mjs";
 
 // Route handlers are tried in order; each returns `true` once it has
@@ -46,6 +46,7 @@ const ROUTES = [
   handleUploadAvatar,
   handleConversation,
   handleChatSend,
+  handleChatNew,
   handleChatEvents,
 ];
 

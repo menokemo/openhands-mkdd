@@ -72,6 +72,31 @@ function readSystemMessageSuffix(name, timezone) {
   return `${body.trim()}\n\n${buildTimeContextInstructions(timezone)}\n\n${PREVIEW_INSTRUCTIONS}\n\n${LIVE_APP_INSTRUCTIONS}\n\n${OWNER_UPLOADS_INSTRUCTIONS}\n\n${GITHUB_REPO_INSTRUCTIONS}`;
 }
 
+// BUGS_AND_FIXES.md #60: without an explicit condenser, an employee's
+// conversation can hit litellm.APIError ("input exceeds the context
+// window") with NO automatic recovery - confirmed live this had
+// actually happened to Kirollos. Two real, separately-confirmed root
+// causes: (1) no condenser was configured at all (confirmed live via
+// the "Compact context" button itself failing with "No condenser
+// configured"), and (2) the context-window figure the UI displays for
+// this LLM profile (1.1M tokens) is a generic default, not this
+// specific model's real limit - confirmed live via web research on the
+// actual model behind this profile (GPT-5.6 Sol via a ChatGPT Plus/
+// Codex subscription), whose real effective limit is ~258,400 tokens,
+// not 1.1M. MAX_TOKENS below (160,000) is deliberately well under that
+// real limit - condensation must trigger well before the real wall,
+// not right at (or past) it.
+//
+// IMPORTANT: this number is specific to the CURRENT shared LLM profile
+// (glm-5.2, actually GPT-5.6 Sol/ChatGPT Codex underneath). The owner's
+// stated plan is to eventually give each employee their own dedicated
+// LLM profile, likely on different underlying models with different
+// real context windows - whoever does that must re-verify the correct
+// max_tokens for EACH model at that time (the same research pattern
+// used to find this number: check what the UI-displayed limit actually
+// is for that real model, not just reuse 160,000 blindly).
+const CONDENSER_MAX_TOKENS = 160000;
+
 async function createOrUpdateProfile(name, llmProfileRef, timezone) {
   const r = await openhandsFetch(`/api/agent-profiles/${name}`, {
     method: "POST",
@@ -81,6 +106,16 @@ async function createOrUpdateProfile(name, llmProfileRef, timezone) {
       agent: "CodeActAgent",
       llm_profile_ref: llmProfileRef,
       system_message_suffix: readSystemMessageSuffix(name, timezone),
+      condenser: {
+        enabled: true,
+        max_size: 240,
+        condenser_kind: "llm_summarizing",
+        max_tokens: CONDENSER_MAX_TOKENS,
+        keep_first: 2,
+        minimum_progress: 0.1,
+        hard_context_reset_max_retries: 5,
+        hard_context_reset_context_scaling: 0.8,
+      },
     }),
   });
 

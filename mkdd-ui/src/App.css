@@ -2626,3 +2626,25 @@ header button,
   color: var(--mkdd-danger);
   font-size: 12px;
 }
+
+/* =========================
+   Start fresh conversation button
+   ========================= */
+
+.chat-new-conversation-button {
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border: 1px solid var(--mkdd-border-subtle);
+  border-radius: 999px;
+  background: var(--mkdd-surface-raised);
+  color: var(--mkdd-text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chat-new-conversation-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

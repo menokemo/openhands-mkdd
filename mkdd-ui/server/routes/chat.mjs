@@ -102,6 +102,94 @@ export function buildOutgoingContent(message, imageDataUrls) {
   return content;
 }
 
+/**
+ * Creates a brand-new OpenHands conversation for a project+employee,
+ * unconditionally (no existing-conversation check) - shared by
+ * handleChatSend's create-if-missing path and handleChatNew's always-
+ * create path (BUGS_AND_FIXES.md #61).
+ *
+ * Because /api/conversations/search defaults to CREATED_AT_DESC (most
+ * recently created first - confirmed live via the real OpenAPI schema),
+ * a newly created conversation with the same project/employee tags
+ * naturally becomes the one findAuthorizedConversation returns next -
+ * no change needed to the search/matching logic itself for a "start
+ * fresh" conversation to actually take over as the active one.
+ *
+ * Returns { ok, status, body } - callers decide how to write the HTTP
+ * response, since handleChatSend and handleChatNew shape it slightly
+ * differently.
+ */
+async function createNewConversation({
+  project,
+  employeeId,
+  employeeName,
+  message,
+  imageDataUrls,
+}) {
+  const [employeeDisplayName, projectDisplayName, agentProfileUuid] = await Promise.all([
+    Promise.resolve(resolveEmployeeDisplayName(employeeId, employeeName)),
+    resolveProjectDisplayName(project),
+    resolveAgentProfileUuid(employeeId),
+  ]);
+
+  if (!agentProfileUuid) {
+    return { ok: false, status: 404, body: { error: "agent_profile_not_found" } };
+  }
+
+  const r = await fetch(OPENHANDS_URL + "/api/conversations", {
+    method: "POST",
+    headers: {
+      "X-Session-API-Key": sessionKey(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      workspace: {
+        working_dir: project,
+        kind: "LocalWorkspace",
+      },
+      agent_profile_id: agentProfileUuid,
+      autotitle: false,
+      // Confirmed real field (README/ENGINEERING_PRINCIPLES.md #1): the
+      // real Agent Canvas create-conversation payload sends `title`
+      // (see use-create-conversation.ts). Without it, conversations
+      // MKDD creates show up unnamed in Agent Canvas's own UI
+      // (BUGS_AND_FIXES.md #24).
+      title: `${employeeDisplayName} — ${projectDisplayName}`,
+      tags: {
+        mkddproject: project,
+        mkddemployee: employeeName,
+        mkddemployeeid: employeeId,
+      },
+      initial_message: {
+        role: "user",
+        content: buildOutgoingContent(message, imageDataUrls),
+        run: true,
+      },
+    }),
+  });
+
+  const created = await r.json();
+
+  if (!r.ok) {
+    // BUGS_AND_FIXES.md #48: this branch used to blindly wrap whatever
+    // OpenHands returned as {conversation: created} regardless of
+    // success/failure - so a real creation failure (e.g. a 422 from
+    // OpenHands) had no top-level .error field, and the frontend fell
+    // back to a generic "send_message_failed" string that hid the
+    // actual reason. Surface it properly instead.
+    return {
+      ok: false,
+      status: r.status,
+      body: {
+        error: created?.detail ?? created?.error ?? "conversation_creation_failed",
+        detail: created,
+      },
+    };
+  }
+
+  return { ok: true, status: r.status, body: { conversation: created } };
+}
+
 export async function handleChatSend(req, res) {
   if (!(req.method === "POST" && req.url === "/api/chat/send")) return false;
 
@@ -133,73 +221,15 @@ export async function handleChatSend(req, res) {
   });
 
   if (!conversation) {
-    const [employeeDisplayName, projectDisplayName, agentProfileUuid] = await Promise.all(
-      [
-        Promise.resolve(resolveEmployeeDisplayName(employeeId, employeeName)),
-        resolveProjectDisplayName(project),
-        resolveAgentProfileUuid(employeeId),
-      ],
-    );
-
-    if (!agentProfileUuid) {
-      res.writeHead(404, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: "agent_profile_not_found" }));
-      return true;
-    }
-
-    const r = await fetch(OPENHANDS_URL + "/api/conversations", {
-      method: "POST",
-      headers: {
-        "X-Session-API-Key": sessionKey(),
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        workspace: {
-          working_dir: project,
-          kind: "LocalWorkspace",
-        },
-        agent_profile_id: agentProfileUuid,
-        autotitle: false,
-        // Confirmed real field (README/ENGINEERING_PRINCIPLES.md #1): the
-        // real Agent Canvas create-conversation payload sends `title`
-        // (see use-create-conversation.ts). Without it, conversations
-        // MKDD creates show up unnamed in Agent Canvas's own UI
-        // (BUGS_AND_FIXES.md #24).
-        title: `${employeeDisplayName} — ${projectDisplayName}`,
-        tags: {
-          mkddproject: project,
-          mkddemployee: employeeName,
-          mkddemployeeid: employeeId,
-        },
-        initial_message: {
-          role: "user",
-          content: buildOutgoingContent(message, imageDataUrls),
-          run: true,
-        },
-      }),
+    const result = await createNewConversation({
+      project,
+      employeeId,
+      employeeName,
+      message,
+      imageDataUrls,
     });
-
-    const created = await r.json();
-
-    if (!r.ok) {
-      // BUGS_AND_FIXES.md #48: this branch used to blindly wrap whatever
-      // OpenHands returned as {conversation: created} regardless of
-      // success/failure - so a real creation failure (e.g. a 422 from
-      // OpenHands) had no top-level .error field, and the frontend fell
-      // back to a generic "send_message_failed" string that hid the
-      // actual reason. Surface it properly instead.
-      res.writeHead(r.status, { "content-type": "application/json" });
-      res.end(
-        JSON.stringify({
-          error: created?.detail ?? created?.error ?? "conversation_creation_failed",
-          detail: created,
-        }),
-      );
-      return true;
-    }
-
-    res.writeHead(r.status, { "content-type": "application/json" });
-    res.end(JSON.stringify({ conversation: created }));
+    res.writeHead(result.status, { "content-type": "application/json" });
+    res.end(JSON.stringify(result.body));
     return true;
   }
 
@@ -225,6 +255,53 @@ export async function handleChatSend(req, res) {
       result,
     }),
   );
+  return true;
+}
+
+/**
+ * POST /api/chat/new — always creates a brand-new conversation for a
+ * project+employee, even if one already exists (unlike /api/chat/send's
+ * create-if-missing behavior). The old conversation is not deleted or
+ * modified - it stays reachable directly in OpenHands's own UI - but
+ * because /api/conversations/search returns newest-first by default,
+ * the new conversation naturally becomes the one MKDD's own UI resolves
+ * to going forward (BUGS_AND_FIXES.md #61: needed when an existing
+ * conversation is stuck in an unrecoverable state, e.g. one created
+ * before a condenser fix was applied to the employee's profile).
+ */
+export async function handleChatNew(req, res) {
+  if (!(req.method === "POST" && req.url === "/api/chat/new")) return false;
+
+  const { project, employeeId, employeeName, message, imageDataUrls } =
+    await readJsonBody(req);
+
+  const hasText = typeof message === "string" && message.trim().length > 0;
+  const hasImages = Array.isArray(imageDataUrls) && imageDataUrls.length > 0;
+
+  if (!project || !employeeId || !employeeName || (!hasText && !hasImages)) {
+    res.writeHead(400, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "invalid_request" }));
+    return true;
+  }
+
+  if (hasImages) {
+    const imageError = validateImageDataUrls(imageDataUrls);
+    if (imageError) {
+      res.writeHead(400, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: imageError }));
+      return true;
+    }
+  }
+
+  const result = await createNewConversation({
+    project,
+    employeeId,
+    employeeName,
+    message,
+    imageDataUrls,
+  });
+  res.writeHead(result.status, { "content-type": "application/json" });
+  res.end(JSON.stringify(result.body));
   return true;
 }
 

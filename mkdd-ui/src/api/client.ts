@@ -152,6 +152,37 @@ export async function sendChatMessage(
   return data;
 }
 
+/**
+ * Always creates a brand-new conversation with this employee for this
+ * project, even if one already exists - unlike sendChatMessage, which
+ * reuses an existing conversation when there is one. The old
+ * conversation isn't deleted; it just stops being the one MKDD's UI
+ * resolves to going forward (BUGS_AND_FIXES.md #61).
+ */
+export async function startNewConversation(
+  project: string,
+  employeeId: string,
+  employeeName: string,
+  message: string,
+  imageDataUrls?: string[],
+): Promise<SendMessageResponse> {
+  const r = await fetch("/api/chat/new", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      project,
+      employeeId,
+      employeeName,
+      message,
+      imageDataUrls,
+    }),
+  });
+
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error ?? "start_new_conversation_failed");
+  return data;
+}
+
 export type WorkflowGateName = "requirements" | "ui_ux" | "architecture" | "production";
 
 export type WorkflowReviewRole =
