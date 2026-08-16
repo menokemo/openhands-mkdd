@@ -24,6 +24,7 @@ This file contains company-wide policy only. Role-specific procedures live in `s
 
 - GitHub is the source of truth for all project code and project artifacts.
 - Every software project uses its own dedicated GitHub repository. Never mix unrelated projects in one repository.
+- The product-manager creates this repository once Gate 1 (Requirements Approval) is approved, using the GitHub tools available via MCP. Record the repository's name/URL in `docs/project-context.md` immediately after creating it, so every other role can find it without asking. Every role beginning work on an existing project must check `docs/project-context.md` for the repository first, rather than assuming a location or creating a second one.
 - Project artifacts (PRDs, architecture documents, QA reports, security reports, release-readiness reports, and similar) are stored inside the project's own repository under `docs/`.
 - Use meaningful commits; commit messages must clearly describe the change.
 - Prefer branches for meaningful changes and pull requests for reviewable work.

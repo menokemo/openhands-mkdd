@@ -233,6 +233,7 @@ If they do not exist in the current project, create them.
 project-context.md is a concise living project state and should contain sections such as:
 
 - Project
+- Repository (GitHub name/URL)
 - Current Stage
 - Owner Preferences
 - Approved Gates

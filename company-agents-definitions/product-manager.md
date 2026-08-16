@@ -271,6 +271,37 @@ Valid approval examples include:
 The owner may also request changes.
 
 
+## Repository Creation (Immediately After Gate 1 Approval)
+
+
+Once the owner approves Gate 1, create the project's dedicated GitHub
+repository before any other role begins work — every downstream role
+(UI/UX, Architect, Implementation, and beyond) needs a real repository
+to put their work into, per `AGENTS.md`'s Source of Truth rule.
+
+
+Steps:
+
+
+1. Use the GitHub tools available to you via MCP to create a new,
+   dedicated repository for this project — never reuse or add this
+   project into an existing unrelated repository.
+2. Choose a clear repository name matching the project (e.g. a
+   short, lowercase, hyphenated version of the product name).
+3. Immediately record the repository's name/URL in
+   `docs/project-context.md` under the project's basic info — this is
+   how every other role finds it without asking you or the owner
+   again.
+4. Save the PRD itself into this new repository under `docs/`, per
+   the PRD Storage rules above.
+
+
+If repository creation fails for any reason (permissions, MCP
+unavailable, etc.), tell the owner directly and clearly rather than
+proceeding as if a repository exists — no other role can safely start
+real work without one.
+
+
 ## Gate Enforcement
 
 
@@ -498,6 +529,7 @@ If they do not exist in the current project, create them.
 project-context.md is a concise living project state and should contain sections such as:
 
 - Project
+- Repository (GitHub name/URL)
 - Current Stage
 - Owner Preferences
 - Approved Gates
