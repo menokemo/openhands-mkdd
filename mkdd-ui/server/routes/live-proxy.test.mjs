@@ -70,3 +70,64 @@ test("does not rewrite a path that merely CONTAINS the prefix substring without 
   const html = "<p>see /_next/ for details</p>";
   assert.equal(rewriteLiveAppHtml(html, "x"), html);
 });
+
+test("real end-to-end: a chunked (streaming) HTML response gets rewritten with consistent headers, not a Content-Length/Transfer-Encoding conflict", async () => {
+  const http = await import("node:http");
+  const fs = await import("node:fs");
+
+  // handleLiveProxy validates the project against the real /projects
+  // directory (see server/lib/project-paths.mjs) - not configurable in
+  // this context, so use that real path rather than an unrelated temp dir.
+  const projectDir = "/projects/mkdd-live-proxy-e2e-test";
+  fs.mkdirSync(projectDir, { recursive: true });
+
+  // A server that streams its response in chunks (Transfer-Encoding:
+  // chunked, no known Content-Length up front) - exactly how real SSR
+  // frameworks like Next.js normally respond. This is the case that
+  // broke live previews with "Parse Error: Content-Length can't be
+  // present with Transfer-Encoding" until this was fixed.
+  const fakeApp = http.createServer((req, res) => {
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+    res.write('<link href="/_next/static/x.css"/>');
+    res.end("<p>done</p>");
+  });
+
+  await new Promise((resolve) => fakeApp.listen(0, "127.0.0.1", resolve));
+  const fakeAppPort = fakeApp.address().port;
+
+  process.env.OPENHANDS_URL = "http://127.0.0.1:9999";
+  process.env.MKDD_LIVE_APP_PORT = String(fakeAppPort);
+
+  // Re-import with the env vars set, using a fresh module registry entry
+  // (query string busts Node's module cache) so agentCanvasHost()/
+  // LIVE_APP_PORT pick up these test-specific values.
+  const { handleLiveProxy } = await import(`./live-proxy.mjs?t=${Date.now()}`);
+
+  const mkddServer = http.createServer(async (req, res) => {
+    const handled = await handleLiveProxy(req, res);
+    if (!handled) {
+      res.writeHead(404);
+      res.end();
+    }
+  });
+  await new Promise((resolve) => mkddServer.listen(0, "127.0.0.1", resolve));
+  const mkddPort = mkddServer.address().port;
+
+  const response = await fetch(
+    `http://127.0.0.1:${mkddPort}/live/mkdd-live-proxy-e2e-test/page`,
+  );
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  // The actual bug: both headers present together is an HTTP protocol
+  // violation that made real proxies (Vite's included) reject the
+  // response outright.
+  assert.equal(response.headers.get("transfer-encoding"), null);
+  assert.ok(response.headers.get("content-length"));
+  assert.equal(Number(response.headers.get("content-length")), Buffer.byteLength(body));
+  assert.ok(body.includes('href="/live/mkdd-live-proxy-e2e-test/_next/static/x.css"'));
+
+  fakeApp.close();
+  mkddServer.close();
+  fs.rmSync(projectDir, { recursive: true, force: true });
+});

@@ -136,6 +136,17 @@ export async function handleLiveProxy(req, res) {
 
         const headers = { ...proxyRes.headers };
         delete headers["content-encoding"];
+        // We're sending the rewritten body as one fixed-length chunk, not
+        // the original chunked stream - keeping the original
+        // transfer-encoding header alongside our new content-length is an
+        // HTTP protocol violation. Confirmed live: this was silently
+        // breaking every proxied HTML response with
+        // "Parse Error: Content-Length can't be present with
+        // Transfer-Encoding" (Vite's own HTTP client correctly rejecting
+        // the malformed response) - the exact reason live app previews
+        // returned a 502 despite the proxy and target server both
+        // working correctly.
+        delete headers["transfer-encoding"];
         headers["content-length"] = Buffer.byteLength(rewritten);
 
         res.writeHead(proxyRes.statusCode ?? 502, headers);
