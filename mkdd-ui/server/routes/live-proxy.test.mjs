@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseLiveProxyPath, rewriteLiveAppHtml } from "./live-proxy.mjs";
+import { parseLiveProxyPath, rewriteLiveAppPaths } from "./live-proxy.mjs";
 
 test("splits project slug and forward path for a nested route", () => {
   const result = parseLiveProxyPath("my-app/api/users?x=1");
@@ -28,7 +28,7 @@ test("preserves query strings and deep paths", () => {
 
 test("rewrites an href attribute pointing to a known absolute asset prefix", () => {
   const html = '<link rel="stylesheet" href="/_next/static/chunks/x.css"/>';
-  const result = rewriteLiveAppHtml(html, "acme-app");
+  const result = rewriteLiveAppPaths(html, "acme-app");
   assert.equal(
     result,
     '<link rel="stylesheet" href="/live/acme-app/_next/static/chunks/x.css"/>',
@@ -37,7 +37,7 @@ test("rewrites an href attribute pointing to a known absolute asset prefix", () 
 
 test("rewrites a src attribute the same way", () => {
   const html = '<script src="/_next/static/chunks/main.js"></script>';
-  const result = rewriteLiveAppHtml(html, "acme-app");
+  const result = rewriteLiveAppPaths(html, "acme-app");
   assert.equal(
     result,
     '<script src="/live/acme-app/_next/static/chunks/main.js"></script>',
@@ -47,20 +47,20 @@ test("rewrites a src attribute the same way", () => {
 test("rewrites the same path pattern when embedded inside inline JS/JSON (not just HTML attributes) - matches real Next.js RSC payloads", () => {
   const html =
     '<script>self.__next_f.push([1,"path:\\"/_next/static/chunks/foo.js\\""])</script>';
-  const result = rewriteLiveAppHtml(html, "acme-app");
+  const result = rewriteLiveAppPaths(html, "acme-app");
   assert.ok(result.includes('\\"/live/acme-app/_next/static/chunks/foo.js\\"'));
 });
 
 test("rewrites multiple different known prefixes in the same document", () => {
   const html = '<link href="/static/a.css"/><img src="/assets/b.png"/>';
-  const result = rewriteLiveAppHtml(html, "x");
+  const result = rewriteLiveAppPaths(html, "x");
   assert.ok(result.includes('href="/live/x/static/a.css"'));
   assert.ok(result.includes('src="/live/x/assets/b.png"'));
 });
 
 test("leaves unrelated content untouched", () => {
   const html = "<p>hello world, no asset paths here</p>";
-  assert.equal(rewriteLiveAppHtml(html, "x"), html);
+  assert.equal(rewriteLiveAppPaths(html, "x"), html);
 });
 
 test("does not rewrite a path that merely CONTAINS the prefix substring without a quote/paren immediately before it", () => {
@@ -68,7 +68,7 @@ test("does not rewrite a path that merely CONTAINS the prefix substring without 
   // genuinely starts a quoted/parenthesized reference, not any
   // occurrence of the substring anywhere in the page text.
   const html = "<p>see /_next/ for details</p>";
-  assert.equal(rewriteLiveAppHtml(html, "x"), html);
+  assert.equal(rewriteLiveAppPaths(html, "x"), html);
 });
 
 test("real end-to-end: a chunked (streaming) HTML response gets rewritten with consistent headers, not a Content-Length/Transfer-Encoding conflict", async () => {
@@ -130,4 +130,16 @@ test("real end-to-end: a chunked (streaming) HTML response gets rewritten with c
   fakeApp.close();
   mkddServer.close();
   fs.rmSync(projectDir, { recursive: true, force: true });
+});
+
+test("rewrites /api/ references too - this is the real fix confirmed by Kirollos's own diagnosis (his app's runtime fetch('/api/...') calls were resolving against MKDD's own site root instead of his app)", () => {
+  const js = 'fetch("/api/admins/me").then(r=>r.json())';
+  const result = rewriteLiveAppPaths(js, "test-for-13");
+  assert.equal(result, 'fetch("/live/test-for-13/api/admins/me").then(r=>r.json())');
+});
+
+test("rewrites an /api/ prefix even when the rest of the endpoint is built dynamically (common in minified JS) - only the literal quoted prefix needs to match", () => {
+  const js = 'const url = "/api/" + endpoint; fetch(url)';
+  const result = rewriteLiveAppPaths(js, "acme");
+  assert.ok(result.includes('"/live/acme/api/" + endpoint'));
 });

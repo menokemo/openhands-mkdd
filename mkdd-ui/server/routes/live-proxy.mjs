@@ -21,13 +21,22 @@ function agentCanvasHost() {
 
 // Common absolute-root path prefixes modern frameworks use for their own
 // static assets (Next.js's /_next/, Nuxt's /__nuxt/, and the generic
-// /static/ and /assets/ conventions many others use). When an employee's
-// app is mounted under /live/{project}/ instead of the site root, these
-// absolute references break unless rewritten - this is what makes a
-// live-mounted app actually render with styling/interactivity instead of
-// loading as a blank page, without requiring every employee to
-// special-case their framework's own basePath/publicPath config.
-const REWRITABLE_ROOT_PREFIXES = ["/_next/", "/__nuxt/", "/static/", "/assets/"];
+// /static/ and /assets/ conventions many others use), plus /api/ for the
+// app's own runtime API calls (React code executing in the browser does
+// fetch('/api/...') dynamically - not just references baked into the
+// initial HTML - confirmed live: Kirollos's own diagnosis showed his
+// app's admin panel calling GET /api/admins/me and
+// GET /api/payload-preferences/nav successfully when opened directly,
+// but blank through /live/ - those requests were resolving against
+// MKDD's own site root instead of his app, since /api/ wasn't being
+// rewritten). Rewriting only the prefix (not the full endpoint) still
+// works correctly even for dynamically-constructed URLs in minified JS,
+// since the literal quoted prefix string is what gets matched.
+//
+// Safe from colliding with MKDD's own real /api/* routes: this rewrite
+// only touches the PROXIED RESPONSE body from an employee's own live
+// app (server/routes/live-proxy.mjs), never MKDD's own requests/routes.
+const REWRITABLE_ROOT_PREFIXES = ["/_next/", "/__nuxt/", "/static/", "/assets/", "/api/"];
 
 /**
  * Rewrites occurrences of REWRITABLE_ROOT_PREFIXES that immediately
@@ -40,7 +49,7 @@ const REWRITABLE_ROOT_PREFIXES = ["/_next/", "/__nuxt/", "/static/", "/assets/"]
  * Exported separately so this can be unit-tested against real captured
  * HTML without needing a live server.
  */
-export function rewriteLiveAppHtml(html, projectSlug) {
+export function rewriteLiveAppPaths(html, projectSlug) {
   let result = html;
   for (const prefix of REWRITABLE_ROOT_PREFIXES) {
     const escaped = prefix.replace(/[/]/g, "\\/");
@@ -79,13 +88,15 @@ export function parseLiveProxyPath(rawPath) {
  * preview.mjs) mainly for consistency/sanity, not because it changes
  * the proxy target - the target is always the same shared port.
  *
- * HTML responses are rewritten (see rewriteLiveAppHtml) so common
- * framework asset paths resolve correctly under the /live/{project}/
- * mount point - this is what makes the live app actually render
- * correctly (BUGS_AND_FIXES.md #52), not just return a 200 with broken
- * styling. Non-HTML responses (the assets themselves, once correctly
- * requested at their rewritten /live/{project}/... URL) are streamed
- * through unmodified, since they're already reached at the right path.
+ * HTML and JavaScript responses are rewritten (see
+ * rewriteLiveAppPaths) so common framework asset paths AND the app's
+ * own runtime API calls resolve correctly under the /live/{project}/
+ * mount point - this is what makes the live app actually render and
+ * function correctly (BUGS_AND_FIXES.md #52, #55), not just return a
+ * 200 with broken styling or a UI that never loads its own data. Other
+ * responses (CSS, images, fonts) are streamed through unmodified, since
+ * they're already reached at the right path once their referencing
+ * HTML/JS has been rewritten.
  */
 export async function handleLiveProxy(req, res) {
   if (!req.url?.startsWith("/live/")) return false;
@@ -117,22 +128,28 @@ export async function handleLiveProxy(req, res) {
       },
     },
     (proxyRes) => {
-      const isHtml = (proxyRes.headers["content-type"] ?? "").includes("text/html");
+      const contentType = proxyRes.headers["content-type"] ?? "";
+      // Rewrite HTML (the initial page) and JavaScript (the app's own
+      // bundled code, where runtime fetch('/api/...') calls literally
+      // exist as quoted string prefixes) - not CSS/images/fonts, which
+      // don't reference these app-relative paths the same way.
+      const isRewritable =
+        contentType.includes("text/html") || contentType.includes("javascript");
 
-      if (!isHtml) {
+      if (!isRewritable) {
         res.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers);
         proxyRes.pipe(res);
         return;
       }
 
-      // HTML needs the full body in memory to rewrite it - can't stream
-      // and rewrite at the same time without risking splitting a match
-      // across chunk boundaries.
+      // Rewritable content needs the full body in memory to rewrite it -
+      // can't stream and rewrite at the same time without risking
+      // splitting a match across chunk boundaries.
       const chunks = [];
       proxyRes.on("data", (chunk) => chunks.push(chunk));
       proxyRes.on("end", () => {
         const original = Buffer.concat(chunks).toString("utf8");
-        const rewritten = rewriteLiveAppHtml(original, projectSlug);
+        const rewritten = rewriteLiveAppPaths(original, projectSlug);
 
         const headers = { ...proxyRes.headers };
         delete headers["content-encoding"];
