@@ -35,8 +35,11 @@ export default function WorkPlanPanel({ language, workPlan }: Props) {
   }
 
   return (
-    <section className="work-plan-panel" dir={language === "ar" ? "rtl" : "ltr"}>
-      <div className="work-plan-heading">
+    <details
+      className="work-plan-panel work-plan-drawer"
+      dir={language === "ar" ? "rtl" : "ltr"}
+    >
+      <summary className="work-plan-heading">
         <div>
           <strong>{title}</strong>
           <small>
@@ -45,7 +48,7 @@ export default function WorkPlanPanel({ language, workPlan }: Props) {
           </small>
         </div>
         <span>{workPlan.progressPercent}%</span>
-      </div>
+      </summary>
 
       <div
         className="work-plan-progress"
@@ -72,6 +75,6 @@ export default function WorkPlanPanel({ language, workPlan }: Props) {
           </article>
         ))}
       </div>
-    </section>
+    </details>
   );
 }

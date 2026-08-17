@@ -872,6 +872,23 @@ header button,
   gap: 12px;
 }
 
+.work-plan-drawer > .work-plan-heading {
+  cursor: pointer;
+  list-style: none;
+}
+
+.work-plan-drawer > .work-plan-heading::-webkit-details-marker {
+  display: none;
+}
+
+.work-plan-drawer .work-plan-progress {
+  margin-top: 2px;
+}
+
+.work-plan-drawer .work-plan-tasks {
+  margin-top: 10px;
+}
+
 .work-plan-heading > div {
   min-width: 0;
   display: flex;
