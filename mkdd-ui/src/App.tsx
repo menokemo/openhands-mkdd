@@ -128,6 +128,7 @@ export default function App() {
       <ChatScreen
         language={language}
         employee={selectedEmployee}
+        project={selectedProject}
         messages={messages}
         activity={activity}
         workPlan={workPlan}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { FaPaperclip, FaXmark } from "react-icons/fa6";
+import { FaPaperclip, FaFileArrowUp, FaXmark } from "react-icons/fa6";
 import type {
   ActivityEvent,
   AgentProfile,
@@ -8,14 +8,17 @@ import type {
   ConversationCost,
   ConversationExecutionStatus,
   WorkPlan,
+  Workspace,
 } from "../types";
 import EmployeeInsightsPanel from "../components/EmployeeInsightsPanel";
 import { formatMessageTime } from "../utils/formatMessageTime";
 import { detectPreviewLinks } from "../utils/detectPreviewLinks";
+import { uploadProjectFiles } from "../api/client";
 
 type Props = {
   language: "ar" | "en";
   employee: AgentProfile;
+  project: Workspace;
   messages: ChatMessage[];
   activity: ActivityEvent[];
   workPlan: WorkPlan | null;
@@ -24,7 +27,7 @@ type Props = {
   message: string;
   sending: boolean;
   setMessage: (value: string) => void;
-  sendMessage: (imageDataUrls?: string[]) => Promise<void>;
+  sendMessage: (imageDataUrls?: string[], overrideText?: string) => Promise<void>;
   startFreshConversation: (imageDataUrls?: string[]) => Promise<void>;
 };
 
@@ -38,6 +41,7 @@ type Props = {
 export default function ChatScreen({
   language,
   employee,
+  project,
   messages,
   activity,
   workPlan,
@@ -56,7 +60,53 @@ export default function ChatScreen({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composerRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const genericFileInputRef = useRef<HTMLInputElement>(null);
   const [pendingImages, setPendingImages] = useState<string[]>([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
+
+  // The project's slug on disk is the last path segment (e.g.
+  // "/projects/test-site" -> "test-site") - matches the same computation
+  // used elsewhere (ProjectHomeScreen.tsx's owner-upload feature) for
+  // the exact same reason: uploadProjectFiles needs the on-disk slug,
+  // not the full workspace path.
+  const projectSlug = project.path.split("/").filter(Boolean).pop() ?? "";
+
+  async function handleGenericFileUpload(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList);
+
+    setUploadingFile(true);
+    try {
+      await uploadProjectFiles(projectSlug, files);
+
+      // OpenHands' own message protocol only supports text and image
+      // content (confirmed directly from the customized Agent Canvas
+      // source's MessageContent type - no generic "file" attachment
+      // exists) - so a non-image file can't be sent as a chat
+      // attachment the way an image can. Instead it's uploaded to the
+      // project's real uploads/ folder (same mechanism as the Project
+      // Home owner-upload feature) and the employee is notified via an
+      // ordinary text message, so they know to look for it rather than
+      // relying on noticing it during an unrelated filesystem check.
+      const names = files.map((f) => f.name).join("، ");
+      const notice =
+        files.length === 1
+          ? language === "ar"
+            ? `رفعت ملف جديد للمشروع: ${names} — تقدر تلاقيه في مجلد uploads/.`
+            : `Uploaded a new file to the project: ${names} — you'll find it in the uploads/ folder.`
+          : language === "ar"
+            ? `رفعت ${files.length} ملفات جديدة للمشروع: ${names} — تقدر تلاقيهم في مجلد uploads/.`
+            : `Uploaded ${files.length} new files to the project: ${names} — you'll find them in the uploads/ folder.`;
+
+      await sendMessage(undefined, notice);
+    } catch {
+      alert(
+        language === "ar" ? "فشل رفع الملف، حاول تاني" : "File upload failed, try again",
+      );
+    } finally {
+      setUploadingFile(false);
+    }
+  }
 
   const readFileAsDataUrl = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -289,6 +339,18 @@ export default function ChatScreen({
             <FaPaperclip />
           </button>
 
+          <button
+            type="button"
+            className="composer-attach"
+            onClick={() => genericFileInputRef.current?.click()}
+            disabled={uploadingFile}
+            aria-label={
+              language === "ar" ? "رفع ملف للمشروع" : "Upload a file to the project"
+            }
+          >
+            <FaFileArrowUp />
+          </button>
+
           <input
             ref={fileInputRef}
             type="file"
@@ -302,6 +364,18 @@ export default function ChatScreen({
 
               const dataUrls = await Promise.all(files.map(readFileAsDataUrl));
               setPendingImages((current) => [...current, ...dataUrls].slice(0, 4));
+            }}
+          />
+
+          <input
+            ref={genericFileInputRef}
+            type="file"
+            multiple
+            hidden
+            onChange={(event) => {
+              const fileList = event.target.files;
+              event.target.value = "";
+              void handleGenericFileUpload(fileList);
             }}
           />
 

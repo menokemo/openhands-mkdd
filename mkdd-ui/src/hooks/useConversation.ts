@@ -246,11 +246,11 @@ export function useConversation({ project, employee }: Params) {
     };
   }, [project, employee, conversationId]);
 
-  async function sendMessage(imageDataUrls?: string[]) {
+  async function sendMessage(imageDataUrls?: string[], overrideText?: string) {
     const hasImages = imageDataUrls && imageDataUrls.length > 0;
-    if (!project || !employee || (!message.trim() && !hasImages) || sending) return;
+    const text = (overrideText ?? message).trim();
+    if (!project || !employee || (!text && !hasImages) || sending) return;
 
-    const text = message.trim();
     const optimisticId = `${OPTIMISTIC_ID_PREFIX}${Date.now()}`;
     const optimisticContent: ChatMessage["llm_message"]["content"] = [];
     if (text) optimisticContent.push({ type: "text", text });

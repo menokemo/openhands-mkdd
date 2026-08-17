@@ -922,7 +922,7 @@ header button,
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 6px 2px 10px;
+  padding: 6px 2px calc(var(--composer-height, 90px) + 12px + env(safe-area-inset-bottom));
 }
 
 .chat-screen > .composer {
