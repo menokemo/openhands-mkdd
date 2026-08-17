@@ -1,7 +1,4 @@
-import {
-  findAuthorizedConversation,
-  findAllAuthorizedConversations,
-} from "../lib/authorize-conversation.mjs";
+import { findAllAuthorizedConversations } from "../lib/authorize-conversation.mjs";
 import { normalizeConversation } from "../lib/normalize-conversation.mjs";
 
 export async function handleConversation(req, res) {
@@ -18,10 +15,21 @@ export async function handleConversation(req, res) {
     return true;
   }
 
-  const [found, allMatches] = await Promise.all([
-    findAuthorizedConversation({ project, employeeId, employeeName }),
-    findAllAuthorizedConversations({ project, employeeId, employeeName }),
-  ]);
+  // BUGS_AND_FIXES.md #64: originally this made two separate calls
+  // (findAuthorizedConversation + findAllAuthorizedConversations), each
+  // independently paginating /api/conversations/search - doubling the
+  // real request count for every one of the 14 employees polled every
+  // 5 seconds. One search covers both needs: /api/conversations/search's
+  // confirmed default order is newest-first, so the first matching item
+  // IS the "active" conversation findAuthorizedConversation used to
+  // return separately - no second call needed.
+  const allMatches = await findAllAuthorizedConversations({
+    project,
+    employeeId,
+    employeeName,
+  });
+
+  const found = allMatches[0] ?? null;
 
   // BUGS_AND_FIXES.md #63: totalCost sums EVERY conversation ever
   // created for this project+employee - including ones superseded by
