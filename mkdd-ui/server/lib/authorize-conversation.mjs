@@ -25,6 +25,47 @@ export function matchesEmployee(conversation, { project, employeeId, employeeNam
 }
 
 /**
+ * Like findAuthorizedConversation, but returns EVERY conversation
+ * matching a project+employee, not just the first/newest one.
+ *
+ * Needed for cost totals specifically (BUGS_AND_FIXES.md #63):
+ * "which conversation should the owner chat in" (the newest one,
+ * findAuthorizedConversation's job) and "how much has actually been
+ * spent on this employee for this project" (every conversation ever
+ * created, including ones superseded by "start new conversation") are
+ * genuinely different questions - money spent on an old, no-longer-
+ * active conversation was still really spent, and must not silently
+ * disappear from the project's total cost just because a newer
+ * conversation now takes messaging priority.
+ */
+export async function findAllAuthorizedConversations({
+  project,
+  employeeId,
+  employeeName,
+}) {
+  let pageId = null;
+  const matches = [];
+
+  do {
+    const qs = new URLSearchParams({ limit: "100" });
+    if (pageId) qs.set("page_id", pageId);
+
+    const response = await openhands(`/api/conversations/search?${qs}`);
+    const data = await response.json();
+
+    for (const conversation of data.items ?? []) {
+      if (matchesEmployee(conversation, { project, employeeId, employeeName })) {
+        matches.push(conversation);
+      }
+    }
+
+    pageId = data.next_page_id ?? null;
+  } while (pageId);
+
+  return matches;
+}
+
+/**
  * Paginates through /api/conversations/search looking for a conversation
  * that matches the given project/employee. Optionally also requires a
  * specific conversation ID (used by /api/chat/events, which must confirm

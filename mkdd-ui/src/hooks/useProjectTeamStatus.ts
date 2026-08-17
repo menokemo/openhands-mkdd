@@ -13,6 +13,9 @@ export type ProjectEmployeeStatus = {
   conversationId: string | null;
   executionStatus: ConversationExecutionStatus | null;
   cost: ConversationCost | null;
+  // Real sum across every conversation ever created for this
+  // employee on this project - see BUGS_AND_FIXES.md #63.
+  totalCost: number;
   workPlan: WorkPlan | null;
 };
 
@@ -60,6 +63,7 @@ export function useProjectTeamStatus({ project, employees }: Params) {
                 conversationId: null,
                 executionStatus: null,
                 cost: null,
+                totalCost: conversationResponse.totalCost ?? 0,
                 workPlan: null,
               };
             }
@@ -83,6 +87,7 @@ export function useProjectTeamStatus({ project, employees }: Params) {
               conversationId: conversation.id,
               executionStatus: conversation.execution_status ?? null,
               cost: conversation.cost ?? null,
+              totalCost: conversationResponse.totalCost ?? 0,
               workPlan: workPlan ?? null,
             };
           } catch {
@@ -104,6 +109,7 @@ export function useProjectTeamStatus({ project, employees }: Params) {
               ...update,
               workPlan: update.workPlan ?? old?.workPlan ?? null,
               cost: update.cost ?? old?.cost ?? null,
+              totalCost: update.totalCost ?? old?.totalCost ?? 0,
               executionStatus: update.executionStatus ?? old?.executionStatus ?? null,
               conversationId: update.conversationId ?? old?.conversationId ?? null,
             });
@@ -116,6 +122,7 @@ export function useProjectTeamStatus({ project, employees }: Params) {
                 conversationId: null,
                 executionStatus: null,
                 cost: null,
+                totalCost: 0,
                 workPlan: null,
               },
           );
@@ -143,8 +150,13 @@ export function useProjectTeamStatus({ project, employees }: Params) {
     [items],
   );
 
+  // BUGS_AND_FIXES.md #63: sums totalCost (every conversation ever
+  // created per employee, including ones superseded by "start new
+  // conversation"), not cost.accumulatedCost (which only reflects the
+  // currently-active conversation and would silently drop real money
+  // spent on an old, no-longer-active conversation).
   const totalProjectCost = useMemo(
-    () => items.reduce((sum, item) => sum + (item.cost?.accumulatedCost ?? 0), 0),
+    () => items.reduce((sum, item) => sum + item.totalCost, 0),
     [items],
   );
 
