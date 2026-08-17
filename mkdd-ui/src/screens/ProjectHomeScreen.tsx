@@ -96,12 +96,17 @@ const REVIEW_ICONS: Record<WorkflowReviewRole, React.ComponentType> = {
   security_review: FaShieldHalved,
 };
 
-function fileIcon(name: string) {
+function fileIcon(name: string, isDirectory: boolean) {
+  if (isDirectory) return { icon: <FaFolder />, colorClass: "file-icon-directory" };
+
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
-  if (IMAGE_EXTENSIONS.has(ext)) return <FaFileImage />;
-  if (CODE_EXTENSIONS.has(ext)) return <FaFileCode />;
-  if (TEXT_EXTENSIONS.has(ext)) return <FaFileLines />;
-  return <FaFile />;
+  if (IMAGE_EXTENSIONS.has(ext))
+    return { icon: <FaFileImage />, colorClass: "file-icon-image" };
+  if (CODE_EXTENSIONS.has(ext))
+    return { icon: <FaFileCode />, colorClass: "file-icon-code" };
+  if (TEXT_EXTENSIONS.has(ext))
+    return { icon: <FaFileLines />, colorClass: "file-icon-text" };
+  return { icon: <FaFile />, colorClass: "file-icon-generic" };
 }
 
 /**
@@ -423,18 +428,18 @@ export default function ProjectHomeScreen({
           {projectFiles.map((file) => {
             const depth = file.path.split("/").length - 1;
             const name = file.path.split("/").pop() ?? "";
+            const isDirectory = file.type === "directory";
+            const { icon, colorClass } = fileIcon(name, isDirectory);
 
             return (
               <li
                 key={file.path}
-                className={`project-file-row project-file-${file.type}`}
-                style={{ paddingInlineStart: `${depth * 20}px` }}
+                className="project-file-card"
+                style={{ marginInlineStart: `${depth * 16}px` }}
               >
-                <span className="project-file-icon">
-                  {file.type === "directory" ? <FaFolder /> : fileIcon(name)}
-                </span>
+                <span className={`project-file-icon ${colorClass}`}>{icon}</span>
 
-                {file.type === "directory" ? (
+                {isDirectory ? (
                   <span className="project-file-name">{name}</span>
                 ) : (
                   <a
