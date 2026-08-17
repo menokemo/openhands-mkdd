@@ -670,6 +670,7 @@ header button,
   width: 42px;
   height: 42px;
   flex: 0 0 42px;
+  overflow: hidden;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -2572,4 +2573,109 @@ header button,
   color: #fff;
   font-size: 9px;
   border: 2px solid var(--mkdd-page);
+}
+
+/* =========================
+   Avatar photo positioner (drag + zoom before upload)
+   ========================= */
+
+.avatar-positioner-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(6, 8, 14, 0.72);
+}
+
+.avatar-positioner-modal {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--mkdd-border-subtle);
+  border-radius: 20px;
+  background: var(--mkdd-page);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.avatar-positioner-modal h3 {
+  margin: 0;
+  color: var(--mkdd-text-primary);
+  font-size: 15px;
+}
+
+.avatar-positioner-modal p {
+  margin: 0;
+  color: var(--mkdd-text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.avatar-positioner-viewport {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 2px solid var(--mkdd-accent);
+  background: var(--mkdd-surface-raised);
+  cursor: grab;
+  touch-action: none;
+}
+
+.avatar-positioner-viewport:active {
+  cursor: grabbing;
+}
+
+.avatar-positioner-viewport img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.avatar-positioner-zoom {
+  width: 100%;
+  accent-color: var(--mkdd-accent);
+}
+
+.avatar-positioner-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.avatar-positioner-cancel,
+.avatar-positioner-confirm {
+  flex: 1 1 0;
+  padding: 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.avatar-positioner-cancel {
+  border: 1px solid var(--mkdd-border-subtle);
+  background: var(--mkdd-surface-raised);
+  color: var(--mkdd-text-secondary);
+}
+
+.avatar-positioner-confirm {
+  border: none;
+  background: var(--mkdd-accent);
+  color: #fff;
+}
+
+.avatar-positioner-confirm:disabled {
+  opacity: 0.6;
+  cursor: default;
 }

@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { FaCamera, FaSpinner, FaTriangleExclamation } from "react-icons/fa6";
 import type { AgentProfile } from "../types";
+import AvatarPositioner from "./AvatarPositioner";
 
 type Props = {
   employee: AgentProfile;
@@ -24,6 +25,12 @@ type UploadStatus = "idle" | "uploading" | "error";
  * ref+button approach is more explicit and, critically, this component
  * always shows the user what's happening (uploading / error) instead of
  * failing silently.
+ *
+ * After selecting a file, the raw image is NOT uploaded immediately -
+ * it's handed to AvatarPositioner first, so the owner can drag/zoom to
+ * choose exactly which part of the photo becomes the avatar
+ * (BUGS_AND_FIXES.md #73), instead of a silent center-crop with no
+ * control over framing.
  */
 export default function EmployeeAvatarUpload({
   employee,
@@ -33,6 +40,7 @@ export default function EmployeeAvatarUpload({
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<UploadStatus>("idle");
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
 
   const readFileAsDataUrl = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -50,11 +58,21 @@ export default function EmployeeAvatarUpload({
     e.target.value = ""; // allow re-selecting the same file next time
     if (!file) return;
 
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      setPendingImage(dataUrl);
+    } catch {
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 3000);
+    }
+  };
+
+  const handlePositionerConfirm = async (finalImageDataUrl: string) => {
+    setPendingImage(null);
     setStatus("uploading");
 
     try {
-      const dataUrl = await readFileAsDataUrl(file);
-      await onUpload(employee.name, dataUrl);
+      await onUpload(employee.name, finalImageDataUrl);
       setStatus("idle");
     } catch {
       setStatus("error");
@@ -97,6 +115,15 @@ export default function EmployeeAvatarUpload({
         hidden
         onChange={handleFileChange}
       />
+
+      {pendingImage && (
+        <AvatarPositioner
+          imageDataUrl={pendingImage}
+          language={language}
+          onConfirm={handlePositionerConfirm}
+          onCancel={() => setPendingImage(null)}
+        />
+      )}
     </div>
   );
 }
