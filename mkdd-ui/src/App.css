@@ -2146,14 +2146,14 @@ header button,
 
 .workflow-step-circle {
   flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   font-family: "Segoe UI", system-ui, sans-serif;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 750;
   background: var(--mkdd-surface-raised);
   border: 2px solid var(--mkdd-border-strong);
   color: var(--mkdd-text-muted);
@@ -2162,17 +2162,14 @@ header button,
 
 .workflow-step-line {
   flex: 1 1 auto;
-  height: 2px;
-  background: var(--mkdd-border-subtle);
-  margin-inline: -4px;
+  min-width: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--mkdd-border-strong);
 }
 
 .workflow-step-line-done {
   background: var(--mkdd-success);
-}
-
-.workflow-step:first-child .workflow-step-row {
-  margin-inline-start: 18px;
 }
 
 .workflow-step:last-child .workflow-step-line {
@@ -2233,7 +2230,7 @@ header button,
   background: var(--mkdd-accent);
   border-color: var(--mkdd-accent);
   color: #fff;
-  box-shadow: 0 0 0 4px var(--mkdd-accent-glow);
+  box-shadow: 0 0 0 3px var(--mkdd-accent-glow);
 }
 
 .workflow-step-current .workflow-step-label strong {
