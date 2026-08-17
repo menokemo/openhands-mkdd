@@ -76,3 +76,26 @@ export function getReviewStatusLabel(
   if (!status) return "—";
   return REVIEW_STATUS_LABELS[language][status] ?? status;
 }
+
+const FINDING_STATUS_LABELS: Record<"ar" | "en", Record<string, string>> = {
+  ar: {
+    open: "مفتوحة",
+    fixed_pending_verification: "بانتظار التحقق",
+    verified: "مُتحقَّق منها",
+  },
+  en: {
+    open: "Open",
+    fixed_pending_verification: "Pending verification",
+    verified: "Verified",
+  },
+};
+
+/**
+ * Finding status has three real persisted values (see
+ * server/routes/workflow.mjs's handleFindings). Translates them instead
+ * of showing the raw English status string regardless of the UI's
+ * current language - same reasoning as getReviewStatusLabel.
+ */
+export function getFindingStatusLabel(status: string, language: "ar" | "en"): string {
+  return FINDING_STATUS_LABELS[language][status] ?? status;
+}

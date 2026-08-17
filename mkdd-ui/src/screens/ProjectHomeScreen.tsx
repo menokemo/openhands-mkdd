@@ -23,6 +23,10 @@ import {
   FaLanguage,
   FaTriangleExclamation,
   FaMagnifyingGlass,
+  FaCircleCheck,
+  FaHourglassHalf,
+  FaUserClock,
+  FaWrench,
 } from "react-icons/fa6";
 import type { AgentProfile, Workspace } from "../types";
 import type { ProjectEmployeeStatus } from "../hooks/useProjectTeamStatus";
@@ -34,7 +38,9 @@ import {
   getGateLabel,
   getReviewLabel,
   getReviewStatusLabel,
+  getFindingStatusLabel,
 } from "../utils/workflowLabels";
+import { formatRelativeTime } from "../utils/formatRelativeTime";
 
 type Props = {
   project: Workspace;
@@ -156,15 +162,18 @@ export default function ProjectHomeScreen({
     }
   }
 
-  const workingCount = Array.from(teamStatusByEmployeeId.values()).filter(
+  const statusList = Array.from(teamStatusByEmployeeId.values());
+  const workingCount = statusList.filter(
     (item) => item.executionStatus === "running",
   ).length;
+  const waitingCount = statusList.filter(
+    (item) => item.executionStatus === "waiting_for_confirmation",
+  ).length;
+  const idleCount = employees.length - workingCount - waitingCount;
 
-  const openBlockers =
-    workflow?.blockers.filter((item) => item.status === "open").length ?? 0;
-
-  const unverifiedFindings =
-    workflow?.findings.filter((item) => item.status !== "verified").length ?? 0;
+  const openBlockers = workflow?.blockers.filter((item) => item.status === "open") ?? [];
+  const openFindings =
+    workflow?.findings.filter((item) => item.status !== "verified") ?? [];
 
   return (
     <main className="app project-home">
@@ -234,11 +243,6 @@ export default function ProjectHomeScreen({
         </article>
 
         <article className="project-summary-card">
-          <small>{language === "ar" ? "يعملون الآن" : "Working now"}</small>
-          <strong>{teamStatusLoading ? "…" : workingCount}</strong>
-        </article>
-
-        <article className="project-summary-card">
           <small>{language === "ar" ? "المرحلة الحالية" : "Current gate"}</small>
           <strong>
             {workflowLoading
@@ -263,54 +267,114 @@ export default function ProjectHomeScreen({
           loading={workflowLoading}
           language={language}
         />
+      </section>
 
-        <div className="section-heading workflow-subheading">
-          <div>
-            <small>Quality Gates</small>
-            <h3>{language === "ar" ? "المراجعات الإلزامية" : "Mandatory reviews"}</h3>
+      <section className="dashboard-grid">
+        <article className="dashboard-card">
+          <div className="dashboard-card-heading">
+            <FaUserClock />
+            <h3>{language === "ar" ? "حالة الفريق الآن" : "Work Now"}</h3>
           </div>
-        </div>
+          <ul className="dashboard-status-list">
+            <li className="dashboard-status-active">
+              <span className="dashboard-status-dot" aria-hidden="true" />
+              {language === "ar" ? "يعملون الآن" : "Active workers"}
+              <strong>{teamStatusLoading ? "…" : workingCount}</strong>
+            </li>
+            <li className="dashboard-status-waiting">
+              <span className="dashboard-status-dot" aria-hidden="true" />
+              {language === "ar" ? "بانتظار رد" : "Waiting for input"}
+              <strong>{teamStatusLoading ? "…" : waitingCount}</strong>
+            </li>
+            <li className="dashboard-status-idle">
+              <span className="dashboard-status-dot" aria-hidden="true" />
+              {language === "ar" ? "خاملون" : "Idle"}
+              <strong>{teamStatusLoading ? "…" : idleCount}</strong>
+            </li>
+          </ul>
+        </article>
 
-        <div className="workflow-review-grid">
-          {REVIEW_ROLES.map((reviewRole) => {
-            const review = workflow?.reviews[reviewRole];
-            const ReviewIcon = REVIEW_ICONS[reviewRole];
+        <article className="dashboard-card">
+          <div className="dashboard-card-heading">
+            <FaClipboardCheck />
+            <h3>{language === "ar" ? "المراجعات الإلزامية" : "Mandatory Reviews"}</h3>
+          </div>
+          <ul className="dashboard-review-list">
+            {REVIEW_ROLES.map((reviewRole) => {
+              const review = workflow?.reviews[reviewRole];
+              const ReviewIcon = REVIEW_ICONS[reviewRole];
+              const isComplete = review?.status === "complete";
 
-            return (
-              <article
-                className={`workflow-review-card workflow-review-${review?.status ?? "unknown"}`}
-                key={reviewRole}
-              >
-                <small>
+              return (
+                <li key={reviewRole} className={isComplete ? "review-complete" : ""}>
                   <ReviewIcon />
-                  {getReviewLabel(reviewRole, language)}
-                </small>
-                <strong>
-                  {workflowLoading ? "…" : getReviewStatusLabel(review?.status, language)}
-                </strong>
-                {review?.reviewedBy && <span>{review.reviewedBy}</span>}
-              </article>
-            );
-          })}
-        </div>
+                  <span>{getReviewLabel(reviewRole, language)}</span>
+                  <em>
+                    {isComplete && <FaCircleCheck />}
+                    {workflowLoading
+                      ? "…"
+                      : getReviewStatusLabel(review?.status, language)}
+                  </em>
+                </li>
+              );
+            })}
+          </ul>
+        </article>
 
-        <div className="workflow-summary-row">
-          <article>
-            <span>
-              <FaTriangleExclamation />
-              {language === "ar" ? "عوائق مفتوحة" : "Open blockers"}
-            </span>
-            <strong>{workflowLoading ? "…" : openBlockers}</strong>
-          </article>
+        <article className="dashboard-card">
+          <div className="dashboard-card-heading">
+            <FaTriangleExclamation />
+            <h3>{language === "ar" ? "العوائق" : "Blockers"}</h3>
+            <span className="dashboard-card-count">{openBlockers.length}</span>
+          </div>
+          {openBlockers.length === 0 ? (
+            <p className="dashboard-empty">
+              {language === "ar" ? "لا يوجد عوائق مفتوحة" : "No open blockers"}
+            </p>
+          ) : (
+            <ul className="dashboard-item-list">
+              {openBlockers.map((blocker) => (
+                <li key={blocker.id}>
+                  <strong>{blocker.title}</strong>
+                  <span>
+                    {blocker.createdBy} ·{" "}
+                    {formatRelativeTime(blocker.createdAt, language)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
 
-          <article>
-            <span>
-              <FaMagnifyingGlass />
-              {language === "ar" ? "ملاحظات غير مؤكدة" : "Unverified findings"}
-            </span>
-            <strong>{workflowLoading ? "…" : unverifiedFindings}</strong>
-          </article>
-        </div>
+        <article className="dashboard-card">
+          <div className="dashboard-card-heading">
+            <FaMagnifyingGlass />
+            <h3>{language === "ar" ? "الملاحظات" : "Findings"}</h3>
+            <span className="dashboard-card-count">{openFindings.length}</span>
+          </div>
+          {openFindings.length === 0 ? (
+            <p className="dashboard-empty">
+              {language === "ar" ? "لا توجد ملاحظات مفتوحة" : "No open findings"}
+            </p>
+          ) : (
+            <ul className="dashboard-item-list">
+              {openFindings.map((finding) => (
+                <li key={finding.id}>
+                  <strong>{finding.title}</strong>
+                  <span>
+                    {finding.reviewer} ·{" "}
+                    {finding.status === "fixed_pending_verification" ? (
+                      <FaWrench />
+                    ) : (
+                      <FaHourglassHalf />
+                    )}{" "}
+                    {getFindingStatusLabel(finding.status, language)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
       </section>
 
       <section className="project-home-section project-files-section">

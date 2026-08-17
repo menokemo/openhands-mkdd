@@ -1409,87 +1409,6 @@ header button,
   font-size: 13px;
 }
 
-.project-home .workflow-subheading {
-  margin-top: 16px;
-  margin-bottom: 9px;
-}
-
-.project-home .workflow-review-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.project-home .workflow-review-card {
-  min-height: 88px;
-  padding: 11px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  border: 1px solid var(--mkdd-border-strong);
-  border-radius: 15px;
-  background: var(--mkdd-surface);
-}
-
-.project-home .workflow-review-card small {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--mkdd-text-muted);
-  font-size: 9px;
-  font-weight: 650;
-}
-
-.project-home .workflow-review-card strong {
-  width: fit-content;
-  padding: 4px 7px;
-  border-radius: 999px;
-  background: rgba(222, 160, 51, 0.12);
-  color: var(--mkdd-warning);
-  font-size: 8px;
-  text-transform: capitalize;
-}
-
-.project-home .workflow-review-complete {
-  border-color: rgba(69, 193, 120, 0.33);
-}
-
-.project-home .workflow-review-complete strong {
-  background: rgba(69, 193, 120, 0.11);
-  color: var(--mkdd-success);
-}
-
-.project-home .workflow-summary-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.project-home .workflow-summary-row article {
-  min-height: 70px;
-  padding: 11px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  border: 1px solid var(--mkdd-border-strong);
-  border-radius: 14px;
-  background: var(--mkdd-surface);
-}
-
-.project-home .workflow-summary-row span {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--mkdd-text-muted);
-  font-size: 9px;
-}
-
-.project-home .workflow-summary-row strong {
-  color: var(--mkdd-text-primary);
-  font-size: 20px;
-}
-
 .project-home .employee-grid {
   display: flex;
   gap: 10px;
@@ -2688,4 +2607,184 @@ header button,
 .avatar-positioner-confirm:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+/* =========================
+   MKDD Project Dashboard Cards (real-data grid, compact style)
+   ========================= */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+@media (min-width: 620px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dashboard-card {
+  padding: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--mkdd-border-subtle);
+  border-radius: 16px;
+  background: var(--mkdd-surface);
+}
+
+.dashboard-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--mkdd-text-secondary);
+  font-size: 13px;
+}
+
+.dashboard-card-heading h3 {
+  margin: 0;
+  flex: 1 1 auto;
+  color: var(--mkdd-text-primary);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.dashboard-card-count {
+  flex: 0 0 auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--mkdd-danger-tint);
+  color: var(--mkdd-danger);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.dashboard-empty {
+  margin: 0;
+  padding: 10px 0;
+  color: var(--mkdd-text-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Work Now (team status) */
+
+.dashboard-status-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-status-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--mkdd-text-secondary);
+  font-size: 12px;
+}
+
+.dashboard-status-list strong {
+  margin-inline-start: auto;
+  color: var(--mkdd-text-primary);
+  font-size: 14px;
+}
+
+.dashboard-status-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+}
+
+.dashboard-status-active .dashboard-status-dot {
+  background: var(--mkdd-success);
+}
+
+.dashboard-status-waiting .dashboard-status-dot {
+  background: var(--mkdd-warning);
+}
+
+.dashboard-status-idle .dashboard-status-dot {
+  background: var(--mkdd-text-disabled);
+}
+
+/* Mandatory reviews (compact list) */
+
+.dashboard-review-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-review-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--mkdd-text-muted);
+  font-size: 12px;
+}
+
+.dashboard-review-list li span {
+  flex: 1 1 auto;
+  color: var(--mkdd-text-secondary);
+}
+
+.dashboard-review-list li em {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--mkdd-warning);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.dashboard-review-list li.review-complete em {
+  color: var(--mkdd-success);
+}
+
+/* Blockers / Findings item lists */
+
+.dashboard-item-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.dashboard-item-list li {
+  padding-inline-start: 10px;
+  border-inline-start: 2px solid var(--mkdd-danger);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dashboard-item-list li strong {
+  color: var(--mkdd-text-primary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.dashboard-item-list li span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--mkdd-text-muted);
+  font-size: 10px;
 }
