@@ -1,6 +1,13 @@
-import { FaCheck } from "react-icons/fa6";
+import {
+  FaCheck,
+  FaClipboardList,
+  FaPalette,
+  FaCompassDrafting,
+  FaRocket,
+} from "react-icons/fa6";
 import type { WorkflowState } from "../api/client";
 import { GATES, getGateLabel } from "../utils/workflowLabels";
+import type { WorkflowGateName } from "../api/client";
 
 type Props = {
   workflow: WorkflowState | null;
@@ -12,6 +19,13 @@ const STATUS_LABELS = {
   ar: { approved: "معتمدة", inProgress: "قيد التنفيذ", pending: "قيد الانتظار" },
   en: { approved: "Approved", inProgress: "In Progress", pending: "Pending" },
 } as const;
+
+const GATE_ICONS: Record<WorkflowGateName, React.ComponentType> = {
+  requirements: FaClipboardList,
+  ui_ux: FaPalette,
+  architecture: FaCompassDrafting,
+  production: FaRocket,
+};
 
 /**
  * The numbered gate-progression stepper (matches the reference design's
@@ -54,7 +68,13 @@ export default function WorkflowStepper({ workflow, loading, language }: Props) 
             </div>
 
             <div className="workflow-step-label">
-              <strong>{getGateLabel(gate, language)}</strong>
+              <strong>
+                {(() => {
+                  const GateIcon = GATE_ICONS[gate];
+                  return <GateIcon />;
+                })()}
+                {getGateLabel(gate, language)}
+              </strong>
               <span>
                 {loading
                   ? "…"

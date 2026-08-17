@@ -21,13 +21,20 @@ import {
   FaPen,
   FaRocket,
   FaLanguage,
+  FaTriangleExclamation,
+  FaMagnifyingGlass,
 } from "react-icons/fa6";
 import type { AgentProfile, Workspace } from "../types";
 import type { ProjectEmployeeStatus } from "../hooks/useProjectTeamStatus";
-import type { ProjectFile, WorkflowState } from "../api/client";
+import type { ProjectFile, WorkflowState, WorkflowReviewRole } from "../api/client";
 import { fetchProjectFiles, uploadProjectFiles } from "../api/client";
 import WorkflowStepper from "../components/WorkflowStepper";
-import { REVIEW_ROLES, getGateLabel, getReviewLabel } from "../utils/workflowLabels";
+import {
+  REVIEW_ROLES,
+  getGateLabel,
+  getReviewLabel,
+  getReviewStatusLabel,
+} from "../utils/workflowLabels";
 
 type Props = {
   project: Workspace;
@@ -74,6 +81,13 @@ const ROLE_ICONS: Record<string, React.ComponentType> = {
   "technical-writer": FaPen,
   "release-manager": FaRocket,
   "content-writer": FaLanguage,
+};
+
+const REVIEW_ICONS: Record<WorkflowReviewRole, React.ComponentType> = {
+  qa: FaClipboardCheck,
+  test_automation: FaVial,
+  code_review: FaCodeBranch,
+  security_review: FaShieldHalved,
 };
 
 function fileIcon(name: string) {
@@ -260,14 +274,20 @@ export default function ProjectHomeScreen({
         <div className="workflow-review-grid">
           {REVIEW_ROLES.map((reviewRole) => {
             const review = workflow?.reviews[reviewRole];
+            const ReviewIcon = REVIEW_ICONS[reviewRole];
 
             return (
               <article
                 className={`workflow-review-card workflow-review-${review?.status ?? "unknown"}`}
                 key={reviewRole}
               >
-                <small>{getReviewLabel(reviewRole, language)}</small>
-                <strong>{workflowLoading ? "…" : (review?.status ?? "—")}</strong>
+                <small>
+                  <ReviewIcon />
+                  {getReviewLabel(reviewRole, language)}
+                </small>
+                <strong>
+                  {workflowLoading ? "…" : getReviewStatusLabel(review?.status, language)}
+                </strong>
                 {review?.reviewedBy && <span>{review.reviewedBy}</span>}
               </article>
             );
@@ -276,12 +296,18 @@ export default function ProjectHomeScreen({
 
         <div className="workflow-summary-row">
           <article>
-            <span>{language === "ar" ? "عوائق مفتوحة" : "Open blockers"}</span>
+            <span>
+              <FaTriangleExclamation />
+              {language === "ar" ? "عوائق مفتوحة" : "Open blockers"}
+            </span>
             <strong>{workflowLoading ? "…" : openBlockers}</strong>
           </article>
 
           <article>
-            <span>{language === "ar" ? "ملاحظات غير مؤكدة" : "Unverified findings"}</span>
+            <span>
+              <FaMagnifyingGlass />
+              {language === "ar" ? "ملاحظات غير مؤكدة" : "Unverified findings"}
+            </span>
             <strong>{workflowLoading ? "…" : unverifiedFindings}</strong>
           </article>
         </div>

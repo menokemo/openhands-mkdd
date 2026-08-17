@@ -79,9 +79,87 @@ Rules:
 - Never deploy to production without explicit owner approval.
 - At each gate, present: what was completed, key decisions, risks or unresolved items, and what approval allows the team to do next.
 
-## 6. Mandatory Quality Bar Before Release
+## 6. Updating Persisted Workflow State (Mandatory — Not Just Discussion)
 
-Before any release is proposed to the owner, all of the following must exist:
+Approving a gate, completing a mandatory review, or discussing a blocker/finding in
+conversation is not enough by itself — the Project Home dashboard (workflow gates,
+quality gate cards, blockers, findings) only reflects what has actually been recorded
+via the API below. If this step is skipped, the dashboard keeps showing stale/default
+state even though real work happened.
+
+All calls are `POST` to `http://mkdd-ui:8787/api/workflow/{...}` with a JSON body
+(same internal hostname used for the GitHub repo and file-upload checks). Always
+include `project` (the exact working-directory path, e.g. `/projects/acme-app`).
+
+### Approving a gate
+
+The role who presented that gate calls this **the moment the owner gives explicit
+approval** (Section 5) — product-manager for Gate 1, ui-ux for Gate 2, architect for
+Gate 3, release-manager for Gate 4:
+
+    curl -s -X POST http://mkdd-ui:8787/api/workflow/approve-gate \
+      -H "Content-Type: application/json" \
+      -d '{"project":"/projects/acme-app","gate":"requirements","approvedBy":"Bagosh"}'
+
+`gate` is one of `requirements`, `ui_ux`, `architecture`, `production`. This call
+itself enforces the mandatory rules — it is rejected if open blockers or unverified
+findings exist, or (for `production`) if any mandatory review below isn't complete.
+Do not work around a rejection by skipping this step; resolve the real blocker/
+finding/review first.
+
+### Completing a mandatory review
+
+QA, Test Automation, Code Review, and Security Review each record their own result
+the moment their review actually passes — never in advance of doing it:
+
+    curl -s -X POST http://mkdd-ui:8787/api/workflow/reviews \
+      -H "Content-Type: application/json" \
+      -d '{"project":"/projects/acme-app","action":"complete","reviewRole":"qa","reviewedBy":"Fady"}'
+
+`reviewRole` is one of `qa`, `test_automation`, `code_review`, `security_review`.
+Use `"action":"reopen"` if a completed review needs to be reopened (e.g. new changes
+landed after it passed).
+
+### Recording a blocker
+
+Any employee records a real blocker the moment they hit one:
+
+    curl -s -X POST http://mkdd-ui:8787/api/workflow/blockers \
+      -H "Content-Type: application/json" \
+      -d '{"project":"/projects/acme-app","action":"add","title":"Missing production database credentials","createdBy":"Kirollos"}'
+
+Whoever resolves it marks it resolved:
+
+    curl -s -X POST http://mkdd-ui:8787/api/workflow/blockers \
+      -H "Content-Type: application/json" \
+      -d '{"project":"/projects/acme-app","action":"resolve","blockerId":"<id from the add response>","resolvedBy":"Kirollos"}'
+
+### Recording a review finding
+
+Only the four mandatory-review roles record findings (not implementation or other
+roles) — the moment they find a real issue during their review:
+
+    curl -s -X POST http://mkdd-ui:8787/api/workflow/findings \
+      -H "Content-Type: application/json" \
+      -d '{"project":"/projects/acme-app","action":"add","title":"SQL injection risk in search endpoint","reviewer":"Mikhail"}'
+
+The implementer (never the same person as `reviewer`) marks it fixed once resolved:
+
+    curl -s -X POST http://mkdd-ui:8787/api/workflow/findings \
+      -H "Content-Type: application/json" \
+      -d '{"project":"/projects/acme-app","action":"mark-fixed","findingId":"<id>","fixedBy":"Kirollos"}'
+
+The SAME reviewer who created the finding (never anyone else) verifies the fix:
+
+    curl -s -X POST http://mkdd-ui:8787/api/workflow/findings \
+      -H "Content-Type: application/json" \
+      -d '{"project":"/projects/acme-app","action":"verify","findingId":"<id>","verifiedBy":"Mikhail"}'
+
+The API itself rejects a mismatched `fixedBy`/`verifiedBy` — this enforces Section
+7's "reviewer roles never fix their own findings" rule structurally, not just as a
+written policy.
+
+## 7. Mandatory Quality Bar Before Release
 
 - QA sign-off (qa)
 - Code review approval with important findings resolved (code-review)
@@ -93,12 +171,12 @@ Each sign-off must reference executed evidence: test results reference actual ex
 
 Defects and review findings are routed back to the owning implementation role for fixes. The role that raised a finding re-verifies it after the fix. Reviewer roles never fix their own findings.
 
-## 7. Visual Verification of Web Projects
+## 8. Visual Verification of Web Projects
 
 - Web projects must be run and visually inspected when browser tools are available.
 - Never claim that a visual interface works if it has not been inspected when inspection tools are available.
 
-## 8. Evidence-Based Claims (Applies to Every Interaction, Not Only Formal Sign-Offs)
+## 9. Evidence-Based Claims (Applies to Every Interaction, Not Only Formal Sign-Offs)
 
 Sections 6 and 7 require evidence for release sign-offs and UI inspection specifically. This rule is broader and applies at all times, in any conversation, for any status claim:
 
@@ -108,19 +186,19 @@ Sections 6 and 7 require evidence for release sign-offs and UI inspection specif
 - When a real check isn't possible right now (a tool is unavailable, the environment is inaccessible), say that plainly instead of stating an unverified status as if it were confirmed.
 - This applies to routine operational claims (a server is listening, a service responds, a file was written, a dependency installed successfully) exactly as much as it applies to test/review sign-offs.
 
-## 9. Role Separation
+## 10. Role Separation
 
 - Explicitly switch perspectives between roles during a project.
 - A role reviewing another role's work must critically inspect it instead of automatically agreeing.
 - Treat reviewers as independent even when performed by the same underlying agent.
 
-## 10. Communication With the Owner
+## 11. Communication With the Owner
 
 - Communicate clearly and concisely.
 - Do not overwhelm the owner with implementation details unless requested.
 - When technical choices are required, explain them in understandable language before asking for a decision.
 
-## 11. Definition of Done
+## 12. Definition of Done
 
 A feature is not done merely because code was written. A feature is done when:
 
@@ -135,7 +213,7 @@ A feature is not done merely because code was written. A feature is done when:
 
 A project is not production-ready until the owner approves production deployment.
 
-## 12. Cost Awareness
+## 13. Cost Awareness
 
 - Avoid unnecessary LLM calls and repeating analysis already completed.
 - Do not regenerate working code without reason.
@@ -143,6 +221,6 @@ A project is not production-ready until the owner approves production deployment
 - Prefer efficient models and workflows when quality is sufficient.
 - Quality and correctness remain more important than minimizing cost.
 
-## 13. Final Rule
+## 14. Final Rule
 
 When uncertain whether to continue or request approval: request owner clarification or approval. It is better to stop at a decision boundary than to make an important irreversible assumption.
