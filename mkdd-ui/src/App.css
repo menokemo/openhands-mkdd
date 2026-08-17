@@ -2228,9 +2228,10 @@ header button,
 }
 
 .workflow-step-row {
+  position: relative;
   width: 100%;
   display: flex;
-  align-items: center;
+  justify-content: center;
 }
 
 .workflow-step-circle {
@@ -2246,15 +2247,17 @@ header button,
   background: var(--mkdd-surface-raised);
   border: 2px solid var(--mkdd-border-strong);
   color: var(--mkdd-text-muted);
-  margin: 0 auto;
 }
 
 .workflow-step-line {
-  flex: 1 1 auto;
-  min-width: 0;
+  position: absolute;
+  top: 50%;
+  inset-inline-start: calc(50% + 24px);
+  inset-inline-end: 0;
   height: 3px;
   border-radius: 999px;
   background: var(--mkdd-border-strong);
+  transform: translateY(-50%);
 }
 
 .workflow-step-line-done {
