@@ -272,7 +272,7 @@ export default function ProjectHomeScreen({
       <section className="dashboard-grid">
         <article className="dashboard-card">
           <div className="dashboard-card-heading">
-            <FaUserClock />
+            <FaUserClock className="dashboard-icon-info" />
             <h3>{language === "ar" ? "حالة الفريق الآن" : "Work Now"}</h3>
           </div>
           <ul className="dashboard-status-list">
@@ -296,7 +296,7 @@ export default function ProjectHomeScreen({
 
         <article className="dashboard-card">
           <div className="dashboard-card-heading">
-            <FaClipboardCheck />
+            <FaClipboardCheck className="dashboard-icon-accent" />
             <h3>{language === "ar" ? "المراجعات الإلزامية" : "Mandatory Reviews"}</h3>
           </div>
           <ul className="dashboard-review-list">
@@ -323,7 +323,7 @@ export default function ProjectHomeScreen({
 
         <article className="dashboard-card">
           <div className="dashboard-card-heading">
-            <FaTriangleExclamation />
+            <FaTriangleExclamation className="dashboard-icon-danger" />
             <h3>{language === "ar" ? "العوائق" : "Blockers"}</h3>
             <span className="dashboard-card-count">{openBlockers.length}</span>
           </div>
@@ -348,7 +348,7 @@ export default function ProjectHomeScreen({
 
         <article className="dashboard-card">
           <div className="dashboard-card-heading">
-            <FaMagnifyingGlass />
+            <FaMagnifyingGlass className="dashboard-icon-warning" />
             <h3>{language === "ar" ? "الملاحظات" : "Findings"}</h3>
             <span className="dashboard-card-count">{openFindings.length}</span>
           </div>

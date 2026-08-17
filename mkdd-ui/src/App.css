@@ -2196,6 +2196,10 @@ header button,
   font-weight: 700;
 }
 
+.workflow-step-label strong svg {
+  font-size: 14px;
+}
+
 .workflow-step-label span {
   font-family: "Segoe UI", system-ui, sans-serif;
   font-size: 10px;
@@ -2644,6 +2648,27 @@ header button,
   font-size: 13px;
 }
 
+.dashboard-card-heading svg {
+  flex: 0 0 auto;
+  font-size: 18px;
+}
+
+.dashboard-icon-info {
+  color: var(--mkdd-info);
+}
+
+.dashboard-icon-accent {
+  color: var(--mkdd-accent);
+}
+
+.dashboard-icon-danger {
+  color: var(--mkdd-danger);
+}
+
+.dashboard-icon-warning {
+  color: var(--mkdd-warning);
+}
+
 .dashboard-card-heading h3 {
   margin: 0;
   flex: 1 1 auto;
@@ -2737,6 +2762,12 @@ header button,
   font-size: 12px;
 }
 
+.dashboard-review-list li > svg:first-child {
+  flex: 0 0 auto;
+  font-size: 15px;
+  color: var(--mkdd-accent-soft);
+}
+
 .dashboard-review-list li span {
   flex: 1 1 auto;
   color: var(--mkdd-text-secondary);
@@ -2787,4 +2818,8 @@ header button,
   gap: 4px;
   color: var(--mkdd-text-muted);
   font-size: 10px;
+}
+
+.dashboard-item-list li span svg {
+  font-size: 12px;
 }
