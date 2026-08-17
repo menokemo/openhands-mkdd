@@ -20,11 +20,21 @@ const STATUS_LABELS = {
   en: { approved: "Approved", inProgress: "In Progress", pending: "Pending" },
 } as const;
 
-const GATE_ICONS: Record<WorkflowGateName, React.ComponentType> = {
+const GATE_ICONS: Record<
+  WorkflowGateName,
+  React.ComponentType<{ className?: string }>
+> = {
   requirements: FaClipboardList,
   ui_ux: FaPalette,
   architecture: FaCompassDrafting,
   production: FaRocket,
+};
+
+const GATE_ICON_COLORS: Record<WorkflowGateName, string> = {
+  requirements: "gate-icon-accent-deep",
+  ui_ux: "gate-icon-accent",
+  architecture: "gate-icon-accent-soft",
+  production: "gate-icon-success",
 };
 
 /**
@@ -71,7 +81,7 @@ export default function WorkflowStepper({ workflow, loading, language }: Props) 
               <strong>
                 {(() => {
                   const GateIcon = GATE_ICONS[gate];
-                  return <GateIcon />;
+                  return <GateIcon className={GATE_ICON_COLORS[gate]} />;
                 })()}
                 {getGateLabel(gate, language)}
               </strong>

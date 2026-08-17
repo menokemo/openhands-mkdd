@@ -2197,7 +2197,23 @@ header button,
 }
 
 .workflow-step-label strong svg {
-  font-size: 14px;
+  font-size: 16px;
+}
+
+.gate-icon-accent-deep {
+  color: var(--mkdd-accent-deep);
+}
+
+.gate-icon-accent {
+  color: var(--mkdd-accent);
+}
+
+.gate-icon-accent-soft {
+  color: var(--mkdd-accent-soft);
+}
+
+.gate-icon-success {
+  color: var(--mkdd-success);
 }
 
 .workflow-step-label span {
