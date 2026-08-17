@@ -141,10 +141,6 @@ export type Conversation = {
 
 export type ConversationResponse = {
   conversation: Conversation | null;
-  // Real sum across every conversation ever created for this
-  // project+employee, not just the currently-active one - see
-  // BUGS_AND_FIXES.md #63.
-  totalCost: number;
 };
 
 export type WorkPlan = {

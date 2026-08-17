@@ -13,9 +13,6 @@ export type ProjectEmployeeStatus = {
   conversationId: string | null;
   executionStatus: ConversationExecutionStatus | null;
   cost: ConversationCost | null;
-  // Real sum across every conversation ever created for this
-  // employee on this project - see BUGS_AND_FIXES.md #63.
-  totalCost: number;
   workPlan: WorkPlan | null;
 };
 
@@ -24,6 +21,13 @@ type Params = {
   employees: AgentProfile[];
 };
 
+// BUGS_AND_FIXES.md #65: this hook polls /api/conversation for every
+// employee every 5 seconds - it must stay on the cheap,
+// short-circuiting per-employee lookup only. Project-level total cost
+// (an expensive exhaustive scan) intentionally lives in a separate
+// hook (useProjectTotalCost) on its own, much slower refresh schedule
+// - bundling it into this hot path previously broke the UI entirely
+// as conversation volume grew.
 export function useProjectTeamStatus({ project, employees }: Params) {
   const [items, setItems] = useState<ProjectEmployeeStatus[]>([]);
   const [loading, setLoading] = useState(false);
@@ -63,7 +67,6 @@ export function useProjectTeamStatus({ project, employees }: Params) {
                 conversationId: null,
                 executionStatus: null,
                 cost: null,
-                totalCost: conversationResponse.totalCost ?? 0,
                 workPlan: null,
               };
             }
@@ -87,7 +90,6 @@ export function useProjectTeamStatus({ project, employees }: Params) {
               conversationId: conversation.id,
               executionStatus: conversation.execution_status ?? null,
               cost: conversation.cost ?? null,
-              totalCost: conversationResponse.totalCost ?? 0,
               workPlan: workPlan ?? null,
             };
           } catch {
@@ -109,7 +111,6 @@ export function useProjectTeamStatus({ project, employees }: Params) {
               ...update,
               workPlan: update.workPlan ?? old?.workPlan ?? null,
               cost: update.cost ?? old?.cost ?? null,
-              totalCost: update.totalCost ?? old?.totalCost ?? 0,
               executionStatus: update.executionStatus ?? old?.executionStatus ?? null,
               conversationId: update.conversationId ?? old?.conversationId ?? null,
             });
@@ -122,7 +123,6 @@ export function useProjectTeamStatus({ project, employees }: Params) {
                 conversationId: null,
                 executionStatus: null,
                 cost: null,
-                totalCost: 0,
                 workPlan: null,
               },
           );
@@ -150,20 +150,9 @@ export function useProjectTeamStatus({ project, employees }: Params) {
     [items],
   );
 
-  // BUGS_AND_FIXES.md #63: sums totalCost (every conversation ever
-  // created per employee, including ones superseded by "start new
-  // conversation"), not cost.accumulatedCost (which only reflects the
-  // currently-active conversation and would silently drop real money
-  // spent on an old, no-longer-active conversation).
-  const totalProjectCost = useMemo(
-    () => items.reduce((sum, item) => sum + item.totalCost, 0),
-    [items],
-  );
-
   return {
     items,
     byEmployeeId,
-    totalProjectCost,
     loading,
   };
 }

@@ -23,6 +23,7 @@ import { useTheme } from "./hooks/useTheme";
 import { useProjectNavigation } from "./hooks/useProjectNavigation";
 import { useConversation } from "./hooks/useConversation";
 import { useProjectTeamStatus } from "./hooks/useProjectTeamStatus";
+import { useProjectTotalCost } from "./hooks/useProjectTotalCost";
 import { useProjectWorkflow } from "./hooks/useProjectWorkflow";
 import { groupProjectsByGateStatus } from "./utils/projectGateStatus";
 
@@ -64,14 +65,13 @@ export default function App() {
     employee: selectedEmployee,
   });
 
-  const {
-    byEmployeeId: teamStatusByEmployeeId,
-    totalProjectCost,
-    loading: teamStatusLoading,
-  } = useProjectTeamStatus({
-    project: selectedProject,
-    employees,
-  });
+  const { byEmployeeId: teamStatusByEmployeeId, loading: teamStatusLoading } =
+    useProjectTeamStatus({
+      project: selectedProject,
+      employees,
+    });
+
+  const { totalCost: totalProjectCost } = useProjectTotalCost(selectedProject);
 
   const { workflow, loading: workflowLoading } = useProjectWorkflow({
     project: selectedProject,

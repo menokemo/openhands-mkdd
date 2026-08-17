@@ -18,6 +18,17 @@ export async function fetchProjectFiles(projectSlug: string): Promise<ProjectFil
   return data.files ?? [];
 }
 
+/**
+ * Real sum across every conversation ever created for a project
+ * (across all employees). Deliberately a separate call from
+ * fetchConversation - see BUGS_AND_FIXES.md #65.
+ */
+export async function fetchProjectTotalCost(projectSlug: string): Promise<number> {
+  const r = await fetch(`/api/projects/${encodeURIComponent(projectSlug)}/total-cost`);
+  const data = await r.json();
+  return typeof data.totalCost === "number" ? data.totalCost : 0;
+}
+
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

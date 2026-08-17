@@ -25,24 +25,17 @@ export function matchesEmployee(conversation, { project, employeeId, employeeNam
 }
 
 /**
- * Like findAuthorizedConversation, but returns EVERY conversation
- * matching a project+employee, not just the first/newest one.
- *
- * Needed for cost totals specifically (BUGS_AND_FIXES.md #63):
- * "which conversation should the owner chat in" (the newest one,
- * findAuthorizedConversation's job) and "how much has actually been
- * spent on this employee for this project" (every conversation ever
- * created, including ones superseded by "start new conversation") are
- * genuinely different questions - money spent on an old, no-longer-
- * active conversation was still really spent, and must not silently
- * disappear from the project's total cost just because a newer
- * conversation now takes messaging priority.
+ * Filters conversations by PROJECT only (no employee filter) - one
+ * exhaustive scan covers every employee's conversations for a project
+ * at once, instead of one exhaustive scan per employee
+ * (BUGS_AND_FIXES.md #65: an earlier per-employee exhaustive-scan
+ * design, even after removing a duplicate request, still ran a full
+ * scan on every 5-second poll for all 14 employees, which broke the
+ * UI entirely as conversation volume grew). Intended for a project-
+ * level cost total, computed once and refreshed on a much slower
+ * schedule than the per-employee status poll.
  */
-export async function findAllAuthorizedConversations({
-  project,
-  employeeId,
-  employeeName,
-}) {
+export async function findAllProjectConversations(project) {
   let pageId = null;
   const matches = [];
 
@@ -54,7 +47,7 @@ export async function findAllAuthorizedConversations({
     const data = await response.json();
 
     for (const conversation of data.items ?? []) {
-      if (matchesEmployee(conversation, { project, employeeId, employeeName })) {
+      if (conversation.tags?.mkddproject === project) {
         matches.push(conversation);
       }
     }

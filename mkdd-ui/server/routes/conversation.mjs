@@ -1,4 +1,4 @@
-import { findAllAuthorizedConversations } from "../lib/authorize-conversation.mjs";
+import { findAuthorizedConversation } from "../lib/authorize-conversation.mjs";
 import { normalizeConversation } from "../lib/normalize-conversation.mjs";
 
 export async function handleConversation(req, res) {
@@ -15,38 +15,19 @@ export async function handleConversation(req, res) {
     return true;
   }
 
-  // BUGS_AND_FIXES.md #64: originally this made two separate calls
-  // (findAuthorizedConversation + findAllAuthorizedConversations), each
-  // independently paginating /api/conversations/search - doubling the
-  // real request count for every one of the 14 employees polled every
-  // 5 seconds. One search covers both needs: /api/conversations/search's
-  // confirmed default order is newest-first, so the first matching item
-  // IS the "active" conversation findAuthorizedConversation used to
-  // return separately - no second call needed.
-  const allMatches = await findAllAuthorizedConversations({
-    project,
-    employeeId,
-    employeeName,
-  });
-
-  const found = allMatches[0] ?? null;
-
-  // BUGS_AND_FIXES.md #63: totalCost sums EVERY conversation ever
-  // created for this project+employee - including ones superseded by
-  // "start new conversation" - not just the currently-active one.
-  // Money genuinely spent on an old conversation doesn't disappear
-  // just because a newer conversation now takes messaging priority;
-  // the project's real total cost must keep reflecting it.
-  const totalCost = allMatches.reduce((sum, conversation) => {
-    const normalized = normalizeConversation(conversation);
-    return sum + (normalized?.cost?.accumulatedCost ?? 0);
-  }, 0);
+  // BUGS_AND_FIXES.md #65: this route is polled every 5s for all 14
+  // employees - it must stay on the CHEAP, short-circuiting lookup
+  // (stops at the first match) and never the exhaustive full-scan
+  // used for cost totals. #63/#64 mistakenly put the exhaustive scan
+  // on this hot path, which broke the UI entirely as conversation
+  // volume grew. Total cost now lives on a separate, project-level,
+  // less-frequently-polled endpoint (server/routes/project-cost.mjs).
+  const found = await findAuthorizedConversation({ project, employeeId, employeeName });
 
   res.writeHead(200, { "content-type": "application/json" });
   res.end(
     JSON.stringify({
       conversation: found ? normalizeConversation(found) : null,
-      totalCost,
     }),
   );
   return true;

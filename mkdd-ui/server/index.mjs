@@ -16,6 +16,7 @@ import { handleServeAvatar, handleUploadAvatar } from "./routes/avatars.mjs";
 import { handlePreview } from "./routes/preview.mjs";
 import { handleProjectFiles } from "./routes/project-files.mjs";
 import { handleProjectLivePort } from "./routes/project-live-port.mjs";
+import { handleProjectTotalCost } from "./routes/project-cost.mjs";
 import { startLivePortProxies } from "./live-port-proxy.mjs";
 import { handleConversation } from "./routes/conversation.mjs";
 import { handleChatSend, handleChatNew, handleChatEvents } from "./routes/chat.mjs";
@@ -43,6 +44,7 @@ const ROUTES = [
   handlePreview,
   handleProjectFiles,
   handleProjectLivePort,
+  handleProjectTotalCost,
   handleUploadAvatar,
   handleConversation,
   handleChatSend,
