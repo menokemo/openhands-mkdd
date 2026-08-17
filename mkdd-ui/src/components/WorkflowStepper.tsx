@@ -30,11 +30,18 @@ const GATE_ICONS: Record<
   production: FaRocket,
 };
 
-const GATE_ICON_COLORS: Record<WorkflowGateName, string> = {
-  requirements: "gate-icon-accent-deep",
-  ui_ux: "gate-icon-accent",
-  architecture: "gate-icon-accent-soft",
-  production: "gate-icon-success",
+// Four genuinely distinct hues (not shades of the same blue - see
+// BUGS_AND_FIXES.md #83, where the earlier accent/accent-deep/accent-soft
+// scheme looked "almost the same color" to the eye). Set as a single CSS
+// custom property consumed by BOTH the gate icon and the pending-state
+// circle border/number, guaranteeing they always match exactly since
+// they read the same source value rather than two separately-picked
+// colors that could drift apart.
+const GATE_COLOR_VARS: Record<WorkflowGateName, string> = {
+  requirements: "var(--mkdd-accent)",
+  ui_ux: "var(--mkdd-danger)",
+  architecture: "var(--mkdd-warning)",
+  production: "var(--mkdd-success)",
 };
 
 /**
@@ -64,7 +71,11 @@ export default function WorkflowStepper({ workflow, loading, language }: Props) 
         const stepStatus = isApproved ? "approved" : isCurrent ? "current" : "pending";
 
         return (
-          <div className={`workflow-step workflow-step-${stepStatus}`} key={gate}>
+          <div
+            className={`workflow-step workflow-step-${stepStatus}`}
+            key={gate}
+            style={{ "--gate-color": GATE_COLOR_VARS[gate] } as React.CSSProperties}
+          >
             <div className="workflow-step-row">
               <div className="workflow-step-circle">
                 {isApproved ? <FaCheck /> : index + 1}
@@ -81,7 +92,7 @@ export default function WorkflowStepper({ workflow, loading, language }: Props) 
               <strong>
                 {(() => {
                   const GateIcon = GATE_ICONS[gate];
-                  return <GateIcon className={GATE_ICON_COLORS[gate]} />;
+                  return <GateIcon />;
                 })()}
                 {getGateLabel(gate, language)}
               </strong>

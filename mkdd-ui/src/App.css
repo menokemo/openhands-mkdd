@@ -2253,7 +2253,7 @@ header button,
   position: absolute;
   top: 50%;
   inset-inline-start: calc(50% + 24px);
-  inset-inline-end: 0;
+  inset-inline-end: -8px;
   height: 3px;
   border-radius: 999px;
   background: var(--mkdd-border-strong);
@@ -2288,28 +2288,23 @@ header button,
 
 .workflow-step-label strong svg {
   font-size: 19px;
-}
-
-.gate-icon-accent-deep {
-  color: var(--mkdd-accent-deep);
-}
-
-.gate-icon-accent {
-  color: var(--mkdd-accent);
-}
-
-.gate-icon-accent-soft {
-  color: var(--mkdd-accent-soft);
-}
-
-.gate-icon-success {
-  color: var(--mkdd-success);
+  color: var(--gate-color);
 }
 
 .workflow-step-label span {
   font-family: "Segoe UI", system-ui, sans-serif;
   font-size: 10px;
   color: var(--mkdd-text-muted);
+}
+
+/* Pending gates: the circle's border/number match the gate's own icon
+   color (BUGS_AND_FIXES.md #83) - approved/current keep their meaningful
+   status colors below instead (green = approved, accent = in progress),
+   per explicit product decision that status should stay visually
+   distinct from gate identity for those two states. */
+.workflow-step-pending .workflow-step-circle {
+  border-color: var(--gate-color);
+  color: var(--gate-color);
 }
 
 .workflow-step-approved .workflow-step-circle {
