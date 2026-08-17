@@ -27,6 +27,7 @@ import {
   FaHourglassHalf,
   FaUserClock,
   FaWrench,
+  FaChevronDown,
 } from "react-icons/fa6";
 import type { AgentProfile, Workspace } from "../types";
 import type { ProjectEmployeeStatus } from "../hooks/useProjectTeamStatus";
@@ -129,6 +130,7 @@ export default function ProjectHomeScreen({
   const [filesLoading, setFilesLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // The project's slug on disk is the last path segment (e.g.
@@ -136,6 +138,22 @@ export default function ProjectHomeScreen({
   // names the directory it creates, and how preview.mjs/project-files.mjs
   // resolve it back.
   const projectSlug = project.path.split("/").filter(Boolean).pop() ?? "";
+
+  /** The immediate parent directory of a path, or null for root-level items. */
+  function parentOf(path: string): string | null {
+    const segments = path.split("/");
+    segments.pop();
+    return segments.length > 0 ? segments.join("/") : null;
+  }
+
+  function toggleFolder(path: string) {
+    setExpandedFolders((current) => {
+      const next = new Set(current);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  }
 
   function reloadProjectFiles() {
     setFilesLoading(true);
@@ -425,35 +443,51 @@ export default function ProjectHomeScreen({
         )}
 
         <ul className="project-files-list">
-          {projectFiles.map((file) => {
-            const depth = file.path.split("/").length - 1;
-            const name = file.path.split("/").pop() ?? "";
-            const isDirectory = file.type === "directory";
-            const { icon, colorClass } = fileIcon(name, isDirectory);
+          {projectFiles
+            .filter((file) => {
+              const parent = parentOf(file.path);
+              return parent === null || expandedFolders.has(parent);
+            })
+            .map((file) => {
+              const depth = file.path.split("/").length - 1;
+              const name = file.path.split("/").pop() ?? "";
+              const isDirectory = file.type === "directory";
+              const isExpanded = expandedFolders.has(file.path);
+              const { icon, colorClass } = fileIcon(name, isDirectory);
 
-            return (
-              <li
-                key={file.path}
-                className="project-file-card"
-                style={{ marginInlineStart: `${depth * 16}px` }}
-              >
-                <span className={`project-file-icon ${colorClass}`}>{icon}</span>
-
-                {isDirectory ? (
-                  <span className="project-file-name">{name}</span>
-                ) : (
-                  <a
-                    className="project-file-name project-file-link"
-                    href={`/preview/${projectSlug}/${file.path}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {name}
-                  </a>
-                )}
-              </li>
-            );
-          })}
+              return (
+                <li
+                  key={file.path}
+                  className="project-file-card"
+                  style={{ marginInlineStart: `${depth * 16}px` }}
+                >
+                  {isDirectory ? (
+                    <button
+                      type="button"
+                      className="project-file-folder-button"
+                      onClick={() => toggleFolder(file.path)}
+                      aria-expanded={isExpanded}
+                    >
+                      <span className={`project-file-icon ${colorClass}`}>{icon}</span>
+                      <span className="project-file-name">{name}</span>
+                      <FaChevronDown
+                        className={`project-file-chevron${isExpanded ? " expanded" : ""}`}
+                      />
+                    </button>
+                  ) : (
+                    <a
+                      className="project-file-link-row"
+                      href={`/preview/${projectSlug}/${file.path}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <span className={`project-file-icon ${colorClass}`}>{icon}</span>
+                      <span className="project-file-name project-file-link">{name}</span>
+                    </a>
+                  )}
+                </li>
+              );
+            })}
         </ul>
       </section>
     </main>
