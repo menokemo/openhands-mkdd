@@ -3,6 +3,7 @@ import type {
   ConversationResponse,
   EventsResponse,
   SendMessageResponse,
+  WorkflowGateName,
   WorkPlan,
   Workspace,
 } from "../types";
@@ -218,7 +219,7 @@ export async function startNewConversation(
   return data;
 }
 
-export type WorkflowGateName = "requirements" | "ui_ux" | "architecture" | "production";
+export type { WorkflowGateName } from "../types";
 
 export type WorkflowReviewRole =
   "qa" | "test_automation" | "code_review" | "security_review";

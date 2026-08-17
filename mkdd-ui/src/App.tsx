@@ -158,6 +158,7 @@ export default function App() {
     screen = (
       <ProjectsScreen
         projects={projects}
+        employees={employees}
         loading={loading}
         language={language}
         t={t}

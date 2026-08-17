@@ -3,6 +3,8 @@ import { listEmployeeNames } from "../lib/list-employee-definitions.mjs";
 import { readEmployeeDisplayInfo } from "../lib/employee-display-info.mjs";
 import { buildEmployeeAvatarUrl } from "./avatars.mjs";
 import { getProjectColor } from "../lib/project-metadata.mjs";
+import { getWorkflowState } from "../workflow-state.mjs";
+import { findAllProjectConversations } from "../lib/authorize-conversation.mjs";
 
 export async function handleProjects(req, res) {
   if (req.method !== "GET" || req.url !== "/api/projects") return false;
@@ -10,10 +12,30 @@ export async function handleProjects(req, res) {
   const r = await openhands("/api/workspaces");
   const data = await r.json();
 
-  data.workspaces = (data.workspaces ?? []).map((workspace) => ({
-    ...workspace,
-    color: getProjectColor(workspace.path),
-  }));
+  // BUGS_AND_FIXES.md #81: each project card shows its current workflow
+  // gate and when it was last actually worked on - both real, computed
+  // here rather than fabricated. currentGate comes from persisted
+  // workflow state (same source as the Project Home stepper).
+  // lastActivityAt is the most recent updated_at across every real
+  // conversation tied to this project - not a guess, not the
+  // workspace's own creation time.
+  data.workspaces = await Promise.all(
+    (data.workspaces ?? []).map(async (workspace) => {
+      const conversations = await findAllProjectConversations(workspace.path);
+      const lastActivityAt = conversations.reduce((latest, conversation) => {
+        const updatedAt = conversation.updated_at ?? conversation.created_at;
+        if (!updatedAt) return latest;
+        return !latest || updatedAt > latest ? updatedAt : latest;
+      }, null);
+
+      return {
+        ...workspace,
+        color: getProjectColor(workspace.path),
+        currentGate: getWorkflowState(workspace.path).currentGate,
+        lastActivityAt,
+      };
+    }),
+  );
 
   res.writeHead(r.status, { "content-type": "application/json" });
   res.end(JSON.stringify(data));

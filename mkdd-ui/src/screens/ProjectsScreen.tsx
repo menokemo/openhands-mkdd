@@ -1,5 +1,8 @@
 import { useState } from "react";
-import type { Workspace } from "../types";
+import { FaDesktop } from "react-icons/fa6";
+import type { AgentProfile, Workspace } from "../types";
+import { getGateLabel } from "../utils/workflowLabels";
+import { formatRelativeTime } from "../utils/formatRelativeTime";
 
 // Must match server/lib/project-metadata.mjs's ALLOWED_COLORS exactly -
 // the backend rejects any color not in this list, falling back silently
@@ -7,8 +10,13 @@ import type { Workspace } from "../types";
 // confusing "I picked purple but it saved as default" experience.
 const PROJECT_COLORS = ["#7c6bff", "#5c9eff", "#3ecf8e", "#f5a524", "#f5618b", "#8d95aa"];
 
+// How many team avatars show before collapsing into "+N" - matches the
+// reference design's compact stack.
+const VISIBLE_AVATAR_COUNT = 3;
+
 type Props = {
   projects: Workspace[];
+  employees: AgentProfile[];
   loading: boolean;
   language: "ar" | "en";
   t: {
@@ -36,7 +44,9 @@ type Props = {
  */
 export default function ProjectsScreen({
   projects,
+  employees,
   loading,
+  language,
   t,
   onOpenProject,
   onCreateProject,
@@ -71,32 +81,84 @@ export default function ProjectsScreen({
     }
   };
 
+  const visibleAvatars = employees.slice(0, VISIBLE_AVATAR_COUNT);
+  const hiddenAvatarCount = employees.length - visibleAvatars.length;
+
   return (
     <main className="app projects-screen">
       <div className="section-label">{t.projects}</div>
 
-      <section className="chat">
+      <section className="project-list">
         {loading && (
-          <article>
+          <article className="project-list-status">
             <p>{t.loadingProjects}</p>
           </article>
         )}
 
         {!loading && projects.length === 0 && (
-          <article>
+          <article className="project-list-status">
             <p>{t.noProjects}</p>
           </article>
         )}
 
         {projects.map((project) => (
           <article
-            className="project-card"
+            className="project-card-v2"
             key={project.id}
-            style={{ borderInlineStartColor: project.color ?? PROJECT_COLORS[0] }}
             onClick={() => onOpenProject(project)}
           >
-            <b>{project.name}</b>
-            <p>{project.path}</p>
+            <div
+              className="project-card-icon"
+              style={{ color: project.color ?? PROJECT_COLORS[0] }}
+            >
+              <FaDesktop />
+            </div>
+
+            <div className="project-card-body">
+              <strong>{project.name}</strong>
+              <span className="project-card-meta">
+                {language === "ar" ? "مساحة عمل" : "Workspace"}
+                {project.lastActivityAt && (
+                  <>
+                    {" "}
+                    • {language === "ar" ? "آخر تحديث" : "Updated"}{" "}
+                    {formatRelativeTime(project.lastActivityAt, language)}
+                  </>
+                )}
+              </span>
+
+              <span
+                className="project-card-gate"
+                style={{ color: project.color ?? PROJECT_COLORS[0] }}
+              >
+                {getGateLabel(project.currentGate ?? "requirements", language)}
+              </span>
+
+              {employees.length > 0 && (
+                <div className="project-card-avatars">
+                  {visibleAvatars.map((employee) => {
+                    const label =
+                      language === "ar"
+                        ? (employee.displayNameAr ?? employee.name)
+                        : (employee.displayNameEn ?? employee.name);
+                    return (
+                      <div className="project-card-avatar" key={employee.id}>
+                        {employee.avatarUrl ? (
+                          <img src={employee.avatarUrl} alt={label} />
+                        ) : (
+                          label.slice(0, 1)
+                        )}
+                      </div>
+                    );
+                  })}
+                  {hiddenAvatarCount > 0 && (
+                    <div className="project-card-avatar project-card-avatar-more">
+                      +{hiddenAvatarCount}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </article>
         ))}
       </section>

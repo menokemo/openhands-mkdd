@@ -1,8 +1,13 @@
+export type WorkflowGateName = "requirements" | "ui_ux" | "architecture" | "production";
+
 export type Workspace = {
   id: string;
   name: string;
   path: string;
   color?: string;
+  // Real data, computed server-side per project - see BUGS_AND_FIXES.md #81.
+  currentGate?: WorkflowGateName;
+  lastActivityAt?: string | null;
 };
 
 export type AgentProfile = {
