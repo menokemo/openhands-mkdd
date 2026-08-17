@@ -680,6 +680,7 @@ header button,
 
 .chat-employee-info {
   min-width: 0;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -687,6 +688,9 @@ header button,
 
 .chat-employee-info strong {
   font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chat-employee-info span {
@@ -1003,163 +1007,167 @@ header button,
 }
 
 /* =========================
-   MKDD Employee Insights
+   MKDD Employee Insights - status-colored button + modal
    ========================= */
 
-.employee-insights {
+.employee-details-button {
+  margin: 0;
   flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.employee-insights-summary {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-}
-
-.execution-status,
-.conversation-cost {
-  min-width: 0;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 8px;
+  padding: 6px 12px;
   border: 1px solid var(--mkdd-border-subtle);
-  border-radius: 10px;
-  background: var(--mkdd-surface);
+  border-radius: 999px;
+  background: var(--mkdd-surface-raised);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.execution-status > div,
-.conversation-cost {
-  min-width: 0;
+/* Status color categories - shared by the trigger button, the modal's
+   border, and the status label inside it, so all three consistently
+   reflect the employee's current activity at a glance. */
+.status-color-running {
+  border-color: var(--mkdd-success);
+  color: var(--mkdd-success);
 }
 
-.execution-status small,
-.conversation-cost small {
-  display: block;
+.status-color-waiting {
+  border-color: var(--mkdd-warning);
+  color: var(--mkdd-warning);
+}
+
+.status-color-paused {
+  border-color: var(--mkdd-text-muted);
   color: var(--mkdd-text-muted);
-  font-size: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
-.execution-status strong,
-.conversation-cost strong {
-  display: block;
-  margin-top: 1px;
-  color: var(--mkdd-text-primary);
-  font-size: 10px;
+.status-color-danger {
+  border-color: var(--mkdd-danger);
+  color: var(--mkdd-danger);
 }
 
-.execution-status-dot {
-  width: 9px;
-  height: 9px;
-  flex: 0 0 9px;
-  border-radius: 50%;
-  background: var(--mkdd-text-disabled);
+.status-color-finished {
+  border-color: var(--mkdd-accent);
+  color: var(--mkdd-accent);
 }
 
-.execution-status-running {
-  border-color: rgba(73, 194, 125, 0.42);
+.status-color-idle {
+  border-color: var(--mkdd-border-subtle);
+  color: var(--mkdd-text-muted);
 }
 
-.execution-status-running .execution-status-dot {
-  background: var(--mkdd-success);
-  box-shadow: 0 0 0 0 rgba(73, 194, 125, 0.34);
-  animation: mkdd-running-pulse 1.6s ease-out infinite;
-}
-
-.execution-status-waiting_for_confirmation {
-  border-color: rgba(225, 176, 72, 0.4);
-}
-
-.execution-status-waiting_for_confirmation .execution-status-dot {
-  background: var(--mkdd-warning);
-}
-
-.execution-status-paused .execution-status-dot {
-  background: var(--mkdd-text-muted);
-}
-
-.execution-status-error .execution-status-dot,
-.execution-status-stuck .execution-status-dot {
-  background: var(--mkdd-danger);
-}
-
-.execution-status-finished .execution-status-dot {
-  background: var(--mkdd-accent);
-}
-
-@keyframes mkdd-running-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(73, 194, 125, 0.34);
-  }
-  70% {
-    box-shadow: 0 0 0 7px rgba(73, 194, 125, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(73, 194, 125, 0);
-  }
-}
-
-.conversation-cost {
-  min-width: 84px;
-  flex-direction: column;
-  align-items: flex-start;
+.employee-insights-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
   justify-content: center;
-  gap: 1px;
+  background: rgba(6, 8, 14, 0.6);
 }
 
-.conversation-cost span {
-  color: var(--mkdd-text-muted);
-  font-size: 9px;
-  white-space: nowrap;
-}
-
-.activity-drawer {
+.employee-insights-modal {
+  width: 100%;
+  max-width: 560px;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--mkdd-border-subtle);
-  border-radius: 15px;
-  background: var(--mkdd-surface);
-  overflow: hidden;
+  border-top-width: 3px;
+  border-radius: 20px 20px 0 0;
+  background: var(--mkdd-page);
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.35);
 }
 
-.activity-drawer summary {
-  min-height: 42px;
-  padding: 0 12px;
+.employee-insights-modal-header {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  cursor: pointer;
-  list-style: none;
-  color: var(--mkdd-text-secondary);
-  font-size: 12px;
-  font-weight: 650;
+  padding: 14px 16px 10px;
 }
 
-.activity-drawer summary::-webkit-details-marker {
-  display: none;
+.employee-insights-modal-status {
+  font-size: 13px;
+  font-weight: 750;
 }
 
-.activity-drawer summary small {
-  min-width: 24px;
-  height: 22px;
-  padding: 0 7px;
+.employee-insights-modal-close {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
-  border-radius: 999px;
+  border: none;
+  border-radius: 50%;
   background: var(--mkdd-surface-raised);
+  color: var(--mkdd-text-secondary);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.employee-insights-modal-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+  padding: 0 16px 10px;
+  border-bottom: 1px solid var(--mkdd-border-subtle);
+}
+
+.employee-insights-modal-tab {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
   color: var(--mkdd-text-muted);
-  font-size: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.employee-insights-modal-tab.active {
+  background: var(--mkdd-surface-raised);
+  color: var(--mkdd-text-primary);
+}
+
+.employee-insights-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+}
+
+.employee-insights-cost-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.employee-insights-cost-tab strong {
+  color: var(--mkdd-text-primary);
+  font-size: 24px;
+}
+
+.employee-insights-cost-tab span {
+  color: var(--mkdd-text-secondary);
+  font-size: 13px;
+}
+
+.employee-insights-cost-tab small {
+  margin-top: 6px;
+  color: var(--mkdd-text-muted);
+  font-size: 11px;
 }
 
 .activity-list {
   display: flex;
   flex-direction: column;
   gap: 7px;
-  padding: 0 10px 10px;
 }
 
 .activity-item {
@@ -1173,154 +1181,33 @@ header button,
 }
 
 .activity-marker {
-  width: 7px;
-  height: 7px;
-  margin-top: 5px;
+  width: 8px;
+  height: 8px;
+  margin-top: 4px;
   border-radius: 50%;
-  background: var(--mkdd-text-disabled);
-}
-
-.activity-ActionEvent .activity-marker {
-  background: var(--mkdd-accent);
-}
-
-.activity-ObservationEvent .activity-marker {
-  background: var(--mkdd-success);
-}
-
-.activity-AgentErrorEvent .activity-marker,
-.activity-UserRejectObservation .activity-marker {
-  background: var(--mkdd-danger);
+  background: var(--mkdd-accent-soft);
 }
 
 .activity-item strong {
   display: block;
-  color: var(--mkdd-text-secondary);
-  font-size: 10px;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
+  color: var(--mkdd-text-primary);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .activity-item time {
   display: block;
   margin-top: 2px;
-  color: var(--mkdd-text-disabled);
-  font-size: 8px;
-}
-
-.activity-empty {
-  margin: 0;
-  padding: 8px 4px 4px;
   color: var(--mkdd-text-muted);
   font-size: 10px;
 }
 
-@media (max-width: 560px) {
-  .employee-insights-summary {
-    grid-template-columns: minmax(0, 1fr) 90px;
-  }
-
-  .execution-status,
-  .conversation-cost {
-    padding: 5px 7px;
-    border-radius: 10px;
-  }
-}
-
-/* Unified employee details drawer */
-
-.employee-insights-drawer {
-  border: 1px solid var(--mkdd-border-subtle);
-  border-radius: 16px;
-  background: var(--mkdd-surface);
-  overflow: hidden;
-}
-
-.employee-insights-trigger {
-  min-height: 46px;
-  padding: 0 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  cursor: pointer;
-  list-style: none;
-  color: var(--mkdd-text-secondary);
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.employee-insights-trigger::-webkit-details-marker {
-  display: none;
-}
-
-.employee-insights-content {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 0 10px 10px;
-  max-height: 65vh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.employee-insights-trigger .execution-status-dot {
-  width: 9px;
-  height: 9px;
-  flex: 0 0 9px;
-}
-
-.execution-status-dot-running {
-  background: var(--mkdd-success);
-  box-shadow: 0 0 0 0 rgba(73, 194, 125, 0.34);
-  animation: mkdd-running-pulse 1.6s ease-out infinite;
-}
-
-.execution-status-dot-waiting_for_confirmation {
-  background: var(--mkdd-warning);
-}
-
-.execution-status-dot-paused {
-  background: var(--mkdd-text-muted);
-}
-
-.execution-status-dot-error,
-.execution-status-dot-stuck {
-  background: var(--mkdd-danger);
-}
-
-.execution-status-dot-finished {
-  background: var(--mkdd-accent);
-}
-
-.execution-status-dot-idle,
-.execution-status-dot-deleting,
-.execution-status-dot-unknown {
-  background: var(--mkdd-text-disabled);
-}
-
-.activity-heading {
-  min-height: 40px;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  color: var(--mkdd-text-secondary);
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.activity-heading small {
-  min-width: 24px;
-  height: 22px;
-  padding: 0 7px;
-  display: grid;
-  place-items: center;
-  border-radius: 999px;
-  background: var(--mkdd-surface-raised);
+.activity-empty {
+  margin: 0;
+  padding: 20px 0;
   color: var(--mkdd-text-muted);
-  font-size: 9px;
+  font-size: 12px;
+  text-align: center;
 }
 
 /* =========================
@@ -2652,7 +2539,6 @@ header button,
    ========================= */
 
 .chat-new-conversation-button {
-  margin-inline-start: auto;
   flex: 0 0 auto;
   padding: 6px 12px;
   border: 1px solid var(--mkdd-border-subtle);

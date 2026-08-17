@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { FaCircleInfo } from "react-icons/fa6";
 import type {
   ActivityEvent,
   ConversationCost,
@@ -13,6 +15,8 @@ type Props = {
   cost: ConversationCost | null;
   workPlan: WorkPlan | null;
 };
+
+type TabKey = "cost" | "workplan" | "activity";
 
 const statusText = {
   ar: {
@@ -38,6 +42,31 @@ const statusText = {
     unknown: "Unavailable",
   },
 } as const;
+
+/**
+ * Maps execution status to one of the shared status color categories
+ * (matching the existing execution-status-dot-* classes) - used to
+ * color both the trigger button and the modal's border, per the
+ * owner's request that both reflect current employee activity at a
+ * glance, not just the small dot that existed before.
+ */
+function statusColorClass(status: ConversationExecutionStatus | null): string {
+  switch (status) {
+    case "running":
+      return "status-color-running";
+    case "waiting_for_confirmation":
+      return "status-color-waiting";
+    case "paused":
+      return "status-color-paused";
+    case "error":
+    case "stuck":
+      return "status-color-danger";
+    case "finished":
+      return "status-color-finished";
+    default:
+      return "status-color-idle";
+  }
+}
 
 function activityLabel(event: ActivityEvent, language: "ar" | "en") {
   if (event.kind === "ActionEvent") {
@@ -91,8 +120,12 @@ export default function EmployeeInsightsPanel({
   cost,
   workPlan,
 }: Props) {
+  const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabKey>("cost");
+
   const statusKey = executionStatus ?? "unknown";
-  const latestActivity = activity.slice(-8).reverse();
+  const colorClass = statusColorClass(executionStatus);
+  const latestActivity = activity.slice(-30).reverse();
   const totalTokens = cost?.tokens
     ? cost.tokens.prompt +
       cost.tokens.completion +
@@ -101,74 +134,112 @@ export default function EmployeeInsightsPanel({
       cost.tokens.reasoning
     : null;
 
-  return (
-    <details
-      className="employee-insights employee-insights-drawer"
-      dir={language === "ar" ? "rtl" : "ltr"}
-    >
-      <summary className="employee-insights-trigger">
-        <span>
-          {language === "ar" ? "تفاصيل الموظف والنشاط" : "Employee details & activity"}
-        </span>
-        <span
-          className={`execution-status-dot execution-status-dot-${statusKey}`}
-          aria-hidden="true"
-        />
-      </summary>
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: "cost", label: language === "ar" ? "التكلفة" : "Cost" },
+    { key: "workplan", label: language === "ar" ? "خطة العمل" : "Work Plan" },
+    { key: "activity", label: language === "ar" ? "النشاط" : "Activity" },
+  ];
 
-      <div className="employee-insights-content">
-        <div className="employee-insights-summary">
-          <div className={`execution-status execution-status-${statusKey}`}>
-            <span className="execution-status-dot" aria-hidden="true" />
-            <div>
-              <small>{language === "ar" ? "الحالة" : "Status"}</small>
-              <strong>{statusText[language][statusKey]}</strong>
+  return (
+    <>
+      <button
+        type="button"
+        className={`employee-details-button ${colorClass}`}
+        onClick={() => setOpen(true)}
+      >
+        <FaCircleInfo />
+        {language === "ar" ? "بيانات الموظف" : "Employee details"}
+      </button>
+
+      {open && (
+        <div
+          className="employee-insights-modal-backdrop"
+          onClick={() => setOpen(false)}
+          dir={language === "ar" ? "rtl" : "ltr"}
+        >
+          <div
+            className={`employee-insights-modal ${colorClass}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="employee-insights-modal-header">
+              <span className={`employee-insights-modal-status ${colorClass}`}>
+                {statusText[language][statusKey]}
+              </span>
+              <button
+                type="button"
+                className="employee-insights-modal-close"
+                onClick={() => setOpen(false)}
+                aria-label={language === "ar" ? "إغلاق" : "Close"}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="employee-insights-modal-tabs">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  className={`employee-insights-modal-tab ${
+                    activeTab === tab.key ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab(tab.key)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="employee-insights-modal-body">
+              {activeTab === "cost" && (
+                <div className="employee-insights-cost-tab">
+                  <strong>{cost ? `$${cost.accumulatedCost.toFixed(4)}` : "—"}</strong>
+                  {totalTokens !== null && (
+                    <span>
+                      {totalTokens.toLocaleString()}{" "}
+                      {language === "ar" ? "توكن" : "tokens"}
+                    </span>
+                  )}
+                  {cost?.modelName && (
+                    <small>
+                      {language === "ar" ? "النموذج" : "Model"}: {cost.modelName}
+                    </small>
+                  )}
+                </div>
+              )}
+
+              {activeTab === "workplan" && (
+                <WorkPlanPanel language={language} workPlan={workPlan} />
+              )}
+
+              {activeTab === "activity" && (
+                <div className="activity-list">
+                  {latestActivity.length === 0 ? (
+                    <p className="activity-empty">
+                      {language === "ar"
+                        ? "لا يوجد نشاط مسجل حتى الآن."
+                        : "No activity recorded yet."}
+                    </p>
+                  ) : (
+                    latestActivity.map((event) => (
+                      <article
+                        className={`activity-item activity-${event.kind}`}
+                        key={event.id}
+                      >
+                        <span className="activity-marker" aria-hidden="true" />
+                        <div>
+                          <strong>{activityLabel(event, language)}</strong>
+                          {event.timestamp && <time>{event.timestamp}</time>}
+                        </div>
+                      </article>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           </div>
-
-          <div className="conversation-cost">
-            <small>{language === "ar" ? "التكلفة" : "Cost"}</small>
-            <strong>{cost ? `$${cost.accumulatedCost.toFixed(4)}` : "—"}</strong>
-            {totalTokens !== null && (
-              <span>
-                {totalTokens.toLocaleString()} {language === "ar" ? "توكن" : "tokens"}
-              </span>
-            )}
-          </div>
         </div>
-
-        <WorkPlanPanel language={language} workPlan={workPlan} />
-
-        <section className="activity-drawer">
-          <div className="activity-heading">
-            <span>{language === "ar" ? "النشاط" : "Activity"}</span>
-            <small>{activity.length}</small>
-          </div>
-
-          <div className="activity-list">
-            {latestActivity.length === 0 ? (
-              <p className="activity-empty">
-                {language === "ar"
-                  ? "لا يوجد نشاط مسجل حتى الآن."
-                  : "No activity recorded yet."}
-              </p>
-            ) : (
-              latestActivity.map((event) => (
-                <article
-                  className={`activity-item activity-${event.kind}`}
-                  key={event.id}
-                >
-                  <span className="activity-marker" aria-hidden="true" />
-                  <div>
-                    <strong>{activityLabel(event, language)}</strong>
-                    {event.timestamp && <time>{event.timestamp}</time>}
-                  </div>
-                </article>
-              ))
-            )}
-          </div>
-        </section>
-      </div>
-    </details>
+      )}
+    </>
   );
 }

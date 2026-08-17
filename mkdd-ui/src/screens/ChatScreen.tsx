@@ -149,15 +149,16 @@ export default function ChatScreen({
         >
           {language === "ar" ? "محادثة جديدة" : "New conversation"}
         </button>
+
+        <EmployeeInsightsPanel
+          language={language}
+          activity={activity}
+          executionStatus={executionStatus}
+          cost={cost}
+          workPlan={workPlan}
+        />
       </div>
 
-      <EmployeeInsightsPanel
-        language={language}
-        activity={activity}
-        executionStatus={executionStatus}
-        cost={cost}
-        workPlan={workPlan}
-      />
       <section className="chat">
         {messages.map((event) => {
           const textParts = event.llm_message.content
