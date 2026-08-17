@@ -45,6 +45,52 @@ const GATE_COLOR_VARS: Record<WorkflowGateName, string> = {
 };
 
 /**
+ * Builds one continuous connecting-line gradient spanning exactly from
+ * the first circle's center to the last circle's center - the
+ * .workflow-stepper-connector element itself is positioned to match
+ * that same range (see App.css), so these percentages are relative to
+ * the CONNECTOR'S OWN length, not the full stepper width. Two separate
+ * per-step absolutely-positioned segment attempts (BUGS_AND_FIXES.md
+ * #83/#84) failed because a segment confined to one grid column's own
+ * coordinate space can't reliably reach into a neighboring column's
+ * circle - one continuous element with a precomputed gradient sidesteps
+ * that entirely.
+ *
+ * With N equal-width columns, circle i's center sits at
+ * ((i + 0.5) / N) * 100% of the TOTAL stepper width. Converted to the
+ * connector's own local 0-100% range (which spans from circle 0's
+ * center to circle N-1's center): local% = (global% - firstCenter%) /
+ * (lastCenter% - firstCenter%) * 100. Each segment between two adjacent
+ * circles is split into two hard-stop halves - the left half takes the
+ * left gate's color, the right half takes the right gate's color - per
+ * explicit product direction.
+ */
+function buildConnectorGradient(gates: readonly WorkflowGateName[]): string {
+  const n = gates.length;
+  const firstCenter = (0.5 / n) * 100;
+  const lastCenter = ((n - 1 + 0.5) / n) * 100;
+  const span = lastCenter - firstCenter;
+  const toLocal = (globalPercent: number) => ((globalPercent - firstCenter) / span) * 100;
+
+  const stops: string[] = [];
+
+  for (let i = 0; i < n - 1; i++) {
+    const leftCenter = toLocal(((i + 0.5) / n) * 100);
+    const rightCenter = toLocal(((i + 1.5) / n) * 100);
+    const midpoint = (leftCenter + rightCenter) / 2;
+    const leftColor = GATE_COLOR_VARS[gates[i]];
+    const rightColor = GATE_COLOR_VARS[gates[i + 1]];
+
+    stops.push(`${leftColor} ${leftCenter}%`);
+    stops.push(`${leftColor} ${midpoint}%`);
+    stops.push(`${rightColor} ${midpoint}%`);
+    stops.push(`${rightColor} ${rightCenter}%`);
+  }
+
+  return `linear-gradient(to left, ${stops.join(", ")})`;
+}
+
+/**
  * The numbered gate-progression stepper (matches the reference design's
  * "Workflow Overview": circled gate numbers, a checkmark once approved,
  * a connecting line between steps that fills in as gates are approved).
@@ -61,39 +107,52 @@ const GATE_COLOR_VARS: Record<WorkflowGateName, string> = {
  */
 export default function WorkflowStepper({ workflow, loading, language }: Props) {
   const t = STATUS_LABELS[language];
+  const connectorGradient = buildConnectorGradient(GATES);
 
   return (
     <div className="workflow-stepper" aria-busy={loading}>
-      {GATES.map((gate, index) => {
-        const gateState = workflow?.gates[gate];
-        const isApproved = gateState?.status === "approved";
-        const isCurrent = !isApproved && workflow?.currentGate === gate;
-        const stepStatus = isApproved ? "approved" : isCurrent ? "current" : "pending";
+      <div className="workflow-stepper-circles">
+        <div
+          className="workflow-stepper-connector"
+          style={{ background: connectorGradient }}
+        />
 
-        return (
-          <div
-            className={`workflow-step workflow-step-${stepStatus}`}
-            key={gate}
-            style={{ "--gate-color": GATE_COLOR_VARS[gate] } as React.CSSProperties}
-          >
-            <div className="workflow-step-row">
+        {GATES.map((gate) => {
+          const gateState = workflow?.gates[gate];
+          const isApproved = gateState?.status === "approved";
+          const isCurrent = !isApproved && workflow?.currentGate === gate;
+          const stepStatus = isApproved ? "approved" : isCurrent ? "current" : "pending";
+
+          return (
+            <div
+              className={`workflow-step-circle-slot workflow-step-${stepStatus}`}
+              key={gate}
+              style={{ "--gate-color": GATE_COLOR_VARS[gate] } as React.CSSProperties}
+            >
               <div className="workflow-step-circle">
-                {isApproved ? <FaCheck /> : index + 1}
+                {isApproved ? <FaCheck /> : GATES.indexOf(gate) + 1}
               </div>
-
-              {index < GATES.length - 1 && (
-                <div
-                  className={`workflow-step-line${isApproved ? " workflow-step-line-done" : ""}`}
-                />
-              )}
             </div>
+          );
+        })}
+      </div>
 
-            <div className="workflow-step-label">
+      <div className="workflow-stepper-labels">
+        {GATES.map((gate) => {
+          const gateState = workflow?.gates[gate];
+          const isApproved = gateState?.status === "approved";
+          const isCurrent = !isApproved && workflow?.currentGate === gate;
+          const stepStatus = isApproved ? "approved" : isCurrent ? "current" : "pending";
+          const GateIcon = GATE_ICONS[gate];
+
+          return (
+            <div
+              className={`workflow-step-label workflow-step-${stepStatus}`}
+              key={gate}
+              style={{ "--gate-color": GATE_COLOR_VARS[gate] } as React.CSSProperties}
+            >
               <strong>
-                {(() => {
-                  const GateIcon = GATE_ICONS[gate];
-                  return <GateIcon />;
-                })()}
+                <GateIcon />
                 {getGateLabel(gate, language)}
               </strong>
               <span>
@@ -106,9 +165,9 @@ export default function WorkflowStepper({ workflow, loading, language }: Props) 
                       : t.pending}
               </span>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

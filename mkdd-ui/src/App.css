@@ -2213,29 +2213,40 @@ header button,
    ========================= */
 
 .workflow-stepper {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
   margin: 8px 0 18px;
 }
 
-.workflow-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 10px;
+.workflow-stepper-circles {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding-block: 4px;
 }
 
-.workflow-step-row {
+/* One continuous line spanning from the first circle's center to the
+   last circle's center - see WorkflowStepper.tsx's buildConnectorGradient
+   for why this replaced two earlier per-step segment attempts that both
+   failed to reach cleanly into a neighboring grid column
+   (BUGS_AND_FIXES.md #83/#84). */
+.workflow-stepper-connector {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: 12.5%;
+  inset-inline-end: 12.5%;
+  height: 3px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+}
+
+.workflow-step-circle-slot {
   position: relative;
-  width: 100%;
   display: flex;
   justify-content: center;
 }
 
 .workflow-step-circle {
-  flex: 0 0 auto;
+  position: relative;
+  z-index: 1;
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -2249,28 +2260,58 @@ header button,
   color: var(--mkdd-text-muted);
 }
 
-.workflow-step-line {
-  position: absolute;
-  top: 50%;
-  inset-inline-start: calc(50% + 24px);
-  inset-inline-end: -8px;
-  height: 3px;
-  border-radius: 999px;
-  background: var(--mkdd-border-strong);
-  transform: translateY(-50%);
+/* Pending gates: the circle's border/number match the gate's own icon
+   color (BUGS_AND_FIXES.md #83) - approved/current keep their meaningful
+   status colors below instead (green = approved, accent = in progress),
+   per explicit product decision that status should stay visually
+   distinct from gate identity for those two states. */
+.workflow-step-pending .workflow-step-circle {
+  border-color: var(--gate-color);
+  color: var(--gate-color);
 }
 
-.workflow-step-line-done {
-  background: var(--mkdd-success);
+.workflow-step-approved .workflow-step-circle {
+  background: var(--mkdd-success-tint);
+  border-color: var(--mkdd-success);
+  color: var(--mkdd-success);
 }
 
-.workflow-step:last-child .workflow-step-line {
-  display: none;
+/* Current gate: pulsing glow - same visual language as an actively
+   working employee (see .employee-card-running/mkdd-employee-card-running
+   above), per explicit request to reuse that "active" pattern here. */
+.workflow-step-current .workflow-step-circle {
+  background: var(--mkdd-accent);
+  border-color: var(--mkdd-accent);
+  color: #fff;
+  animation: mkdd-workflow-step-current 1.8s ease-in-out infinite;
+}
+
+@keyframes mkdd-workflow-step-current {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px var(--mkdd-accent-glow),
+      0 0 10px var(--mkdd-accent-glow);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 5px var(--mkdd-accent-glow),
+      0 0 22px var(--mkdd-accent-glow);
+  }
+}
+
+.workflow-stepper-labels {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: 10px;
 }
 
 .workflow-step-label {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
   gap: 3px;
 }
 
@@ -2297,39 +2338,11 @@ header button,
   color: var(--mkdd-text-muted);
 }
 
-/* Pending gates: the circle's border/number match the gate's own icon
-   color (BUGS_AND_FIXES.md #83) - approved/current keep their meaningful
-   status colors below instead (green = approved, accent = in progress),
-   per explicit product decision that status should stay visually
-   distinct from gate identity for those two states. */
-.workflow-step-pending .workflow-step-circle {
-  border-color: var(--gate-color);
-  color: var(--gate-color);
-}
-
-.workflow-step-approved .workflow-step-circle {
-  background: var(--mkdd-success-tint);
-  border-color: var(--mkdd-success);
-  color: var(--mkdd-success);
-}
-
-.workflow-step-current .workflow-step-circle {
-  background: var(--mkdd-accent);
-  border-color: var(--mkdd-accent);
-  color: #fff;
-  box-shadow: 0 0 0 3px var(--mkdd-accent-glow);
-}
-
-.workflow-step-current .workflow-step-label strong {
+.workflow-step-current.workflow-step-label strong {
   color: var(--mkdd-text-primary);
 }
 
 @media (min-width: 700px) {
-  .workflow-stepper {
-    gap: 0;
-    margin: 12px 0 22px;
-  }
-
   .workflow-step-label strong {
     font-size: 14px;
   }
