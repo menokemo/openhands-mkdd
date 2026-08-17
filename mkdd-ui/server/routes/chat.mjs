@@ -305,6 +305,56 @@ export async function handleChatNew(req, res) {
   return true;
 }
 
+/**
+ * Fetches every page of events for a conversation, de-duplicates by id,
+ * sorts by timestamp, and normalizes each event - shared by
+ * handleChatEvents (full event list for the chat screen) and
+ * handleChatWorkPlan (BUGS_AND_FIXES.md #66: work plan only, without
+ * the full event payload - a conversation's full event history can be
+ * hundreds of KB, and the team-status strip only ever needed the small
+ * derived work_plan from it, not the raw events themselves).
+ */
+async function fetchAllNormalizedEvents(conversationId) {
+  let eventsPageId = null;
+  let eventsStatus = 200;
+  const allEventItems = [];
+
+  do {
+    const eventQs = new URLSearchParams({ limit: "100" });
+    if (eventsPageId) eventQs.set("page_id", eventsPageId);
+
+    const eventsResponse = await openhands(
+      `/api/conversations/${conversationId}/events/search?${eventQs}`,
+    );
+
+    eventsStatus = eventsResponse.status;
+    const pageData = await eventsResponse.json();
+
+    if (!eventsResponse.ok) {
+      return { status: eventsStatus, items: [] };
+    }
+
+    allEventItems.push(...(pageData.items ?? []));
+    eventsPageId = pageData.next_page_id ?? null;
+  } while (eventsPageId);
+
+  const uniqueEvents = new Map();
+  for (const event of allEventItems) {
+    if (event?.id) uniqueEvents.set(event.id, event);
+  }
+
+  const sorted = Array.from(uniqueEvents.values()).sort((a, b) => {
+    const aTime = a.timestamp ? Date.parse(a.timestamp) : 0;
+    const bTime = b.timestamp ? Date.parse(b.timestamp) : 0;
+    return aTime - bTime;
+  });
+
+  return {
+    status: eventsStatus,
+    items: sorted.map(normalizeEvent).filter(Boolean),
+  };
+}
+
 export async function handleChatEvents(req, res) {
   if (!req.url?.startsWith("/api/chat/events?")) return false;
 
@@ -333,58 +383,55 @@ export async function handleChatEvents(req, res) {
     return true;
   }
 
-  // Fetch every page of events for this conversation, then de-duplicate by
-  // id and sort by timestamp (defensive: OpenHands' own pagination should
-  // already be gap-free, but this guards against duplicate/out-of-order
-  // pages under retries).
-  let eventsPageId = null;
-  let eventsStatus = 200;
-  let data = { items: [], next_page_id: null };
-  const allEventItems = [];
+  const { status, items } = await fetchAllNormalizedEvents(conversationId);
 
-  do {
-    const eventQs = new URLSearchParams({ limit: "100" });
-    if (eventsPageId) eventQs.set("page_id", eventsPageId);
+  res.writeHead(status, { "content-type": "application/json" });
+  res.end(
+    JSON.stringify({ items, next_page_id: null, work_plan: deriveWorkPlan(items) }),
+  );
+  return true;
+}
 
-    const eventsResponse = await openhands(
-      `/api/conversations/${conversationId}/events/search?${eventQs}`,
-    );
+/**
+ * GET /api/chat/work-plan — like /api/chat/events, but returns ONLY the
+ * derived work_plan, never the full event list. Used by the frequent
+ * (5s x 14 employees) team-status poll, which only ever needed the
+ * small derived summary - fetching the full event history there
+ * (sometimes hundreds of KB for a long-running conversation) added
+ * real, unnecessary network transfer on every poll (BUGS_AND_FIXES.md
+ * #66).
+ */
+export async function handleChatWorkPlan(req, res) {
+  if (!req.url?.startsWith("/api/chat/work-plan?")) return false;
 
-    eventsStatus = eventsResponse.status;
-    const pageData = await eventsResponse.json();
+  const url = new URL(req.url, "http://mkdd.local");
+  const conversationId = url.searchParams.get("conversation");
+  const project = url.searchParams.get("project");
+  const employeeId = url.searchParams.get("employeeId");
+  const employeeName = url.searchParams.get("employeeName");
 
-    if (!eventsResponse.ok) {
-      data = pageData;
-      break;
-    }
-
-    allEventItems.push(...(pageData.items ?? []));
-    eventsPageId = pageData.next_page_id ?? null;
-    data = pageData;
-  } while (eventsPageId);
-
-  if (eventsStatus >= 200 && eventsStatus < 300) {
-    const uniqueEvents = new Map();
-
-    for (const event of allEventItems) {
-      if (event?.id) uniqueEvents.set(event.id, event);
-    }
-
-    data = {
-      ...data,
-      items: Array.from(uniqueEvents.values()).sort((a, b) => {
-        const aTime = a.timestamp ? Date.parse(a.timestamp) : 0;
-        const bTime = b.timestamp ? Date.parse(b.timestamp) : 0;
-        return aTime - bTime;
-      }),
-      next_page_id: null,
-    };
+  if (!conversationId || !project || !employeeId || !employeeName) {
+    res.writeHead(400, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "conversation_project_employee_required" }));
+    return true;
   }
 
-  data.items = (data.items ?? []).map(normalizeEvent).filter(Boolean);
-  data.work_plan = deriveWorkPlan(data.items);
+  const authorizedConversation = await findAuthorizedConversation({
+    conversationId,
+    project,
+    employeeId,
+    employeeName,
+  });
 
-  res.writeHead(eventsStatus, { "content-type": "application/json" });
-  res.end(JSON.stringify(data));
+  if (!authorizedConversation) {
+    res.writeHead(403, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "conversation_employee_mismatch" }));
+    return true;
+  }
+
+  const { status, items } = await fetchAllNormalizedEvents(conversationId);
+
+  res.writeHead(status, { "content-type": "application/json" });
+  res.end(JSON.stringify({ work_plan: deriveWorkPlan(items) }));
   return true;
 }

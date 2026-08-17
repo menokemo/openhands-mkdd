@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchConversation, fetchEvents } from "../api/client";
+import { fetchConversation, fetchWorkPlan } from "../api/client";
 import type {
   AgentProfile,
   ConversationCost,
@@ -74,13 +74,13 @@ export function useProjectTeamStatus({ project, employees }: Params) {
             let workPlan: WorkPlan | null | undefined = undefined;
 
             try {
-              const eventsResponse = await fetchEvents(
+              const workPlanResponse = await fetchWorkPlan(
                 conversation.id,
                 project.path,
                 employee.id,
                 employee.name,
               );
-              workPlan = eventsResponse.work_plan;
+              workPlan = workPlanResponse.work_plan;
             } catch {
               // Preserve the previous work plan on a transient events failure.
             }

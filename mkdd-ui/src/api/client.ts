@@ -3,6 +3,7 @@ import type {
   ConversationResponse,
   EventsResponse,
   SendMessageResponse,
+  WorkPlan,
   Workspace,
 } from "../types";
 
@@ -135,6 +136,29 @@ export async function fetchEvents(
     employeeName,
   });
   const r = await fetch(`/api/chat/events?${qs}`);
+
+  return r.json();
+}
+
+/**
+ * Like fetchEvents, but returns only the derived work_plan, not the
+ * full event history - used by the frequent (5s x 14 employees)
+ * team-status poll, which never needed the full events, only the
+ * small summary derived from them (BUGS_AND_FIXES.md #66).
+ */
+export async function fetchWorkPlan(
+  conversationId: string,
+  project: string,
+  employeeId: string,
+  employeeName: string,
+): Promise<{ work_plan: WorkPlan | null }> {
+  const qs = new URLSearchParams({
+    conversation: conversationId,
+    project,
+    employeeId,
+    employeeName,
+  });
+  const r = await fetch(`/api/chat/work-plan?${qs}`);
 
   return r.json();
 }
