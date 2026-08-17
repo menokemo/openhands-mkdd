@@ -1645,6 +1645,10 @@ header button,
   font-weight: 760;
 }
 
+.project-home .employee-avatar img {
+  border-radius: 50%;
+}
+
 .project-home .employee-card-info {
   min-width: 0;
   width: 100%;
