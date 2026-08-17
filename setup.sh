@@ -198,6 +198,19 @@ else
       docker exec -e MKDD_BOOTSTRAP_LLM_PROFILE_REF=<your-llm-profile-name> \
         mkdd-ui node server/scripts/bootstrap-employees.mjs
 
+    IMPORTANT (BUGS_AND_FIXES.md #59/#60): when creating that LLM profile,
+    set "Max Input Tokens" to a value comfortably under the model's REAL
+    effective context limit - Agent Canvas's own UI can display a
+    hard-coded generic limit (e.g. 1.1M tokens) for unrecognized model
+    names that is far larger than what the model/subscription actually
+    supports, causing a real litellm.APIError context-overflow failure
+    with no warning. This was confirmed live for GPT-5.6 Sol via ChatGPT
+    Plus/Codex (real limit ~258,400 tokens, silently reduced from 353K in
+    July 2026) - 200000 was used there; re-verify the real limit for
+    whatever model/subscription this deployment actually uses, since it
+    is NOT something this script (or bootstrap-employees.mjs's own
+    condenser setting) can determine or set automatically.
+
 EOF
 fi
 
@@ -208,6 +221,14 @@ cat <<EOF
     MKDD UI:        http://localhost:${MKDD_UI_PORT}
     Agent Canvas:   http://localhost:${MKDD_AGENT_CANVAS_UI_PORT}
     Agent Server:   http://localhost:${MKDD_AGENT_CANVAS_PORT}
+
+    Reminder (BUGS_AND_FIXES.md #59/#60): if you have not already set
+    "Max Input Tokens" on this deployment's LLM profile (Agent Canvas ->
+    Settings -> LLM Profiles) to a value comfortably under that model's
+    REAL effective context limit, do so now - Agent Canvas can otherwise
+    display a hard-coded generic limit far larger than what the model
+    actually supports, causing a real context-overflow failure with no
+    warning.
 
 Run './setup.sh status' to check container health, or
     './setup.sh logs'   to follow logs.
