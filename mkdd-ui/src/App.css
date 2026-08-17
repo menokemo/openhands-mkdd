@@ -1604,9 +1604,18 @@ header button,
 }
 
 .project-home .employee-card .employee-avatar {
+  position: relative;
+  overflow: visible;
   width: 52px;
   height: 52px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(108, 93, 255, 0.28);
+  border-radius: 50%;
+  background: var(--mkdd-surface-raised);
+  color: var(--mkdd-accent-soft);
   font-size: 18px;
+  font-weight: 760;
 }
 
 .project-home .employee-card-running .employee-avatar {
@@ -1630,22 +1639,9 @@ header button,
   max-width: 100%;
 }
 
-.project-home .employee-avatar {
-  position: relative;
-  overflow: visible;
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(108, 93, 255, 0.28);
-  border-radius: 50%;
-  background: var(--mkdd-surface-raised);
-  color: var(--mkdd-accent-soft);
-  font-size: 16px;
-  font-weight: 760;
-}
-
 .project-home .employee-avatar img {
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
 }
 
