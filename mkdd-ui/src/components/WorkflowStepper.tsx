@@ -65,7 +65,10 @@ const GATE_COLOR_VARS: Record<WorkflowGateName, string> = {
  * left gate's color, the right half takes the right gate's color - per
  * explicit product direction.
  */
-function buildConnectorGradient(gates: readonly WorkflowGateName[]): string {
+function buildConnectorGradient(
+  gates: readonly WorkflowGateName[],
+  language: "ar" | "en",
+): string {
   const n = gates.length;
   const firstCenter = (0.5 / n) * 100;
   const lastCenter = ((n - 1 + 0.5) / n) * 100;
@@ -87,7 +90,14 @@ function buildConnectorGradient(gates: readonly WorkflowGateName[]): string {
     stops.push(`${rightColor} ${rightCenter}%`);
   }
 
-  return `linear-gradient(to left, ${stops.join(", ")})`;
+  // document.documentElement.dir switches to "ltr" for English (see
+  // useLanguage.ts), which mirrors the whole grid so the first gate
+  // sits on the LEFT instead of the RIGHT. linear-gradient() always
+  // uses fixed physical directions regardless of dir, so the direction
+  // itself must flip to match which side gate 0 actually renders on.
+  const direction = language === "ar" ? "to left" : "to right";
+
+  return `linear-gradient(${direction}, ${stops.join(", ")})`;
 }
 
 /**
@@ -107,7 +117,7 @@ function buildConnectorGradient(gates: readonly WorkflowGateName[]): string {
  */
 export default function WorkflowStepper({ workflow, loading, language }: Props) {
   const t = STATUS_LABELS[language];
-  const connectorGradient = buildConnectorGradient(GATES);
+  const connectorGradient = buildConnectorGradient(GATES, language);
 
   return (
     <div className="workflow-stepper" aria-busy={loading}>
