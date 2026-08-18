@@ -400,7 +400,7 @@ header button,
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 14px 16px calc(10px + env(safe-area-inset-bottom));
+  padding: 14px 16px calc(20px + env(safe-area-inset-bottom));
   background: var(--mkdd-page);
   border-top: 1px solid var(--mkdd-border-subtle);
   z-index: 20;
@@ -3050,4 +3050,18 @@ header button,
 [data-theme="dark"] .project-view .chat article.me {
   background: color-mix(in srgb, var(--mkdd-accent) 55%, var(--mkdd-page));
   border-color: color-mix(in srgb, var(--mkdd-accent) 55%, var(--mkdd-page));
+}
+
+/* Light mode: the "me" bubble's text was reported as hard to read
+   against its purple background - the ancestor rule sets color: #fff
+   on .project-view .chat article.me itself, but markdown content
+   renders through several nested elements (.message-markdown > p,
+   ul, li, etc.) and something in that chain was evidently not
+   inheriting white reliably. Forcing white on every descendant text
+   node inside the "me" bubble removes any ambiguity about inheritance,
+   rather than relying on a single ancestor rule and hoping it cascades
+   correctly through markdown's element chain. */
+.project-view .chat article.me,
+.project-view .chat article.me * {
+  color: #fff;
 }
