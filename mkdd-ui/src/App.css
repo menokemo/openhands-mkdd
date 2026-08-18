@@ -2475,6 +2475,12 @@ header button,
   padding: 0;
 }
 
+.app-header-icon-active {
+  border-color: var(--mkdd-accent);
+  background: color-mix(in srgb, var(--mkdd-accent) 14%, var(--mkdd-surface));
+  color: var(--mkdd-accent);
+}
+
 /* =========================
    Chat message images (attachments)
    ========================= */

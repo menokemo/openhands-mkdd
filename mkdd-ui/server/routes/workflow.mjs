@@ -6,12 +6,8 @@ import {
   GATES,
   REVIEW_ROLES,
 } from "../workflow-state.mjs";
-
-async function readJsonBody(req) {
-  let body = "";
-  for await (const chunk of req) body += chunk;
-  return JSON.parse(body || "{}");
-}
+import { readJsonBody } from "../lib/read-json-body.mjs";
+import { sendPushToAll } from "../lib/push-notifications.mjs";
 
 /**
  * GET /api/workflow/summary — returns gate status for every project that
@@ -418,6 +414,15 @@ export async function handleReports(req, res) {
 
     throw new Error("invalid_report_action");
   });
+
+  if (action === "add") {
+    void sendPushToAll({
+      title: "تقرير جديد",
+      body: `${fromEmployeeId} → ${toEmployeeId}: ${title}`,
+      url: "/",
+      tag: `mkdd-report-${gate}`,
+    });
+  }
 
   res.writeHead(200, { "content-type": "application/json" });
   res.end(JSON.stringify({ workflow }));

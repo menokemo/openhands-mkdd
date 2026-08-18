@@ -27,6 +27,7 @@ import {
   handleChatWorkPlan,
   handleChatLastMessage,
 } from "./routes/chat.mjs";
+import { handlePushVapidKey, handlePushSubscribe } from "./routes/push.mjs";
 import { attachChatWebSocketBridge } from "./lib/ws-bridge.mjs";
 
 // Route handlers are tried in order; each returns `true` once it has
@@ -60,6 +61,8 @@ const ROUTES = [
   handleChatEvents,
   handleChatWorkPlan,
   handleChatLastMessage,
+  handlePushVapidKey,
+  handlePushSubscribe,
 ];
 
 const server = http.createServer(async (req, res) => {

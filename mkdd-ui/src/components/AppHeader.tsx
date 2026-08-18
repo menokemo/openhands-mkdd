@@ -1,5 +1,11 @@
-import { FaBars, FaSun, FaMoon } from "react-icons/fa6";
+import { useState } from "react";
+import { FaBars, FaSun, FaMoon, FaBell, FaBellSlash } from "react-icons/fa6";
 import type { Theme } from "../hooks/useTheme";
+import {
+  isPushSupported,
+  getNotificationPermission,
+  enablePushNotifications,
+} from "../utils/pushNotifications";
 
 type Props = {
   language: "ar" | "en";
@@ -30,6 +36,15 @@ export default function AppHeader({
   setTheme,
   onOpenSidebar,
 }: Props) {
+  const [notificationsEnabled, setNotificationsEnabled] = useState(
+    getNotificationPermission() === "granted",
+  );
+
+  async function handleEnableNotifications() {
+    const success = await enablePushNotifications();
+    setNotificationsEnabled(success);
+  }
+
   return (
     <header className="app-header">
       <button
@@ -51,6 +66,25 @@ export default function AppHeader({
       </div>
 
       <div className="app-header-actions">
+        {isPushSupported() && !notificationsEnabled && (
+          <button
+            className="app-header-icon-button"
+            onClick={handleEnableNotifications}
+            aria-label={language === "ar" ? "تفعيل الإشعارات" : "Enable notifications"}
+          >
+            <FaBellSlash />
+          </button>
+        )}
+
+        {isPushSupported() && notificationsEnabled && (
+          <span
+            className="app-header-icon-button app-header-icon-active"
+            aria-label={language === "ar" ? "الإشعارات مفعّلة" : "Notifications on"}
+          >
+            <FaBell />
+          </span>
+        )}
+
         <button
           className="app-header-icon-button"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}

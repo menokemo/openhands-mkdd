@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket as UpstreamWebSocket } from "ws";
 import { OPENHANDS_URL, sessionKey } from "./openhands-client.mjs";
 import { findAuthorizedConversation } from "./authorize-conversation.mjs";
 import { normalizeEvent } from "./normalize-event.mjs";
+import { sendPushToAll } from "./push-notifications.mjs";
 
 /**
  * Secure realtime chat bridge — implements Phase C of
@@ -96,6 +97,26 @@ export function attachChatWebSocketBridge(httpServer) {
       const normalized = normalizeEvent(rawEvent);
       if (normalized && browserSocket.readyState === browserSocket.OPEN) {
         browserSocket.send(JSON.stringify({ type: "event", event: normalized }));
+      }
+
+      // Push notification for a genuine new agent message (BUGS_AND_FIXES.md
+      // #107) - never for the owner's own messages, and never blocks/
+      // delays delivering the event to the open browser tab above.
+      if (normalized?.kind === "MessageEvent" && normalized.source === "agent") {
+        const firstTextBlock = normalized.llm_message?.content?.find(
+          (item) => item.type === "text",
+        );
+        const preview = firstTextBlock?.text?.slice(0, 120) ?? "";
+
+        void sendPushToAll({
+          title: employeeName,
+          body: preview,
+          // No per-conversation deep link exists yet (MKDD is a
+          // client-side-state SPA, not URL-routed per conversation) -
+          // opens the app root; the owner navigates from there.
+          url: "/",
+          tag: `mkdd-message-${employeeId}`,
+        });
       }
     });
 
