@@ -13,6 +13,7 @@ import type {
 import EmployeeInsightsPanel from "../components/EmployeeInsightsPanel";
 import { formatMessageTime } from "../utils/formatMessageTime";
 import { detectPreviewLinks } from "../utils/detectPreviewLinks";
+import { ROLE_ICONS } from "../utils/roleIcons";
 import { uploadProjectFiles } from "../api/client";
 
 type Props = {
@@ -161,7 +162,13 @@ export default function ChatScreen({
   return (
     <main className="app project-view chat-screen">
       <div className="chat-screen-person">
-        <div className="chat-role-badge">{employee.role}</div>
+        <div className="chat-role-badge">
+          {(() => {
+            const RoleIcon = ROLE_ICONS[employee.id];
+            return RoleIcon ? <RoleIcon /> : null;
+          })()}
+          {employee.role}
+        </div>
 
         <div className="chat-screen-person-row">
           <button

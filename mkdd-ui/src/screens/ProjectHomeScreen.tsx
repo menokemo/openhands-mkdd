@@ -7,20 +7,10 @@ import {
   FaFile,
   FaUpload,
   FaSpinner,
-  FaClipboardList,
-  FaChartLine,
-  FaPalette,
-  FaCompassDrafting,
-  FaCode,
-  FaPlug,
   FaClipboardCheck,
   FaVial,
   FaCodeBranch,
   FaShieldHalved,
-  FaServer,
-  FaPen,
-  FaRocket,
-  FaLanguage,
   FaTriangleExclamation,
   FaMagnifyingGlass,
   FaCircleCheck,
@@ -73,22 +63,7 @@ const TEXT_EXTENSIONS = new Set(["md", "txt"]);
 // icon representing their role - shown as a small badge on their avatar
 // in the team strip, since the role text itself can be visually crowded
 // at the strip's compact card width.
-const ROLE_ICONS: Record<string, React.ComponentType> = {
-  "product-manager": FaClipboardList,
-  "business-analyst": FaChartLine,
-  "ui-ux": FaPalette,
-  architect: FaCompassDrafting,
-  implementation: FaCode,
-  "integration-engineer": FaPlug,
-  qa: FaClipboardCheck,
-  "test-automation": FaVial,
-  "code-review": FaCodeBranch,
-  "security-review": FaShieldHalved,
-  devops: FaServer,
-  "technical-writer": FaPen,
-  "release-manager": FaRocket,
-  "content-writer": FaLanguage,
-};
+import { ROLE_ICONS } from "../utils/roleIcons";
 
 const REVIEW_ICONS: Record<WorkflowReviewRole, React.ComponentType> = {
   qa: FaClipboardCheck,

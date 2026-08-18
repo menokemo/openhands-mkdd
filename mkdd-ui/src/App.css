@@ -934,12 +934,19 @@ header button,
 }
 
 .chat-role-badge {
-  padding: 4px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 16px;
   border-radius: 999px;
-  background: var(--mkdd-accent-glow);
-  color: var(--mkdd-accent);
-  font-size: 11px;
+  background: var(--mkdd-accent);
+  color: #fff;
+  font-size: 13px;
   font-weight: 700;
+}
+
+.chat-role-badge svg {
+  font-size: 13px;
 }
 
 .chat-screen-person-row {
