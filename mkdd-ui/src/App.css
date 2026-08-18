@@ -791,7 +791,7 @@ header button,
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  justify-content: center;
 }
 
 .chat-employee-info strong {
@@ -799,11 +799,6 @@ header button,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.chat-employee-info span {
-  color: var(--mkdd-text-muted);
-  font-size: 11px;
 }
 
 /* =========================
@@ -930,12 +925,29 @@ header button,
 
 .chat-screen-person {
   flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--mkdd-border-subtle);
+}
+
+.chat-role-badge {
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: var(--mkdd-accent-glow);
+  color: var(--mkdd-accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.chat-screen-person-row {
+  width: 100%;
   min-width: 0;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--mkdd-border-subtle);
 }
 
 .chat-back-button {

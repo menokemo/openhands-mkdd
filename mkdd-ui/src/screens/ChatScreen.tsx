@@ -161,63 +161,66 @@ export default function ChatScreen({
   return (
     <main className="app project-view chat-screen">
       <div className="chat-screen-person">
-        <button
-          type="button"
-          className="chat-back-button"
-          onClick={onBack}
-          aria-label={language === "ar" ? "رجوع" : "Back"}
-        >
-          ←
-        </button>
+        <div className="chat-role-badge">{employee.role}</div>
 
-        <div className="chat-employee-avatar">
-          {employee.avatarUrl ? (
-            <img src={employee.avatarUrl} alt={employeeName ?? employee.name} />
-          ) : (
-            (employeeName?.slice(0, 1) ?? "?")
-          )}
-        </div>
+        <div className="chat-screen-person-row">
+          <button
+            type="button"
+            className="chat-back-button"
+            onClick={onBack}
+            aria-label={language === "ar" ? "رجوع" : "Back"}
+          >
+            ←
+          </button>
 
-        <div className="chat-employee-info">
-          <strong>{employeeName}</strong>
-          <span>{employee.role}</span>
-        </div>
+          <div className="chat-employee-avatar">
+            {employee.avatarUrl ? (
+              <img src={employee.avatarUrl} alt={employeeName ?? employee.name} />
+            ) : (
+              (employeeName?.slice(0, 1) ?? "?")
+            )}
+          </div>
 
-        <button
-          type="button"
-          className="chat-new-conversation-button"
-          disabled={sending}
-          onClick={() => {
-            if (!message.trim() && pendingImages.length === 0) {
-              alert(
+          <div className="chat-employee-info">
+            <strong>{employeeName}</strong>
+          </div>
+
+          <button
+            type="button"
+            className="chat-new-conversation-button"
+            disabled={sending}
+            onClick={() => {
+              if (!message.trim() && pendingImages.length === 0) {
+                alert(
+                  language === "ar"
+                    ? "اكتب رسالتك الأولى في صندوق الكتابة الأول، وبعدين دوس محادثة جديدة"
+                    : "Type your first message in the composer first, then press New conversation",
+                );
+                return;
+              }
+
+              const confirmed = window.confirm(
                 language === "ar"
-                  ? "اكتب رسالتك الأولى في صندوق الكتابة الأول، وبعدين دوس محادثة جديدة"
-                  : "Type your first message in the composer first, then press New conversation",
+                  ? "هتبدأ محادثة جديدة تمامًا مع الموظف ده. المحادثة الحالية هتفضل موجودة (تقدر توصلها من واجهة OpenHands الأصلية)، بس هتبقى مش النشطة بعد كده. متأكد؟"
+                  : "This will start a completely new conversation with this employee. The current conversation stays intact (reachable from OpenHands's own UI) but will no longer be the active one. Continue?",
               );
-              return;
-            }
+              if (confirmed)
+                startFreshConversation(
+                  pendingImages.length > 0 ? pendingImages : undefined,
+                );
+            }}
+          >
+            {language === "ar" ? "محادثة جديدة" : "New conversation"}
+          </button>
 
-            const confirmed = window.confirm(
-              language === "ar"
-                ? "هتبدأ محادثة جديدة تمامًا مع الموظف ده. المحادثة الحالية هتفضل موجودة (تقدر توصلها من واجهة OpenHands الأصلية)، بس هتبقى مش النشطة بعد كده. متأكد؟"
-                : "This will start a completely new conversation with this employee. The current conversation stays intact (reachable from OpenHands's own UI) but will no longer be the active one. Continue?",
-            );
-            if (confirmed)
-              startFreshConversation(
-                pendingImages.length > 0 ? pendingImages : undefined,
-              );
-          }}
-        >
-          {language === "ar" ? "محادثة جديدة" : "New conversation"}
-        </button>
-
-        <EmployeeInsightsPanel
-          language={language}
-          activity={activity}
-          executionStatus={executionStatus}
-          cost={cost}
-          workPlan={workPlan}
-        />
+          <EmployeeInsightsPanel
+            language={language}
+            activity={activity}
+            executionStatus={executionStatus}
+            cost={cost}
+            workPlan={workPlan}
+          />
+        </div>
       </div>
 
       <section className="chat">
