@@ -226,7 +226,14 @@ export default function ProjectHomeScreen({
 
                 <div className="employee-card-info">
                   <strong>{label}</strong>
-                  <span>{employee.role}</span>
+                  <span className="employee-card-role-badge">
+                    {ROLE_ICONS[employee.id] &&
+                      (() => {
+                        const RoleIcon = ROLE_ICONS[employee.id];
+                        return <RoleIcon />;
+                      })()}
+                    {employee.role}
+                  </span>
                 </div>
               </div>
             );

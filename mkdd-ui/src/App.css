@@ -888,7 +888,7 @@ header button,
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .employee-card-info strong {
@@ -898,12 +898,26 @@ header button,
   font-size: 14px;
 }
 
-.employee-card-info span {
+.employee-card-role-badge {
+  max-width: 100%;
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--mkdd-accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--mkdd-text-muted);
-  font-size: 10px;
+}
+
+.employee-card-role-badge svg {
+  flex: 0 0 auto;
+  font-size: 9px;
 }
 
 .employee-open-arrow {
@@ -1606,13 +1620,17 @@ header button,
   max-width: 100%;
 }
 
-.project-home .employee-card-info span {
-  font-size: 10px;
-  color: var(--mkdd-text-muted);
+.project-home .employee-card-role-badge {
+  max-width: 100%;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--mkdd-accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
 }
 
 .project-home .employee-avatar img {
