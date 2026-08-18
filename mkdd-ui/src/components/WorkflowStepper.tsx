@@ -9,10 +9,11 @@ import {
   FaCircleCheck,
   FaCircleXmark,
   FaLock,
+  FaSignature,
 } from "react-icons/fa6";
 import type { AgentProfile, Workspace } from "../types";
 import type { WorkflowState } from "../api/client";
-import { closeWorkflowReport } from "../api/client";
+import { closeWorkflowReport, approveWorkflowGate } from "../api/client";
 import { GATES, getGateLabel } from "../utils/workflowLabels";
 import type { WorkflowGateName } from "../api/client";
 
@@ -42,6 +43,32 @@ const REPORT_STATUS_LABELS = {
     implemented: "Implemented",
     declined: "Declined",
     closed: "Closed",
+  },
+} as const;
+
+// Real backend rejection reasons (see server/routes/workflow.mjs
+// handleApproveGate), translated to plain language instead of showing
+// a raw error code like "open_blockers_exist" to the owner.
+const APPROVAL_ERROR_LABELS = {
+  ar: {
+    open_blockers_exist: "لسه في عوائق مفتوحة على المشروع، لازم تتحل قبل الاعتماد.",
+    unverified_findings_exist:
+      "لسه في ملاحظات مراجعة غير مؤكَّدة، لازم تتأكد قبل الاعتماد.",
+    mandatory_reviews_incomplete:
+      "لسه في مراجعات إلزامية (QA/اختبارات آلية/مراجعة كود/مراجعة أمان) لم تكتمل.",
+    gate_not_current: "هذه المرحلة مش المرحلة الحالية للمشروع.",
+    invalid_gate: "مرحلة غير صحيحة.",
+    default: "فشل الاعتماد، حاول تاني.",
+  },
+  en: {
+    open_blockers_exist: "There are still open blockers - resolve them before approving.",
+    unverified_findings_exist:
+      "There are still unverified review findings - verify them before approving.",
+    mandatory_reviews_incomplete:
+      "Mandatory reviews (QA/Test Automation/Code Review/Security Review) are not all complete yet.",
+    gate_not_current: "This is not the project's current gate.",
+    invalid_gate: "Invalid gate.",
+    default: "Approval failed, try again.",
   },
 } as const;
 
@@ -154,12 +181,39 @@ export default function WorkflowStepper({
   const [openGate, setOpenGate] = useState<WorkflowGateName | null>(null);
   const [closingReportId, setClosingReportId] = useState<string | null>(null);
   const [closeError, setCloseError] = useState<string | null>(null);
+  const [confirmingApproval, setConfirmingApproval] = useState(false);
+  const [approving, setApproving] = useState(false);
+  const [approvalError, setApprovalError] = useState<string | null>(null);
 
   function employeeName(employeeId: string): string {
     const employee = employees.find((e) => e.id === employeeId);
     if (!employee) return employeeId;
     const name = language === "ar" ? employee.displayNameAr : employee.displayNameEn;
     return name ?? employee.name;
+  }
+
+  async function handleApproveGate() {
+    if (!workflow) return;
+    setApproving(true);
+    setApprovalError(null);
+    try {
+      // "Owner" is the deliberate, explicit identity recorded for this
+      // action - there's no real authenticated user identity in this
+      // system yet (see README section 47 / AGENTS.md's untrusted-
+      // client-identity note), so gate approvals specifically use a
+      // fixed, unambiguous marker rather than any employee-style name,
+      // since the user explicitly asked for this to act as their own
+      // signature - distinct from any AI employee's identity.
+      const next = await approveWorkflowGate(project.path, workflow.currentGate, "Owner");
+      onWorkflowChange(next);
+      setConfirmingApproval(false);
+    } catch (err) {
+      const code = err instanceof Error ? err.message : "";
+      const labels = APPROVAL_ERROR_LABELS[language];
+      setApprovalError((labels as Record<string, string>)[code] ?? labels.default);
+    } finally {
+      setApproving(false);
+    }
   }
 
   async function handleCloseReport(reportId: string) {
@@ -250,6 +304,67 @@ export default function WorkflowStepper({
           );
         })}
       </div>
+
+      {workflow && workflow.gates[workflow.currentGate].status !== "approved" && (
+        <button
+          type="button"
+          className="workflow-approve-button"
+          onClick={() => {
+            setApprovalError(null);
+            setConfirmingApproval(true);
+          }}
+        >
+          <FaSignature />
+          {language === "ar"
+            ? `اعتماد مرحلة ${getGateLabel(workflow.currentGate, language)}`
+            : `Approve ${getGateLabel(workflow.currentGate, language)}`}
+        </button>
+      )}
+
+      {confirmingApproval && workflow && (
+        <div
+          className="modal-backdrop"
+          onClick={() => !approving && setConfirmingApproval(false)}
+        >
+          <div className="modal approve-gate-modal" onClick={(e) => e.stopPropagation()}>
+            <h2>
+              {language === "ar"
+                ? `اعتماد مرحلة "${getGateLabel(workflow.currentGate, language)}"`
+                : `Approve "${getGateLabel(workflow.currentGate, language)}"`}
+            </h2>
+
+            <p className="approve-gate-warning">
+              {language === "ar"
+                ? "هذا الاعتماد يمثّل توقيعك الرسمي على هذه المرحلة، ولا يمكن التراجع عنه. هل أنت متأكد؟"
+                : "This approval acts as your official sign-off on this gate and cannot be undone. Are you sure?"}
+            </p>
+
+            {approvalError && <p className="modal-error">{approvalError}</p>}
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                onClick={() => setConfirmingApproval(false)}
+                disabled={approving}
+              >
+                {language === "ar" ? "إلغاء" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                className="approve-gate-confirm-button"
+                onClick={handleApproveGate}
+                disabled={approving}
+              >
+                {approving
+                  ? "…"
+                  : language === "ar"
+                    ? "اعتماد نهائي"
+                    : "Confirm approval"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {openGate && (
         <div className="modal-backdrop" onClick={() => setOpenGate(null)}>

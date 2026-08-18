@@ -3238,3 +3238,36 @@ header button,
 .gate-report-close-button:disabled {
   opacity: 0.6;
 }
+
+/* =========================
+   Workflow gate approval (owner sign-off)
+   ========================= */
+
+.workflow-approve-button {
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--mkdd-accent), var(--mkdd-accent-deep));
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.approve-gate-warning {
+  margin: 0;
+  color: var(--mkdd-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.approve-gate-confirm-button {
+  background: var(--mkdd-accent);
+  border-color: var(--mkdd-accent);
+  color: #fff;
+}
