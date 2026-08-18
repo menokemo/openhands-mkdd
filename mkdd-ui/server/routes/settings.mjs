@@ -3,6 +3,32 @@ import { getAllowedHosts, addAllowedHost, removeAllowedHost } from "../site-conf
 import { readJsonBody } from "../lib/read-json-body.mjs";
 
 /**
+ * Real access control (not just hiding a UI button, which would be
+ * purely cosmetic - see BUGS_AND_FIXES.md #112): rejects any settings
+ * request whose Host header isn't a local/private address. NPM (or any
+ * reverse proxy) preserves the original Host header by default when
+ * forwarding requests, so a request that arrives via the public domain
+ * carries that domain in the Host header, while a request made
+ * directly against the local IP carries that IP instead - letting the
+ * backend reliably tell them apart regardless of what the frontend UI
+ * shows or hides.
+ */
+function isLocalHostRequest(req) {
+  const host = (req.headers.host ?? "").split(":")[0];
+
+  if (host === "localhost" || host === "127.0.0.1") return true;
+
+  // RFC 1918 private IPv4 ranges - covers typical LAN/VPN (e.g.
+  // WireGuard) addresses like 192.168.x.x, 10.x.x.x, 172.16-31.x.x.
+  return /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host);
+}
+
+function rejectNonLocal(res) {
+  res.writeHead(403, { "content-type": "application/json" });
+  res.end(JSON.stringify({ error: "local_access_only" }));
+}
+
+/**
  * Restarts this app's own container via the Docker Engine API, reached
  * over the socket mounted into this container (BUGS_AND_FIXES.md #110)
  * - see compose.yml's volumes section for the real security tradeoff
@@ -53,6 +79,11 @@ export async function handleGetAllowedHosts(req, res) {
     return false;
   }
 
+  if (!isLocalHostRequest(req)) {
+    rejectNonLocal(res);
+    return true;
+  }
+
   res.writeHead(200, { "content-type": "application/json" });
   res.end(JSON.stringify({ allowedHosts: getAllowedHosts() }));
   return true;
@@ -68,6 +99,11 @@ export async function handleGetAllowedHosts(req, res) {
 export async function handlePostAllowedHosts(req, res) {
   if (!(req.method === "POST" && req.url === "/api/settings/allowed-hosts")) {
     return false;
+  }
+
+  if (!isLocalHostRequest(req)) {
+    rejectNonLocal(res);
+    return true;
   }
 
   const { host } = await readJsonBody(req);
@@ -88,6 +124,11 @@ export async function handlePostAllowedHosts(req, res) {
 export async function handleRemoveAllowedHost(req, res) {
   if (!(req.method === "POST" && req.url === "/api/settings/allowed-hosts/remove")) {
     return false;
+  }
+
+  if (!isLocalHostRequest(req)) {
+    rejectNonLocal(res);
+    return true;
   }
 
   const { host } = await readJsonBody(req);
@@ -116,6 +157,11 @@ export async function handleRemoveAllowedHost(req, res) {
 export async function handleRestartContainer(req, res) {
   if (!(req.method === "POST" && req.url === "/api/settings/restart-container")) {
     return false;
+  }
+
+  if (!isLocalHostRequest(req)) {
+    rejectNonLocal(res);
+    return true;
   }
 
   const containerName = process.env.MKDD_UI_CONTAINER_NAME ?? "mkdd-ui";

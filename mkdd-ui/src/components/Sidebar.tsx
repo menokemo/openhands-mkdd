@@ -10,6 +10,7 @@ import {
   FaChevronRight,
 } from "react-icons/fa6";
 import DomainSettingsModal from "./DomainSettingsModal";
+import { isLocalAccess } from "../utils/isLocalAccess";
 
 type SidebarMenuKey = "active" | "nearCompletion" | "completed" | "employees";
 
@@ -92,21 +93,23 @@ export default function Sidebar({ open, language, onClose, onSelect }: Props) {
                 </button>
               ))}
 
-              <button
-                className="sidebar-menu-item"
-                onClick={() => {
-                  setSettingsOpen(true);
-                  onClose();
-                }}
-              >
-                <span className="sidebar-menu-icon">
-                  <FaGear />
-                </span>
-                {language === "ar" ? "الإعدادات" : "Settings"}
-                <span className="sidebar-menu-arrow">
-                  {language === "ar" ? <FaChevronLeft /> : <FaChevronRight />}
-                </span>
-              </button>
+              {isLocalAccess() && (
+                <button
+                  className="sidebar-menu-item"
+                  onClick={() => {
+                    setSettingsOpen(true);
+                    onClose();
+                  }}
+                >
+                  <span className="sidebar-menu-icon">
+                    <FaGear />
+                  </span>
+                  {language === "ar" ? "الإعدادات" : "Settings"}
+                  <span className="sidebar-menu-arrow">
+                    {language === "ar" ? <FaChevronLeft /> : <FaChevronRight />}
+                  </span>
+                </button>
+              )}
             </nav>
           </aside>
         </div>
