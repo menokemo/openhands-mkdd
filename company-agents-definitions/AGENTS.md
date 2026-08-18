@@ -175,12 +175,16 @@ The moment an employee finds a real issue in another employee's work, they recor
 
     curl -s -X POST http://mkdd-ui:8787/api/workflow/reports \
       -H "Content-Type: application/json" \
-      -d '{"project":"/projects/acme-app","action":"add","gate":"requirements","fromEmployeeId":"implementation","toEmployeeId":"ui-ux","title":"Missing branch-specific product data in requirements"}'
+      -d '{"project":"/projects/acme-app","action":"add","gate":"requirements","fromEmployeeId":"implementation","toEmployeeId":"ui-ux","title":"Missing branch-specific product data in requirements","details":"The requirements document does not specify per-branch product listings, pricing, or availability. This blocks implementing the branch-selector feature correctly - each branch page currently falls back to showing identical generic data. Recommend adding a per-branch data table to the PRD before continuing implementation."}'
 
 `gate` is one of `requirements`, `ui_ux`, `architecture`, `production`. `fromEmployeeId`
 and `toEmployeeId` are the stable employee IDs used throughout this document (Section
 4's lifecycle role names, e.g. `implementation`, `ui-ux`, `architect` — not display
-names).
+names). `title` is a short one-line summary shown at a glance; `details` (optional but
+strongly recommended for anything non-trivial) is the full explanation — write it the
+same way you would write a real report: what you observed, why it matters, and what
+you recommend. A one-line `title` alone is not a substitute for `details` when the
+issue actually needs explaining.
 
 The employee who received the report responds once they've actually looked at it —
 either confirming they implemented the fix:

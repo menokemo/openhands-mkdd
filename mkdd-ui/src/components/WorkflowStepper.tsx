@@ -291,6 +291,10 @@ export default function WorkflowStepper({
 
                     <p className="gate-report-title">{report.title}</p>
 
+                    {report.details && (
+                      <p className="gate-report-details">{report.details}</p>
+                    )}
+
                     <div
                       className={`gate-report-status gate-report-status-${report.status}`}
                     >

@@ -265,6 +265,7 @@ export type WorkflowState = {
     fromEmployeeId: string;
     toEmployeeId: string;
     title: string;
+    details: string | null;
     status: "open" | "implemented" | "declined" | "closed";
     note: string | null;
     createdAt: string;
