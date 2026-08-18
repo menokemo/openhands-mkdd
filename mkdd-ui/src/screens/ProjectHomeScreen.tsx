@@ -65,6 +65,7 @@ const TEXT_EXTENSIONS = new Set(["md", "txt"]);
 // in the team strip, since the role text itself can be visually crowded
 // at the strip's compact card width.
 import { ROLE_ICONS } from "../utils/roleIcons";
+import { hasUnreadMessage } from "../utils/lastViewed";
 
 const REVIEW_ICONS: Record<WorkflowReviewRole, React.ComponentType> = {
   qa: FaClipboardCheck,
@@ -192,6 +193,11 @@ export default function ProjectHomeScreen({
             const status = teamStatusByEmployeeId.get(employee.id);
             const label =
               language === "ar" ? employee.displayNameAr : employee.displayNameEn;
+            const unread = hasUnreadMessage(
+              employee.id,
+              status?.lastMessageAt ?? null,
+              status?.lastMessageFrom ?? null,
+            );
 
             return (
               <div
@@ -209,6 +215,8 @@ export default function ProjectHomeScreen({
                   }
                 }}
               >
+                {unread && <span className="employee-card-unread-dot" />}
+
                 <div className="employee-card-header">
                   <strong>{label}</strong>
                   {ROLE_ICONS[employee.id] &&

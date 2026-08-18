@@ -14,6 +14,7 @@ import EmployeeInsightsPanel from "../components/EmployeeInsightsPanel";
 import { formatMessageTime } from "../utils/formatMessageTime";
 import { detectPreviewLinks } from "../utils/detectPreviewLinks";
 import { ROLE_ICONS } from "../utils/roleIcons";
+import { markConversationAsViewed } from "../utils/lastViewed";
 import { uploadProjectFiles } from "../api/client";
 
 type Props = {
@@ -128,6 +129,15 @@ export default function ChatScreen({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: "end" });
   }, [messages.length]);
+
+  // Mark as viewed both when this chat first opens AND whenever new
+  // messages arrive while it's still open (BUGS_AND_FIXES.md #106) -
+  // otherwise a message that arrives while the owner is actively
+  // looking at the chat would still show as "unread" on the team strip
+  // the next time they leave and check it.
+  useEffect(() => {
+    markConversationAsViewed(employee.id);
+  }, [employee.id, messages.length]);
 
   // The composer grows with its content (see the textarea below); resize
   // it here since a plain CSS `height:auto` doesn't work for a fixed-

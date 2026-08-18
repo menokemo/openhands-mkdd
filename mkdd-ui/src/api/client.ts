@@ -164,6 +164,27 @@ export async function fetchWorkPlan(
   return r.json();
 }
 
+/**
+ * Lightweight endpoint powering the unread-message badge on the team
+ * strip - see BUGS_AND_FIXES.md #106.
+ */
+export async function fetchLastMessage(
+  conversationId: string,
+  project: string,
+  employeeId: string,
+  employeeName: string,
+): Promise<{ lastMessageAt: string | null; lastMessageFrom: string | null }> {
+  const qs = new URLSearchParams({
+    conversation: conversationId,
+    project,
+    employeeId,
+    employeeName,
+  });
+  const r = await fetch(`/api/chat/last-message?${qs}`);
+
+  return r.json();
+}
+
 export async function sendChatMessage(
   project: string,
   employeeId: string,

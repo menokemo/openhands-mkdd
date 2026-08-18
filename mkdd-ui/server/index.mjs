@@ -25,6 +25,7 @@ import {
   handleChatNew,
   handleChatEvents,
   handleChatWorkPlan,
+  handleChatLastMessage,
 } from "./routes/chat.mjs";
 import { attachChatWebSocketBridge } from "./lib/ws-bridge.mjs";
 
@@ -58,6 +59,7 @@ const ROUTES = [
   handleChatNew,
   handleChatEvents,
   handleChatWorkPlan,
+  handleChatLastMessage,
 ];
 
 const server = http.createServer(async (req, res) => {

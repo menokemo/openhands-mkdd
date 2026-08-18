@@ -435,3 +435,54 @@ export async function handleChatWorkPlan(req, res) {
   res.end(JSON.stringify({ work_plan: deriveWorkPlan(items) }));
   return true;
 }
+
+/**
+ * GET /api/chat/last-message — like /api/chat/work-plan, returns ONLY
+ * the most recent message event's timestamp and sender ("user" or
+ * "agent"), never the full event list. Powers the unread-message badge
+ * on the team strip (BUGS_AND_FIXES.md #106): the frontend compares
+ * this against a locally-remembered "last viewed" timestamp per
+ * employee to decide whether to show a badge, without needing to fetch
+ * (and re-fetch every 5s x 14 employees) the full conversation history.
+ */
+export async function handleChatLastMessage(req, res) {
+  if (!req.url?.startsWith("/api/chat/last-message?")) return false;
+
+  const url = new URL(req.url, "http://mkdd.local");
+  const conversationId = url.searchParams.get("conversation");
+  const project = url.searchParams.get("project");
+  const employeeId = url.searchParams.get("employeeId");
+  const employeeName = url.searchParams.get("employeeName");
+
+  if (!conversationId || !project || !employeeId || !employeeName) {
+    res.writeHead(400, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "conversation_project_employee_required" }));
+    return true;
+  }
+
+  const authorizedConversation = await findAuthorizedConversation({
+    conversationId,
+    project,
+    employeeId,
+    employeeName,
+  });
+
+  if (!authorizedConversation) {
+    res.writeHead(403, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "conversation_employee_mismatch" }));
+    return true;
+  }
+
+  const { status, items } = await fetchAllNormalizedEvents(conversationId);
+  const messages = items.filter((item) => item.kind === "MessageEvent");
+  const last = messages.length > 0 ? messages[messages.length - 1] : null;
+
+  res.writeHead(status, { "content-type": "application/json" });
+  res.end(
+    JSON.stringify({
+      lastMessageAt: last?.timestamp ?? null,
+      lastMessageFrom: last?.source ?? null,
+    }),
+  );
+  return true;
+}

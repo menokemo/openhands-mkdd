@@ -1583,6 +1583,7 @@ header button,
 }
 
 .project-home .employee-card {
+  position: relative;
   flex: 0 0 76px;
   width: 76px;
   min-height: auto;
@@ -3270,4 +3271,24 @@ header button,
   background: var(--mkdd-accent);
   border-color: var(--mkdd-accent);
   color: #fff;
+}
+
+/* =========================
+   Unread message badge (team strip)
+   ========================= */
+
+/* Positioned INSIDE the card's own bounds (not overflowing past the
+   edge) - the card has overflow:hidden (needed for the header/footer's
+   rounded corners, #98/#99), so anything positioned outside the card's
+   own box would get clipped and never show. */
+.employee-card-unread-dot {
+  position: absolute;
+  z-index: 2;
+  top: 6px;
+  inset-inline-end: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mkdd-danger);
+  box-shadow: 0 0 0 2px var(--mkdd-surface);
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchConversation, fetchWorkPlan } from "../api/client";
+import { fetchConversation, fetchWorkPlan, fetchLastMessage } from "../api/client";
 import type {
   AgentProfile,
   ConversationCost,
@@ -14,6 +14,8 @@ export type ProjectEmployeeStatus = {
   executionStatus: ConversationExecutionStatus | null;
   cost: ConversationCost | null;
   workPlan: WorkPlan | null;
+  lastMessageAt: string | null;
+  lastMessageFrom: string | null;
 };
 
 type Params = {
@@ -68,10 +70,14 @@ export function useProjectTeamStatus({ project, employees }: Params) {
                 executionStatus: null,
                 cost: null,
                 workPlan: null,
+                lastMessageAt: null,
+                lastMessageFrom: null,
               };
             }
 
             let workPlan: WorkPlan | null | undefined = undefined;
+            let lastMessageAt: string | null | undefined = undefined;
+            let lastMessageFrom: string | null | undefined = undefined;
 
             try {
               const workPlanResponse = await fetchWorkPlan(
@@ -85,12 +91,27 @@ export function useProjectTeamStatus({ project, employees }: Params) {
               // Preserve the previous work plan on a transient events failure.
             }
 
+            try {
+              const lastMessageResponse = await fetchLastMessage(
+                conversation.id,
+                project.path,
+                employee.id,
+                employee.name,
+              );
+              lastMessageAt = lastMessageResponse.lastMessageAt;
+              lastMessageFrom = lastMessageResponse.lastMessageFrom;
+            } catch {
+              // Preserve the previous last-message info on a transient failure.
+            }
+
             return {
               employeeId: employee.id,
               conversationId: conversation.id,
               executionStatus: conversation.execution_status ?? null,
               cost: conversation.cost ?? null,
               workPlan: workPlan ?? null,
+              lastMessageAt: lastMessageAt ?? null,
+              lastMessageFrom: lastMessageFrom ?? null,
             };
           } catch {
             return null;
@@ -113,6 +134,8 @@ export function useProjectTeamStatus({ project, employees }: Params) {
               cost: update.cost ?? old?.cost ?? null,
               executionStatus: update.executionStatus ?? old?.executionStatus ?? null,
               conversationId: update.conversationId ?? old?.conversationId ?? null,
+              lastMessageAt: update.lastMessageAt ?? old?.lastMessageAt ?? null,
+              lastMessageFrom: update.lastMessageFrom ?? old?.lastMessageFrom ?? null,
             });
           }
 
@@ -124,6 +147,8 @@ export function useProjectTeamStatus({ project, employees }: Params) {
                 executionStatus: null,
                 cost: null,
                 workPlan: null,
+                lastMessageAt: null,
+                lastMessageFrom: null,
               },
           );
         });
