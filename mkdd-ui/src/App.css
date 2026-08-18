@@ -3025,3 +3025,29 @@ header button,
 .dashboard-item-list li span svg {
   font-size: 12px;
 }
+
+/* =========================
+   Dark mode chat refinements
+   ========================= */
+
+/* Light mode's contrast (white surface vs off-white page/bubbles)
+   already reads clearly with no changes needed. Dark mode's tonal steps
+   (--mkdd-surface #0c1623 vs --mkdd-surface-raised #0e1b2a) are too
+   close to each other to read as genuinely distinct layers - bumping
+   the chat area up to --mkdd-surface-hover (a real, clearly lighter
+   step) restores the intended separation from both the bars above/
+   below AND the message bubbles inside it. */
+[data-theme="dark"] .chat-screen > .chat {
+  background: var(--mkdd-surface-hover);
+}
+
+/* The raw --mkdd-accent (#325be4) is a fully saturated brand blue -
+   fine as a small accent, but uncomfortably intense as a large "sent
+   message" bubble background someone reads text against repeatedly.
+   Muted by blending with the page tone, same color-mix() technique
+   already used elsewhere in this file for tints - keeps it clearly
+   recognizable as "your message" while being easier on the eyes. */
+[data-theme="dark"] .project-view .chat article.me {
+  background: color-mix(in srgb, var(--mkdd-accent) 55%, var(--mkdd-page));
+  border-color: color-mix(in srgb, var(--mkdd-accent) 55%, var(--mkdd-page));
+}
