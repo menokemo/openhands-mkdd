@@ -65,6 +65,9 @@ body,
 #root {
   min-height: 100%;
 }
+html {
+  background: var(--mkdd-page);
+}
 body {
   margin: 0;
   background: var(--mkdd-page);
