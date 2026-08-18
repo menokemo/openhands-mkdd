@@ -904,15 +904,15 @@ header button,
   display: flex;
   align-items: center;
   gap: 3px;
-  padding: 2px 8px;
-  border-radius: 999px;
+  padding: 4px 8px;
+  border-radius: 12px;
   background: var(--mkdd-accent);
   color: #fff;
   font-size: 9px;
   font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.3;
+  white-space: normal;
+  text-align: center;
 }
 
 .employee-card-role-badge svg {
@@ -1622,15 +1622,15 @@ header button,
 
 .project-home .employee-card-role-badge {
   max-width: 100%;
-  padding: 2px 8px;
-  border-radius: 999px;
+  padding: 4px 8px;
+  border-radius: 12px;
   background: var(--mkdd-accent);
   color: #fff;
   font-size: 9px;
   font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.3;
+  white-space: normal;
+  text-align: center;
 }
 
 .project-home .employee-avatar img {
