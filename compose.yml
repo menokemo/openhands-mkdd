@@ -52,6 +52,12 @@ services:
     restart: unless-stopped
     environment:
       OPENHANDS_URL: http://agent-canvas:8000
+      # Comma-separated list of domains allowed to reach Vite's dev
+      # server (BUGS_AND_FIXES.md #108) - e.g. "mkdd.example.com". Unset
+      # by default (Vite falls back to its normal localhost-only
+      # behavior). Set this in your own .env file, never commit a real
+      # domain into this file directly.
+      MKDD_ALLOWED_HOSTS: ${MKDD_ALLOWED_HOSTS:-}
     depends_on:
       - agent-canvas
     ports:

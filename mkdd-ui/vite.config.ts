@@ -1,9 +1,22 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
+// Vite's dev server rejects requests whose Host header isn't in this
+// list, as a DNS-rebinding protection - this is a real security
+// feature, not something to disable outright. Reading it from an
+// env var (not hardcoding a domain in this source file, which is
+// committed to a public GitHub repo) means the actual domain lives
+// only in this deployment's own compose.yml/.env, and changing it
+// later is a one-line env var change + restart, never a code change
+// (BUGS_AND_FIXES.md #108).
+const allowedHosts = process.env.MKDD_ALLOWED_HOSTS
+  ? process.env.MKDD_ALLOWED_HOSTS.split(",").map((host) => host.trim())
+  : undefined;
+
 export default defineConfig({
   plugins: [react()],
   server: {
+    allowedHosts,
     proxy: {
       "/api": {
         target: "http://localhost:8787",
