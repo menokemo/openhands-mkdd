@@ -899,8 +899,9 @@ header button,
 }
 
 .employee-card-role-badge {
+  width: 100%;
+  min-width: 0;
   max-width: 100%;
-  width: fit-content;
   display: flex;
   align-items: center;
   gap: 3px;
@@ -1621,6 +1622,8 @@ header button,
 }
 
 .project-home .employee-card-role-badge {
+  width: 100%;
+  min-width: 0;
   max-width: 100%;
   padding: 4px 8px;
   border-radius: 12px;
