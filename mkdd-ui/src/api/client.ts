@@ -380,3 +380,40 @@ export async function updateWorkflowReview(
   if (!r.ok) throw new Error(data.error ?? "workflow_review_update_failed");
   return data.workflow;
 }
+
+/**
+ * Settings: allowed hosts for Vite's dev server (BUGS_AND_FIXES.md
+ * #109). Saving does NOT take effect until the mkdd-ui container
+ * restarts - Vite reads this at server startup only.
+ */
+export async function fetchAllowedHosts(): Promise<string[]> {
+  const r = await fetch("/api/settings/allowed-hosts");
+  const data = await r.json();
+  return data.allowedHosts ?? [];
+}
+
+export async function addAllowedHostSetting(
+  host: string,
+): Promise<{ allowedHosts: string[]; restartRequired: boolean }> {
+  const r = await fetch("/api/settings/allowed-hosts", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ host }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error ?? "add_allowed_host_failed");
+  return data;
+}
+
+export async function removeAllowedHostSetting(
+  host: string,
+): Promise<{ allowedHosts: string[]; restartRequired: boolean }> {
+  const r = await fetch("/api/settings/allowed-hosts/remove", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ host }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error ?? "remove_allowed_host_failed");
+  return data;
+}

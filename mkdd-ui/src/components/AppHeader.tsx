@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { FaBars, FaSun, FaMoon, FaBell, FaBellSlash } from "react-icons/fa6";
+import { FaBars, FaSun, FaMoon, FaBell, FaBellSlash, FaGear } from "react-icons/fa6";
 import type { Theme } from "../hooks/useTheme";
 import {
   isPushSupported,
   getNotificationPermission,
   enablePushNotifications,
 } from "../utils/pushNotifications";
+import DomainSettingsModal from "./DomainSettingsModal";
 
 type Props = {
   language: "ar" | "en";
@@ -39,6 +40,7 @@ export default function AppHeader({
   const [notificationsEnabled, setNotificationsEnabled] = useState(
     getNotificationPermission() === "granted",
   );
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   async function handleEnableNotifications() {
     const success = await enablePushNotifications();
@@ -66,6 +68,14 @@ export default function AppHeader({
       </div>
 
       <div className="app-header-actions">
+        <button
+          className="app-header-icon-button"
+          onClick={() => setSettingsOpen(true)}
+          aria-label={language === "ar" ? "الإعدادات" : "Settings"}
+        >
+          <FaGear />
+        </button>
+
         {isPushSupported() && !notificationsEnabled && (
           <button
             className="app-header-icon-button"
@@ -108,6 +118,10 @@ export default function AppHeader({
           {languageLabel}
         </button>
       </div>
+
+      {settingsOpen && (
+        <DomainSettingsModal language={language} onClose={() => setSettingsOpen(false)} />
+      )}
     </header>
   );
 }
