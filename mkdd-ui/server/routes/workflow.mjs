@@ -312,6 +312,116 @@ export async function handleFindings(req, res) {
   return true;
 }
 
+/**
+ * Cross-employee reports (BUGS_AND_FIXES.md #102): any employee can flag
+ * an issue in another employee's work, tagged to whichever gate it
+ * relates to (independent of the project's current gate - a report about
+ * a requirements gap can be filed while the project is in the
+ * implementation stage, exactly the real scenario that motivated this
+ * feature). Deliberately a SEPARATE system from findings - findings are
+ * scoped to the 4 mandatory review roles and gate the Production
+ * approval; these reports are general peer-to-peer feedback with no
+ * gate-blocking effect, so mixing the two models would have been wrong.
+ *
+ * Lifecycle: open -> the target employee responds (implemented, with an
+ * optional note; or declined, with a REQUIRED explanation of why acting
+ * on it would have a negative impact) -> the owner reviews either
+ * outcome and gives final closure.
+ */
+export async function handleReports(req, res) {
+  if (!(req.method === "POST" && req.url === "/api/workflow/reports")) {
+    return false;
+  }
+
+  const {
+    project,
+    action,
+    gate,
+    fromEmployeeId,
+    toEmployeeId,
+    title,
+    reportId,
+    status,
+    note,
+  } = await readJsonBody(req);
+
+  if (!project || !action) {
+    res.writeHead(400, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "project_action_required" }));
+    return true;
+  }
+
+  const workflow = updateWorkflowState(project, (state) => {
+    if (action === "add") {
+      if (!GATES.includes(gate)) {
+        throw new Error("invalid_gate");
+      }
+
+      if (!fromEmployeeId?.trim() || !toEmployeeId?.trim() || !title?.trim()) {
+        throw new Error("report_fields_required");
+      }
+
+      state.reports.push({
+        id: randomUUID(),
+        gate,
+        fromEmployeeId: fromEmployeeId.trim(),
+        toEmployeeId: toEmployeeId.trim(),
+        title: title.trim(),
+        status: "open",
+        note: null,
+        createdAt: new Date().toISOString(),
+        respondedAt: null,
+        closedAt: null,
+      });
+
+      return state;
+    }
+
+    const report = state.reports.find((item) => item.id === reportId);
+
+    if (!report) {
+      throw new Error("report_not_found");
+    }
+
+    if (action === "respond") {
+      if (report.status !== "open") {
+        throw new Error("report_not_open");
+      }
+
+      if (status !== "implemented" && status !== "declined") {
+        throw new Error("invalid_report_response_status");
+      }
+
+      if (status === "declined" && !note?.trim()) {
+        throw new Error("decline_note_required");
+      }
+
+      report.status = status;
+      report.note = note?.trim() || null;
+      report.respondedAt = new Date().toISOString();
+
+      return state;
+    }
+
+    if (action === "close") {
+      if (report.status !== "implemented" && report.status !== "declined") {
+        throw new Error("report_not_ready_to_close");
+      }
+
+      report.status = "closed";
+      report.closedAt = new Date().toISOString();
+
+      return state;
+    }
+
+    throw new Error("invalid_report_action");
+  });
+
+  res.writeHead(200, { "content-type": "application/json" });
+  res.end(JSON.stringify({ workflow }));
+  return true;
+}
+
 /** All known workflow-rule violation error messages -> HTTP 409 (conflict). */
 export const WORKFLOW_ERROR_CODES = new Set([
   "invalid_gate",
@@ -335,4 +445,11 @@ export const WORKFLOW_ERROR_CODES = new Set([
   "invalid_finding_action",
   "invalid_workflow_state",
   "invalid_current_gate",
+  "report_fields_required",
+  "report_not_found",
+  "report_not_open",
+  "invalid_report_response_status",
+  "decline_note_required",
+  "report_not_ready_to_close",
+  "invalid_report_action",
 ]);

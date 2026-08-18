@@ -7,6 +7,7 @@ import {
   handleBlockers,
   handleReviews,
   handleFindings,
+  handleReports,
   WORKFLOW_ERROR_CODES,
 } from "./routes/workflow.mjs";
 import { handleProjects, handleEmployees } from "./routes/directory.mjs";
@@ -41,6 +42,7 @@ const ROUTES = [
   handleBlockers,
   handleReviews,
   handleFindings,
+  handleReports,
   handleProjects,
   handleCreateProject,
   handleProjectUpload,

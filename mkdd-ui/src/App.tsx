@@ -73,7 +73,11 @@ export default function App() {
 
   const { totalCost: totalProjectCost } = useProjectTotalCost(selectedProject);
 
-  const { workflow, loading: workflowLoading } = useProjectWorkflow({
+  const {
+    workflow,
+    loading: workflowLoading,
+    setWorkflow,
+  } = useProjectWorkflow({
     project: selectedProject,
   });
 
@@ -152,6 +156,7 @@ export default function App() {
         teamStatusLoading={teamStatusLoading}
         workflow={workflow}
         workflowLoading={workflowLoading}
+        onWorkflowChange={setWorkflow}
         language={language}
         onOpenEmployee={openEmployee}
       />

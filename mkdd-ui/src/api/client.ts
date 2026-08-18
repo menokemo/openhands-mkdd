@@ -259,6 +259,18 @@ export type WorkflowState = {
     verifiedBy?: string;
     verifiedAt?: string;
   }>;
+  reports: Array<{
+    id: string;
+    gate: WorkflowGateName;
+    fromEmployeeId: string;
+    toEmployeeId: string;
+    title: string;
+    status: "open" | "implemented" | "declined" | "closed";
+    note: string | null;
+    createdAt: string;
+    respondedAt: string | null;
+    closedAt: string | null;
+  }>;
   reviews: Record<
     WorkflowReviewRole,
     {
@@ -301,6 +313,28 @@ export async function approveWorkflowGate(
   });
   const data = await r.json();
   if (!r.ok) throw new Error(data.error ?? "workflow_gate_approval_failed");
+  return data.workflow;
+}
+
+/**
+ * Final closure of a cross-employee report - the one step in this
+ * feature's lifecycle that's a real owner action from the UI (creating
+ * a report and the employee's response happen via curl, documented in
+ * AGENTS.md, same pattern as findings/blockers). Only valid once the
+ * employee has responded (implemented or declined) - enforced
+ * server-side.
+ */
+export async function closeWorkflowReport(
+  project: string,
+  reportId: string,
+): Promise<WorkflowState> {
+  const r = await fetch("/api/workflow/reports", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ project, action: "close", reportId }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error ?? "report_close_failed");
   return data.workflow;
 }
 

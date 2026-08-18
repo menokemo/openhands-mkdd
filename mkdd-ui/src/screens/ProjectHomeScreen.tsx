@@ -41,6 +41,7 @@ type Props = {
   teamStatusLoading: boolean;
   workflow: WorkflowState | null;
   workflowLoading: boolean;
+  onWorkflowChange: (workflow: WorkflowState) => void;
   language: "ar" | "en";
   onOpenEmployee: (employee: AgentProfile) => void;
 };
@@ -98,6 +99,7 @@ export default function ProjectHomeScreen({
   teamStatusLoading,
   workflow,
   workflowLoading,
+  onWorkflowChange,
   language,
   onOpenEmployee,
 }: Props) {
@@ -261,6 +263,9 @@ export default function ProjectHomeScreen({
           workflow={workflow}
           loading={workflowLoading}
           language={language}
+          project={project}
+          employees={employees}
+          onWorkflowChange={onWorkflowChange}
         />
       </section>
 

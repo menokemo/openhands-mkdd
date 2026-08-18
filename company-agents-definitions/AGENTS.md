@@ -159,6 +159,47 @@ The API itself rejects a mismatched `fixedBy`/`verifiedBy` — this enforces Sec
 7's "reviewer roles never fix their own findings" rule structurally, not just as a
 written policy.
 
+### Recording a cross-employee report
+
+Separate from the mandatory-review findings above (which only the four review roles
+can create, and which gate Production approval), this is general peer-to-peer
+feedback: **any** employee can flag a real issue in **any other** employee's work,
+tagged to whichever gate it actually relates to — independent of the project's
+current gate. Example: while working in the Implementation stage, Kirollos notices
+the requirements Mariam wrote are missing branch-specific product data — he files a
+report tagged to the `requirements` gate even though the project has moved past it.
+This does not block gate approval; it exists purely so the owner can see and track
+it on the relevant gate's card.
+
+The moment an employee finds a real issue in another employee's work, they record it:
+
+    curl -s -X POST http://mkdd-ui:8787/api/workflow/reports \
+      -H "Content-Type: application/json" \
+      -d '{"project":"/projects/acme-app","action":"add","gate":"requirements","fromEmployeeId":"implementation","toEmployeeId":"ui-ux","title":"Missing branch-specific product data in requirements"}'
+
+`gate` is one of `requirements`, `ui_ux`, `architecture`, `production`. `fromEmployeeId`
+and `toEmployeeId` are the stable employee IDs used throughout this document (Section
+4's lifecycle role names, e.g. `implementation`, `ui-ux`, `architect` — not display
+names).
+
+The employee who received the report responds once they've actually looked at it —
+either confirming they implemented the fix:
+
+    curl -s -X POST http://mkdd-ui:8787/api/workflow/reports \
+      -H "Content-Type: application/json" \
+      -d '{"project":"/projects/acme-app","action":"respond","reportId":"<id from the add response>","status":"implemented","note":"Added branch data for all 4 languages"}'
+
+or explaining why they will not act on it — a real explanation is **mandatory** here,
+the API rejects a decline with no `note`:
+
+    curl -s -X POST http://mkdd-ui:8787/api/workflow/reports \
+      -H "Content-Type: application/json" \
+      -d '{"project":"/projects/acme-app","action":"respond","reportId":"<id>","status":"declined","note":"This data already exists in section 3 of the PRD, verified with Bagosh"}'
+
+Final closure of a report is a deliberate owner-only action, done from the Project
+Home UI (the "Close" button in the gate's report modal) — never call
+`"action":"close"` from an employee context.
+
 ## 7. Mandatory Quality Bar Before Release
 
 - QA sign-off (qa)

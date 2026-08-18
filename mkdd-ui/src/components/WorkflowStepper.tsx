@@ -1,11 +1,18 @@
+import { useState } from "react";
 import {
   FaCheck,
   FaClipboardList,
   FaPalette,
   FaCompassDrafting,
   FaRocket,
+  FaXmark,
+  FaCircleCheck,
+  FaCircleXmark,
+  FaLock,
 } from "react-icons/fa6";
+import type { AgentProfile, Workspace } from "../types";
 import type { WorkflowState } from "../api/client";
+import { closeWorkflowReport } from "../api/client";
 import { GATES, getGateLabel } from "../utils/workflowLabels";
 import type { WorkflowGateName } from "../api/client";
 
@@ -13,11 +20,29 @@ type Props = {
   workflow: WorkflowState | null;
   loading: boolean;
   language: "ar" | "en";
+  project: Workspace;
+  employees: AgentProfile[];
+  onWorkflowChange: (workflow: WorkflowState) => void;
 };
 
 const STATUS_LABELS = {
   ar: { approved: "معتمدة", inProgress: "قيد التنفيذ", pending: "قيد الانتظار" },
   en: { approved: "Approved", inProgress: "In Progress", pending: "Pending" },
+} as const;
+
+const REPORT_STATUS_LABELS = {
+  ar: {
+    open: "بانتظار رد الموظف",
+    implemented: "تم التنفيذ",
+    declined: "تم الرفض",
+    closed: "مغلق",
+  },
+  en: {
+    open: "Awaiting employee response",
+    implemented: "Implemented",
+    declined: "Declined",
+    closed: "Closed",
+  },
 } as const;
 
 const GATE_ICONS: Record<
@@ -115,9 +140,48 @@ function buildConnectorGradient(
  *   - current: workflow.currentGate === gate (and not yet approved)
  *   - pending: anything else (not yet reached)
  */
-export default function WorkflowStepper({ workflow, loading, language }: Props) {
+export default function WorkflowStepper({
+  workflow,
+  loading,
+  language,
+  project,
+  employees,
+  onWorkflowChange,
+}: Props) {
   const t = STATUS_LABELS[language];
+  const rt = REPORT_STATUS_LABELS[language];
   const connectorGradient = buildConnectorGradient(GATES, language);
+  const [openGate, setOpenGate] = useState<WorkflowGateName | null>(null);
+  const [closingReportId, setClosingReportId] = useState<string | null>(null);
+  const [closeError, setCloseError] = useState<string | null>(null);
+
+  function employeeName(employeeId: string): string {
+    const employee = employees.find((e) => e.id === employeeId);
+    if (!employee) return employeeId;
+    const name = language === "ar" ? employee.displayNameAr : employee.displayNameEn;
+    return name ?? employee.name;
+  }
+
+  async function handleCloseReport(reportId: string) {
+    setClosingReportId(reportId);
+    setCloseError(null);
+    try {
+      const next = await closeWorkflowReport(project.path, reportId);
+      onWorkflowChange(next);
+    } catch {
+      setCloseError(
+        language === "ar"
+          ? "فشل قفل التقرير، حاول تاني"
+          : "Failed to close the report, try again",
+      );
+    } finally {
+      setClosingReportId(null);
+    }
+  }
+
+  const gateReports = openGate
+    ? (workflow?.reports.filter((r) => r.gate === openGate) ?? [])
+    : [];
 
   return (
     <div className="workflow-stepper" aria-busy={loading}>
@@ -154,16 +218,24 @@ export default function WorkflowStepper({ workflow, loading, language }: Props) 
           const isCurrent = !isApproved && workflow?.currentGate === gate;
           const stepStatus = isApproved ? "approved" : isCurrent ? "current" : "pending";
           const GateIcon = GATE_ICONS[gate];
+          const reportCount =
+            workflow?.reports.filter((r) => r.gate === gate && r.status !== "closed")
+              .length ?? 0;
 
           return (
-            <div
+            <button
+              type="button"
               className={`workflow-step-label workflow-step-${stepStatus}`}
               key={gate}
               style={{ "--gate-color": GATE_COLOR_VARS[gate] } as React.CSSProperties}
+              onClick={() => setOpenGate(gate)}
             >
               <strong>
                 <GateIcon />
                 {getGateLabel(gate, language)}
+                {reportCount > 0 && (
+                  <span className="workflow-step-report-count">{reportCount}</span>
+                )}
               </strong>
               <span>
                 {loading
@@ -174,10 +246,84 @@ export default function WorkflowStepper({ workflow, loading, language }: Props) 
                       ? t.inProgress
                       : t.pending}
               </span>
-            </div>
+            </button>
           );
         })}
       </div>
+
+      {openGate && (
+        <div className="modal-backdrop" onClick={() => setOpenGate(null)}>
+          <div className="modal gate-reports-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="gate-reports-modal-header">
+              <h2>{getGateLabel(openGate, language)}</h2>
+              <button
+                type="button"
+                className="modal-close-button"
+                onClick={() => setOpenGate(null)}
+                aria-label={language === "ar" ? "إغلاق" : "Close"}
+              >
+                <FaXmark />
+              </button>
+            </div>
+
+            {closeError && <p className="modal-error">{closeError}</p>}
+
+            {gateReports.length === 0 ? (
+              <p className="gate-reports-empty">
+                {language === "ar"
+                  ? "لا توجد تقارير لهذه المرحلة."
+                  : "No reports for this stage."}
+              </p>
+            ) : (
+              <ul className="gate-reports-list">
+                {gateReports.map((report) => (
+                  <li
+                    className={`gate-report-card gate-report-${report.status}`}
+                    key={report.id}
+                  >
+                    <div className="gate-report-parties">
+                      <strong>{employeeName(report.fromEmployeeId)}</strong>
+                      <span className="gate-report-arrow">
+                        {language === "ar" ? "←" : "→"}
+                      </span>
+                      <strong>{employeeName(report.toEmployeeId)}</strong>
+                    </div>
+
+                    <p className="gate-report-title">{report.title}</p>
+
+                    <div
+                      className={`gate-report-status gate-report-status-${report.status}`}
+                    >
+                      {report.status === "implemented" && <FaCircleCheck />}
+                      {report.status === "declined" && <FaCircleXmark />}
+                      {report.status === "closed" && <FaLock />}
+                      {rt[report.status]}
+                    </div>
+
+                    {report.note && <p className="gate-report-note">{report.note}</p>}
+
+                    {(report.status === "implemented" ||
+                      report.status === "declined") && (
+                      <button
+                        type="button"
+                        className="gate-report-close-button"
+                        disabled={closingReportId === report.id}
+                        onClick={() => handleCloseReport(report.id)}
+                      >
+                        {closingReportId === report.id
+                          ? "…"
+                          : language === "ar"
+                            ? "قفل نهائي"
+                            : "Close"}
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

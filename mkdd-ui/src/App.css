@@ -2380,6 +2380,11 @@ header button,
   align-items: center;
   text-align: center;
   gap: 3px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
 }
 
 .workflow-step-label strong {
@@ -3071,4 +3076,157 @@ header button,
 .project-view .chat article.me,
 .project-view .chat article.me * {
   color: #fff;
+}
+
+/* =========================
+   Workflow gate reports (cross-employee feedback modal)
+   ========================= */
+
+.workflow-step-report-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--mkdd-danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.gate-reports-modal {
+  max-height: 78vh;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gate-reports-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gate-reports-modal-header h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.modal-close-button {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--mkdd-border-subtle);
+  border-radius: 50%;
+  background: var(--mkdd-surface-raised);
+  color: var(--mkdd-text-secondary);
+  font-size: 13px;
+}
+
+.gate-reports-empty {
+  margin: 10px 0;
+  color: var(--mkdd-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.gate-reports-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gate-report-card {
+  padding: 12px;
+  border: 1px solid var(--mkdd-border-subtle);
+  border-radius: 14px;
+  background: var(--mkdd-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gate-report-parties {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--mkdd-text-primary);
+}
+
+.gate-report-arrow {
+  color: var(--mkdd-text-muted);
+}
+
+.gate-report-title {
+  margin: 0;
+  color: var(--mkdd-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.gate-report-status {
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.gate-report-status-open {
+  background: color-mix(in srgb, var(--mkdd-warning) 16%, var(--mkdd-surface));
+  color: var(--mkdd-warning);
+}
+
+.gate-report-status-implemented {
+  background: color-mix(in srgb, var(--mkdd-success) 16%, var(--mkdd-surface));
+  color: var(--mkdd-success);
+}
+
+.gate-report-status-declined {
+  background: color-mix(in srgb, var(--mkdd-danger) 16%, var(--mkdd-surface));
+  color: var(--mkdd-danger);
+}
+
+.gate-report-status-closed {
+  background: var(--mkdd-surface-hover);
+  color: var(--mkdd-text-muted);
+}
+
+.gate-report-note {
+  margin: 0;
+  padding: 8px 10px;
+  border-inline-start: 3px solid var(--mkdd-border-strong);
+  background: var(--mkdd-surface-raised);
+  color: var(--mkdd-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.gate-report-close-button {
+  align-self: flex-end;
+  padding: 6px 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--mkdd-accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.gate-report-close-button:disabled {
+  opacity: 0.6;
 }

@@ -35,6 +35,7 @@ function normalizeProjectState(project, state) {
     approvals: Array.isArray(state?.approvals) ? state.approvals : [],
     blockers: Array.isArray(state?.blockers) ? state.blockers : [],
     findings: Array.isArray(state?.findings) ? state.findings : [],
+    reports: Array.isArray(state?.reports) ? state.reports : [],
     reviews: {
       ...emptyReviews(),
       ...(state?.reviews ?? {}),
@@ -55,6 +56,7 @@ function emptyProjectState(project) {
     approvals: [],
     blockers: [],
     findings: [],
+    reports: [],
     reviews: emptyReviews(),
     updatedAt: new Date().toISOString(),
   };
