@@ -207,34 +207,24 @@ export default function ProjectHomeScreen({
                   }
                 }}
               >
+                <div className="employee-card-header">
+                  <strong>{label}</strong>
+                  {ROLE_ICONS[employee.id] &&
+                    (() => {
+                      const RoleIcon = ROLE_ICONS[employee.id];
+                      return <RoleIcon />;
+                    })()}
+                </div>
+
                 <div className="employee-avatar">
                   {employee.avatarUrl ? (
                     <img src={employee.avatarUrl} alt={label ?? employee.name} />
                   ) : (
                     (label?.slice(0, 1) ?? "?")
                   )}
-                  {ROLE_ICONS[employee.id] &&
-                    (() => {
-                      const RoleIcon = ROLE_ICONS[employee.id];
-                      return (
-                        <span className="employee-role-badge" title={employee.role ?? ""}>
-                          <RoleIcon />
-                        </span>
-                      );
-                    })()}
                 </div>
 
-                <div className="employee-card-info">
-                  <strong>{label}</strong>
-                  <span className="employee-card-role-badge">
-                    {ROLE_ICONS[employee.id] &&
-                      (() => {
-                        const RoleIcon = ROLE_ICONS[employee.id];
-                        return <RoleIcon />;
-                      })()}
-                    {employee.role}
-                  </span>
-                </div>
+                <div className="employee-card-footer">{employee.role}</div>
               </div>
             );
           })}
