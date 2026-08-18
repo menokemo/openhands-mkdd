@@ -1,5 +1,5 @@
 import http from "node:http";
-import { handleBranding, handleHealth } from "./routes/branding.mjs";
+import { handleBranding, handleBrandingIcon, handleHealth } from "./routes/branding.mjs";
 import {
   handleWorkflowGet,
   handleWorkflowSummary,
@@ -43,6 +43,7 @@ import { attachChatWebSocketBridge } from "./lib/ws-bridge.mjs";
 // PROJECT_AUDIT_REPORT.md section 2.1 and section 4, step 3).
 const ROUTES = [
   handleBranding,
+  handleBrandingIcon,
   handleHealth,
   handleWorkflowGet,
   handleWorkflowSummary,

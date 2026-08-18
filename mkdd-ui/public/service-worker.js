@@ -32,8 +32,8 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "MKDD";
   const options = {
     body: payload.body || "",
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
+    icon: "/api/branding/icon-192.png",
+    badge: "/api/branding/icon-192.png",
     data: { url: payload.url || "/" },
     // Group notifications about the same employee/project so a burst
     // of messages doesn't spam the notification tray - the newest one
