@@ -1600,8 +1600,9 @@ header button,
 .project-home .employee-card .employee-avatar {
   position: relative;
   overflow: visible;
+  flex: 1 1 auto;
   width: 52px;
-  height: 52px;
+  min-height: 52px;
   display: grid;
   place-items: center;
   border: 1px solid rgba(108, 93, 255, 0.28);
