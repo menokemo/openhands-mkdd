@@ -417,3 +417,14 @@ export async function removeAllowedHostSetting(
   if (!r.ok) throw new Error(data.error ?? "remove_allowed_host_failed");
   return data;
 }
+
+/**
+ * Actually restarts the mkdd-ui container via the Docker socket
+ * (BUGS_AND_FIXES.md #110) - the response arrives before the restart
+ * completes (the container is about to die), so this resolving
+ * successfully only confirms the request was accepted, not that the
+ * new domain is live yet.
+ */
+export async function restartContainer(): Promise<void> {
+  await fetch("/api/settings/restart-container", { method: "POST" });
+}

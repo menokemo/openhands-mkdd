@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { FaXmark, FaTrash, FaTriangleExclamation } from "react-icons/fa6";
+import { FaXmark, FaTrash, FaTriangleExclamation, FaRotateRight } from "react-icons/fa6";
 import {
   fetchAllowedHosts,
   addAllowedHostSetting,
   removeAllowedHostSetting,
+  restartContainer,
 } from "../api/client";
 
 type Props = {
@@ -25,6 +26,7 @@ export default function DomainSettingsModal({ language, onClose }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [restartNotice, setRestartNotice] = useState(false);
+  const [restarting, setRestarting] = useState(false);
 
   const t =
     language === "ar"
@@ -35,8 +37,11 @@ export default function DomainSettingsModal({ language, onClose }: Props) {
           placeholder: "مثال: mkdd.example.com",
           add: "إضافة",
           empty: "مفيش دومينات مضافة حاليًا.",
-          restartNotice:
-            "تم الحفظ — الدومين مش هيشتغل إلا بعد إعادة تشغيل حاوية mkdd-ui:\ndocker compose up -d --build mkdd-ui",
+          restartNotice: "تم الحفظ — الدومين مش هيشتغل غير بعد إعادة تشغيل الحاوية.",
+          restartButton: "إعادة تشغيل الآن",
+          restarting: "جاري إعادة التشغيل…",
+          restartingMessage:
+            "استنى نص دقيقة تقريبًا، وبعدها حدّث الصفحة. لو الصفحة معملتش رد، افتحها تاني بعد شوية.",
           loadFailed: "فشل تحميل الدومينات المحفوظة",
           saveFailed: "فشل الحفظ، حاول تاني",
           removeFailed: "فشل الحذف، حاول تاني",
@@ -49,7 +54,11 @@ export default function DomainSettingsModal({ language, onClose }: Props) {
           add: "Add",
           empty: "No domains added yet.",
           restartNotice:
-            "Saved — the domain won't work until the mkdd-ui container is restarted:\ndocker compose up -d --build mkdd-ui",
+            "Saved — the domain won't work until the container is restarted.",
+          restartButton: "Restart now",
+          restarting: "Restarting…",
+          restartingMessage:
+            "Wait about half a minute, then refresh the page. If it doesn't respond, reopen it in a bit.",
           loadFailed: "Failed to load saved domains",
           saveFailed: "Save failed, try again",
           removeFailed: "Remove failed, try again",
@@ -92,6 +101,21 @@ export default function DomainSettingsModal({ language, onClose }: Props) {
     }
   }
 
+  async function handleRestart() {
+    setRestarting(true);
+    try {
+      await restartContainer();
+    } catch {
+      // The container may die mid-response once Docker accepts the
+      // restart request - a failed fetch here is expected, not a real
+      // error, since we only care that the request was sent.
+    }
+    // Deliberately never set restarting back to false - the container
+    // (and this page's connection to it) is genuinely restarting, so
+    // there's nothing meaningful left for this component to do until
+    // the owner manually refreshes.
+  }
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal domain-settings-modal" onClick={(e) => e.stopPropagation()}>
@@ -109,11 +133,33 @@ export default function DomainSettingsModal({ language, onClose }: Props) {
 
         <p className="domain-settings-description">{t.description}</p>
 
-        {restartNotice && (
-          <p className="domain-settings-restart-notice">
+        {restartNotice && !restarting && (
+          <div className="domain-settings-restart-notice">
             <FaTriangleExclamation />
-            {t.restartNotice}
-          </p>
+            <div>
+              <p>{t.restartNotice}</p>
+              <button
+                type="button"
+                className="domain-settings-restart-button"
+                onClick={handleRestart}
+              >
+                <FaRotateRight />
+                {t.restartButton}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {restarting && (
+          <div className="domain-settings-restart-notice domain-settings-restarting">
+            <FaRotateRight className="domain-settings-spin" />
+            <div>
+              <p>
+                <strong>{t.restarting}</strong>
+              </p>
+              <p>{t.restartingMessage}</p>
+            </div>
+          </div>
         )}
 
         {error && <p className="modal-error">{error}</p>}

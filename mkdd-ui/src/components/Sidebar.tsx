@@ -1,12 +1,15 @@
+import { useState } from "react";
 import {
   FaFolderOpen,
   FaHourglassHalf,
   FaCircleCheck,
   FaUsers,
+  FaGear,
   FaXmark,
   FaChevronLeft,
   FaChevronRight,
 } from "react-icons/fa6";
+import DomainSettingsModal from "./DomainSettingsModal";
 
 type SidebarMenuKey = "active" | "nearCompletion" | "completed" | "employees";
 
@@ -45,45 +48,74 @@ const MENU_ITEMS: {
  * opens a separate popup (see App.tsx's activeSidebarMenu state +
  * ProjectListModal/EmployeeListModal) that holds the actual data - the
  * sidebar itself never renders project or employee lists directly.
+ *
+ * Settings (BUGS_AND_FIXES.md #111 - moved here from AppHeader per
+ * explicit request) is the one exception: its modal is fully self-
+ * contained and doesn't need App.tsx-level coordination, so it manages
+ * its own open/close state locally rather than going through onSelect.
  */
 export default function Sidebar({ open, language, onClose, onSelect }: Props) {
-  if (!open) return null;
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
-    <div className="sidebar-backdrop" onClick={onClose}>
-      <aside
-        className="sidebar"
-        dir={language === "ar" ? "rtl" : "ltr"}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          className="sidebar-close"
-          onClick={onClose}
-          aria-label={language === "ar" ? "إغلاق" : "Close"}
-        >
-          <FaXmark />
-        </button>
-
-        <nav className="sidebar-menu">
-          {MENU_ITEMS.map((item) => (
+    <>
+      {open && (
+        <div className="sidebar-backdrop" onClick={onClose}>
+          <aside
+            className="sidebar"
+            dir={language === "ar" ? "rtl" : "ltr"}
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
-              key={item.key}
-              className="sidebar-menu-item"
-              onClick={() => {
-                onSelect(item.key);
-                onClose();
-              }}
+              className="sidebar-close"
+              onClick={onClose}
+              aria-label={language === "ar" ? "إغلاق" : "Close"}
             >
-              <span className="sidebar-menu-icon">{item.icon}</span>
-              {language === "ar" ? item.ar : item.en}
-              <span className="sidebar-menu-arrow">
-                {language === "ar" ? <FaChevronLeft /> : <FaChevronRight />}
-              </span>
+              <FaXmark />
             </button>
-          ))}
-        </nav>
-      </aside>
-    </div>
+
+            <nav className="sidebar-menu">
+              {MENU_ITEMS.map((item) => (
+                <button
+                  key={item.key}
+                  className="sidebar-menu-item"
+                  onClick={() => {
+                    onSelect(item.key);
+                    onClose();
+                  }}
+                >
+                  <span className="sidebar-menu-icon">{item.icon}</span>
+                  {language === "ar" ? item.ar : item.en}
+                  <span className="sidebar-menu-arrow">
+                    {language === "ar" ? <FaChevronLeft /> : <FaChevronRight />}
+                  </span>
+                </button>
+              ))}
+
+              <button
+                className="sidebar-menu-item"
+                onClick={() => {
+                  setSettingsOpen(true);
+                  onClose();
+                }}
+              >
+                <span className="sidebar-menu-icon">
+                  <FaGear />
+                </span>
+                {language === "ar" ? "الإعدادات" : "Settings"}
+                <span className="sidebar-menu-arrow">
+                  {language === "ar" ? <FaChevronLeft /> : <FaChevronRight />}
+                </span>
+              </button>
+            </nav>
+          </aside>
+        </div>
+      )}
+
+      {settingsOpen && (
+        <DomainSettingsModal language={language} onClose={() => setSettingsOpen(false)} />
+      )}
+    </>
   );
 }
 

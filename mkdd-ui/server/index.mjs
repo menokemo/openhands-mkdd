@@ -32,6 +32,7 @@ import {
   handleGetAllowedHosts,
   handlePostAllowedHosts,
   handleRemoveAllowedHost,
+  handleRestartContainer,
 } from "./routes/settings.mjs";
 import { attachChatWebSocketBridge } from "./lib/ws-bridge.mjs";
 
@@ -71,6 +72,7 @@ const ROUTES = [
   handleGetAllowedHosts,
   handlePostAllowedHosts,
   handleRemoveAllowedHost,
+  handleRestartContainer,
 ];
 
 const server = http.createServer(async (req, res) => {

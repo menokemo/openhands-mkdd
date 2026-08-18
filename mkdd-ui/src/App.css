@@ -3314,20 +3314,57 @@ header button,
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  margin: 0;
   padding: 10px 12px;
   border-radius: 12px;
   background: color-mix(in srgb, var(--mkdd-warning) 18%, var(--mkdd-surface));
   color: var(--mkdd-text-primary);
   font-size: 12px;
   line-height: 1.6;
-  white-space: pre-line;
+}
+
+.domain-settings-restart-notice p {
+  margin: 0 0 6px;
+}
+
+.domain-settings-restart-notice p:last-child {
+  margin-bottom: 0;
 }
 
 .domain-settings-restart-notice svg {
   flex: 0 0 auto;
   margin-top: 2px;
   color: var(--mkdd-warning);
+}
+
+.domain-settings-restart-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--mkdd-warning);
+  color: #1a1a1a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.domain-settings-restarting {
+  background: color-mix(in srgb, var(--mkdd-accent) 18%, var(--mkdd-surface));
+}
+
+.domain-settings-restarting svg {
+  color: var(--mkdd-accent);
+}
+
+.domain-settings-spin {
+  animation: mkdd-domain-settings-spin 1.2s linear infinite;
+}
+
+@keyframes mkdd-domain-settings-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .domain-settings-list {

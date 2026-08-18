@@ -58,6 +58,11 @@ services:
       # behavior). Set this in your own .env file, never commit a real
       # domain into this file directly.
       MKDD_ALLOWED_HOSTS: ${MKDD_ALLOWED_HOSTS:-}
+      # The container's own name (BUGS_AND_FIXES.md #110), passed in so
+      # the app knows exactly what to tell the Docker Engine API to
+      # restart via the socket mount below - kept in sync with
+      # container_name above rather than hardcoded twice.
+      MKDD_UI_CONTAINER_NAME: ${MKDD_UI_CONTAINER_NAME:-mkdd-ui}
     depends_on:
       - agent-canvas
     ports:
@@ -77,6 +82,18 @@ services:
       - ./company-agents-definitions:/company-agents-definitions:ro
       - ./mkdd-data:/mkdd-data
       - ${MKDD_PROJECTS_DIR:-./projects}:/projects
+      # Grants the app access to the Docker Engine API so the "Restart
+      # now" button in Settings can actually restart this container
+      # (BUGS_AND_FIXES.md #110) - e.g. after saving a new allowed
+      # domain, which only takes effect on restart. This is a real
+      # security tradeoff: Docker socket access is effectively
+      # equivalent to root on the host in many configurations. Treat it
+      # with the same "known, intentional technical debt" status as the
+      # pid: service sharing above (used for the OpenHands session-key
+      # discovery workaround) - acceptable for this single-owner,
+      # trusted-network deployment model, not something to carry
+      # unexamined into a stricter multi-tenant setup.
+      - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   openhands_state:
