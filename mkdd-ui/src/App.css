@@ -911,10 +911,26 @@ header button,
 }
 
 .chat-screen-person {
+  flex: 0 0 auto;
   min-width: 0;
   display: flex;
   align-items: center;
   gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--mkdd-border-subtle);
+}
+
+.chat-back-button {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--mkdd-border-subtle);
+  border-radius: 50%;
+  background: var(--mkdd-surface-raised);
+  color: var(--mkdd-text-secondary);
+  font-size: 16px;
 }
 
 .chat-screen > .chat {
@@ -1995,6 +2011,10 @@ header button,
 
 .projects-screen {
   padding-top: 74px;
+}
+
+.chat-screen {
+  padding-top: 10px;
 }
 
 /* =========================

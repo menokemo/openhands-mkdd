@@ -129,6 +129,7 @@ export default function App() {
         language={language}
         employee={selectedEmployee}
         project={selectedProject}
+        onBack={closeEmployee}
         messages={messages}
         activity={activity}
         workPlan={workPlan}
@@ -169,21 +170,25 @@ export default function App() {
     );
   }
 
+  const isChatScreen = Boolean(selectedProject && selectedEmployee);
+
   return (
     <>
-      <AppHeader
-        language={language}
-        languageLabel={t.language}
-        setLanguage={setLanguage}
-        theme={theme}
-        setTheme={setTheme}
-        onOpenSidebar={() => {
-          refreshWorkflowSummaries();
-          setSidebarOpen(true);
-        }}
-      />
+      {!isChatScreen && (
+        <AppHeader
+          language={language}
+          languageLabel={t.language}
+          setLanguage={setLanguage}
+          theme={theme}
+          setTheme={setTheme}
+          onOpenSidebar={() => {
+            refreshWorkflowSummaries();
+            setSidebarOpen(true);
+          }}
+        />
+      )}
 
-      {selectedProject && (
+      {selectedProject && !isChatScreen && (
         <BreadcrumbBar
           projectName={selectedProject.name}
           employeeName={currentEmployeeLabel}

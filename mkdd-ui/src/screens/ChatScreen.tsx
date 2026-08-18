@@ -19,6 +19,7 @@ type Props = {
   language: "ar" | "en";
   employee: AgentProfile;
   project: Workspace;
+  onBack: () => void;
   messages: ChatMessage[];
   activity: ActivityEvent[];
   workPlan: WorkPlan | null;
@@ -42,6 +43,7 @@ export default function ChatScreen({
   language,
   employee,
   project,
+  onBack,
   messages,
   activity,
   workPlan,
@@ -159,6 +161,15 @@ export default function ChatScreen({
   return (
     <main className="app project-view chat-screen">
       <div className="chat-screen-person">
+        <button
+          type="button"
+          className="chat-back-button"
+          onClick={onBack}
+          aria-label={language === "ar" ? "رجوع" : "Back"}
+        >
+          ←
+        </button>
+
         <div className="chat-employee-avatar">
           {employee.avatarUrl ? (
             <img src={employee.avatarUrl} alt={employeeName ?? employee.name} />
