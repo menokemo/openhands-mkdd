@@ -344,41 +344,68 @@ export default function ChatScreen({
                 </div>
               )}
 
-              {detectPreviewLinks(textParts).map((link) =>
-                link.kind === "live-port" ? (
+              {detectPreviewLinks(textParts).map((link) => {
+                if (link.kind !== "live-port") {
+                  return (
+                    <a
+                      key={link.url}
+                      className="preview-link-card"
+                      href={link.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <iframe
+                        src={link.url}
+                        title={link.filePath}
+                        className="preview-link-frame"
+                        sandbox=""
+                      />
+                      <span className="preview-link-label">{link.filePath}</span>
+                    </a>
+                  );
+                }
+
+                // Live-app links (BUGS_AND_FIXES.md #125) only stay valid
+                // while the underlying live server process is still
+                // running - unlike a static preview link (a real file on
+                // disk), which stays valid indefinitely. That process
+                // typically only runs for the duration of an active work
+                // session, so a message old enough that the session very
+                // likely ended gets a visible "may be expired" warning
+                // instead of implying it's definitely still live.
+                const ONE_HOUR_MS = 60 * 60 * 1000;
+                const messageAgeMs = event.timestamp
+                  ? Date.now() - new Date(event.timestamp).getTime()
+                  : 0;
+                const mayBeExpired = messageAgeMs > ONE_HOUR_MS;
+
+                return (
                   <a
                     key={`live-port-${link.port}-${link.path}`}
-                    className="live-app-card"
+                    className={
+                      "live-app-card" +
+                      (mayBeExpired ? " live-app-card-maybe-expired" : "")
+                    }
                     href={`${window.location.protocol}//${window.location.hostname}:${link.port}/${link.path}`}
                     target="_blank"
                     rel="noreferrer"
                   >
                     <span className="live-app-badge">
-                      {language === "ar" ? "شغال الآن" : "Live now"}
+                      {mayBeExpired
+                        ? language === "ar"
+                          ? "قد يكون منتهي"
+                          : "May be expired"
+                        : language === "ar"
+                          ? "شغال الآن"
+                          : "Live now"}
                     </span>
                     <span className="live-app-label">:{link.port}</span>
                     <span className="live-app-open">
                       {language === "ar" ? "افتح التطبيق ←" : "Open app →"}
                     </span>
                   </a>
-                ) : (
-                  <a
-                    key={link.url}
-                    className="preview-link-card"
-                    href={link.url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <iframe
-                      src={link.url}
-                      title={link.filePath}
-                      className="preview-link-frame"
-                      sandbox=""
-                    />
-                    <span className="preview-link-label">{link.filePath}</span>
-                  </a>
-                ),
-              )}
+                );
+              })}
 
               {time && <time className="message-time">{time}</time>}
             </article>

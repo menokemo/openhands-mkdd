@@ -3447,3 +3447,26 @@ header button,
   font-size: 12px;
   text-align: center;
 }
+
+/* =========================
+   Live app link: "may be expired" state (BUGS_AND_FIXES.md #125)
+   ========================= */
+
+/* A live-app link's underlying server only runs while the work session
+   that started it stays active - unlike a static preview (a real file
+   on disk), it doesn't stay valid indefinitely. Old messages get a
+   visibly different (warning, not success) color so this isn't
+   mistaken for a guaranteed-working link. */
+.live-app-card-maybe-expired {
+  border-color: var(--mkdd-warning);
+  background: color-mix(in srgb, var(--mkdd-warning) 12%, var(--mkdd-surface));
+}
+
+.live-app-card-maybe-expired .live-app-badge {
+  background: var(--mkdd-warning);
+  color: #1a1a1a;
+}
+
+.live-app-card-maybe-expired .live-app-open {
+  color: var(--mkdd-warning);
+}
