@@ -2090,12 +2090,12 @@ header button,
 }
 
 .breadcrumb-back {
-  width: 30px;
-  height: 30px;
-  border: 1px solid var(--mkdd-border-subtle);
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--mkdd-accent);
   border-radius: 10px;
-  background: var(--mkdd-surface);
-  color: var(--mkdd-text-secondary);
+  background: color-mix(in srgb, var(--mkdd-accent) 14%, var(--mkdd-surface));
+  color: var(--mkdd-accent);
   display: grid;
   place-items: center;
   padding: 0;
@@ -2107,8 +2107,9 @@ header button,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 13px;
-  color: var(--mkdd-text-muted);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--mkdd-text-primary);
 }
 
 .breadcrumb-separator {
