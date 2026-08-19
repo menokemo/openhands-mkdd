@@ -17,6 +17,14 @@ export function useTheme() {
     // fallback for light), so the app's actual default - dark, unless
     // the user has chosen light - is never ambiguous.
     document.documentElement.setAttribute("data-theme", theme);
+
+    // Keep the browser/PWA chrome color in sync with the actual theme
+    // (BUGS_AND_FIXES.md #115) - index.html's inline script sets this
+    // correctly at initial load, but a mid-session toggle via this hook
+    // needs the same update, or the status bar/PWA color would stay
+    // stuck on whatever it was when the page first loaded.
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    themeColorMeta?.setAttribute("content", theme === "light" ? "#5b53d0" : "#325be4");
   }, [theme]);
 
   return { theme, setTheme };

@@ -5,7 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/api/branding/icon-192.png" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#5b53d0" />
+    <meta name="theme-color" content="#325be4" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MKDD</title>
 
@@ -30,10 +30,24 @@
       // too - not just handle a saved "light" preference.
       try {
         var savedTheme = localStorage.getItem("mkdd-theme");
-        document.documentElement.setAttribute(
-          "data-theme",
-          savedTheme === "light" ? "light" : "dark",
-        );
+        var theme = savedTheme === "light" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", theme);
+
+        // Keep the browser/PWA chrome color (status bar, and the PWA
+        // splash-screen-adjacent theme_color) in sync with the actual
+        // theme, not stuck on whatever was hardcoded in the initial
+        // <meta theme-color> tag above - see BUGS_AND_FIXES.md #115,
+        // where a light-mode-only value there caused a visible light
+        // edge specifically in PWA standalone mode (which uses this
+        // differently from a normal browser tab) since the app
+        // actually defaults to dark.
+        var themeColorMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeColorMeta) {
+          themeColorMeta.setAttribute(
+            "content",
+            theme === "light" ? "#5b53d0" : "#325be4",
+          );
+        }
       } catch {}
     </script>
     <div id="root"></div>
