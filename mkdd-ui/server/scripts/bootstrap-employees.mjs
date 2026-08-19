@@ -97,7 +97,31 @@ function readSystemMessageSuffix(name, timezone) {
 // is for that real model, not just reuse 160,000 blindly).
 const CONDENSER_MAX_TOKENS = 160000;
 
-async function createOrUpdateProfile(name, llmProfileRef, timezone) {
+/**
+ * Fetches the current llm_profile_ref for an existing Agent Profile, if
+ * one exists. Returns null for a genuinely new employee (404) or on any
+ * other failure - the caller falls back to the bootstrap default in
+ * that case, since the create call requires SOME value.
+ */
+async function fetchCurrentLlmProfileRef(name) {
+  const r = await openhandsFetch(`/api/agent-profiles/${name}`);
+  if (!r.ok) return null;
+  const data = await r.json();
+  return data?.profile?.llm_profile_ref ?? null;
+}
+
+async function createOrUpdateProfile(name, defaultLlmProfileRef, timezone) {
+  // BUGS_AND_FIXES.md #119: this upsert call previously always sent
+  // defaultLlmProfileRef unconditionally, silently overwriting any LLM
+  // change the owner had made manually from the UI the next time this
+  // script ran - confirmed as the real cause of "I changed the model
+  // in the UI but it didn't stick". An existing employee's CURRENT
+  // llm_profile_ref is preserved; the default is only used the one
+  // time a profile doesn't exist yet at all (the API rejects creation
+  // without a value).
+  const currentLlmProfileRef = await fetchCurrentLlmProfileRef(name);
+  const llmProfileRef = currentLlmProfileRef ?? defaultLlmProfileRef;
+
   const r = await openhandsFetch(`/api/agent-profiles/${name}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -120,7 +144,7 @@ async function createOrUpdateProfile(name, llmProfileRef, timezone) {
   });
 
   const bodyText = await r.text();
-  return { ok: r.ok, status: r.status, body: bodyText };
+  return { ok: r.ok, status: r.status, body: bodyText, llmProfileRef };
 }
 
 async function main() {
@@ -143,7 +167,8 @@ async function main() {
 
   const names = listEmployeeNames(DEFINITIONS_DIR);
   console.log(`Found ${names.length} employee definitions: ${names.join(", ")}`);
-  console.log(`Using LLM profile: ${llmProfileRef}`);
+  console.log(`Using default LLM profile (for NEW employees only): ${llmProfileRef}`);
+  console.log(`Existing employees keep whatever LLM they're currently set to.`);
   console.log(`Using timezone: ${timezone}\n`);
 
   let ok = 0;
@@ -154,7 +179,7 @@ async function main() {
     // this runs once during bootstrap, not on a hot path.
     const result = await createOrUpdateProfile(name, llmProfileRef, timezone);
     if (result.ok) {
-      console.log(`[ok]     ${name}`);
+      console.log(`[ok]     ${name} (llm_profile_ref: ${result.llmProfileRef})`);
       ok += 1;
     } else {
       console.error(`[FAILED] ${name} — HTTP ${result.status}: ${result.body}`);
