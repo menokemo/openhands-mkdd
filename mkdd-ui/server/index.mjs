@@ -1,4 +1,5 @@
 import http from "node:http";
+import { handleStaticFiles } from "./static-files.mjs";
 import { handleBranding, handleBrandingIcon, handleHealth } from "./routes/branding.mjs";
 import {
   handleWorkflowGet,
@@ -80,6 +81,7 @@ const ROUTES = [
   handlePostAllowedHosts,
   handleRemoveAllowedHost,
   handleRestartContainer,
+  handleStaticFiles,
 ];
 
 const server = http.createServer(async (req, res) => {

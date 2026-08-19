@@ -66,7 +66,12 @@ services:
     depends_on:
       - agent-canvas
     ports:
-      - "${MKDD_UI_PORT:-5173}:5173"
+      # BUGS_AND_FIXES.md #123: only one port now - the frontend is a
+      # real production build served as static files by this same
+      # backend process (server/static-files.mjs), not a separate Vite
+      # dev server on its own port anymore. Deployments that had NPM
+      # forwarding to the old MKDD_UI_PORT (5173/15173) need to update
+      # their Forward Port to this one after upgrading.
       - "${MKDD_UI_BACKEND_PORT:-8787}:8787"
       # Live-app preview ports (BUGS_AND_FIXES.md #56): each project gets
       # its own dedicated port from this range (see

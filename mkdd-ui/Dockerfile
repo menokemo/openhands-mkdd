@@ -7,6 +7,8 @@ RUN npm ci
 
 COPY . .
 
-EXPOSE 5173 8787
+RUN npm run build
 
-CMD ["sh","-lc","node server/index.mjs & npm run dev -- --host 0.0.0.0"]
+EXPOSE 8787
+
+CMD ["node", "server/index.mjs"]
