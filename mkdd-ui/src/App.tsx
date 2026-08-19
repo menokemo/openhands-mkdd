@@ -60,6 +60,9 @@ export default function App() {
     setMessage,
     sendMessage,
     startFreshConversation,
+    hasOlderMessages,
+    loadingOlder,
+    loadOlderMessages,
   } = useConversation({
     project: selectedProject,
     employee: selectedEmployee,
@@ -144,6 +147,9 @@ export default function App() {
         setMessage={setMessage}
         sendMessage={sendMessage}
         startFreshConversation={startFreshConversation}
+        hasOlderMessages={hasOlderMessages}
+        loadingOlder={loadingOlder}
+        loadOlderMessages={loadOlderMessages}
       />
     );
   } else if (selectedProject) {

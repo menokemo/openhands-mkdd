@@ -2,6 +2,9 @@ import type {
   AgentProfile,
   ConversationResponse,
   EventsResponse,
+  ChatOpenResponse,
+  RecentEventsResponse,
+  OlderEventsResponse,
   SendMessageResponse,
   WorkflowGateName,
   WorkPlan,
@@ -124,6 +127,23 @@ export async function fetchConversation(
   return r.json();
 }
 
+/**
+ * The chat screen's actual initial load (BUGS_AND_FIXES.md #121) -
+ * ONE request that resolves the conversation AND its most recent
+ * messages together, instead of two separate round-trips where the
+ * second genuinely depended on the first's result anyway.
+ */
+export async function fetchChatOpen(
+  project: string,
+  employeeId: string,
+  employeeName: string,
+): Promise<ChatOpenResponse> {
+  const qs = new URLSearchParams({ project, employeeId, employeeName });
+  const r = await fetch(`/api/chat/open?${qs}`);
+
+  return r.json();
+}
+
 export async function fetchEvents(
   conversationId: string,
   project: string,
@@ -137,6 +157,50 @@ export async function fetchEvents(
     employeeName,
   });
   const r = await fetch(`/api/chat/events?${qs}`);
+
+  return r.json();
+}
+
+/**
+ * Fetches only the most recent messages (BUGS_AND_FIXES.md #121) - the
+ * chat screen's actual initial load, replacing fetchEvents (full
+ * history) for that purpose. Loads fast like a real messaging app;
+ * older messages are fetched on demand via fetchOlderEvents when the
+ * owner scrolls up.
+ */
+export async function fetchRecentEvents(
+  conversationId: string,
+  project: string,
+  employeeId: string,
+  employeeName: string,
+): Promise<RecentEventsResponse> {
+  const qs = new URLSearchParams({
+    conversation: conversationId,
+    project,
+    employeeId,
+    employeeName,
+  });
+  const r = await fetch(`/api/chat/events/recent?${qs}`);
+
+  return r.json();
+}
+
+/** Loads the next (older) page following a previous recent/older call's nextPageId. */
+export async function fetchOlderEvents(
+  conversationId: string,
+  project: string,
+  employeeId: string,
+  employeeName: string,
+  pageId: string,
+): Promise<OlderEventsResponse> {
+  const qs = new URLSearchParams({
+    conversation: conversationId,
+    project,
+    employeeId,
+    employeeName,
+    pageId,
+  });
+  const r = await fetch(`/api/chat/events/older?${qs}`);
 
   return r.json();
 }

@@ -3436,3 +3436,14 @@ header button,
 .domain-settings-form button:disabled {
   opacity: 0.5;
 }
+
+/* =========================
+   Chat: loading older messages indicator (BUGS_AND_FIXES.md #121)
+   ========================= */
+
+.chat-loading-older {
+  padding: 8px 0 12px;
+  color: var(--mkdd-text-muted);
+  font-size: 12px;
+  text-align: center;
+}

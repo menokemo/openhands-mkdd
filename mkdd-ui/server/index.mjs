@@ -23,7 +23,10 @@ import { handleConversation } from "./routes/conversation.mjs";
 import {
   handleChatSend,
   handleChatNew,
+  handleChatOpen,
   handleChatEvents,
+  handleChatRecentEvents,
+  handleChatOlderEvents,
   handleChatWorkPlan,
   handleChatLastMessage,
 } from "./routes/chat.mjs";
@@ -65,7 +68,10 @@ const ROUTES = [
   handleConversation,
   handleChatSend,
   handleChatNew,
+  handleChatOpen,
   handleChatEvents,
+  handleChatRecentEvents,
+  handleChatOlderEvents,
   handleChatWorkPlan,
   handleChatLastMessage,
   handlePushVapidKey,

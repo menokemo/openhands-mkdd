@@ -12,7 +12,8 @@ import type {
 } from "../types";
 import {
   fetchConversation,
-  fetchEvents,
+  fetchChatOpen,
+  fetchOlderEvents,
   sendChatMessage,
   startNewConversation,
 } from "../api/client";
@@ -77,13 +78,16 @@ export function useConversation({ project, employee }: Params) {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [hasOlderMessages, setHasOlderMessages] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [oldestPageId, setOldestPageId] = useState<string | null>(null);
 
   // Reflects incoming events into state, dropping any optimistic
   // placeholder once a real (non-optimistic) message has actually arrived
   // - see sendMessage() below for where the placeholder is added.
   function applyIncomingEvents(
     events: ConversationEvent[],
-    newWorkPlan: WorkPlan | null,
+    newWorkPlan: WorkPlan | null | undefined,
   ) {
     const split = splitEvents(events);
     const hasRealMessage = split.messages.some(
@@ -100,8 +104,16 @@ export function useConversation({ project, employee }: Params) {
     if (newWorkPlan !== undefined) setWorkPlan(newWorkPlan);
   }
 
-  // --- Initial REST load: resolves the conversation id (if one exists)
-  // and the starting history. This stays REST-only (Phase D keeps REST
+  // --- Initial REST load: resolves the conversation AND its most
+  // recent messages in a SINGLE request (BUGS_AND_FIXES.md #121).
+  // Previously this was two sequential requests - fetchConversation,
+  // then fetchEvents (which pulled the ENTIRE conversation history,
+  // sometimes hundreds of KB across dozens of pages) - only starting
+  // once the first fully resolved. handleChatOpen on the backend
+  // resolves the conversation once and returns just the most recent
+  // page of messages together, matching how a real messaging app opens
+  // instantly with recent messages, loading older ones on demand (see
+  // loadOlderMessages below). This stays REST-only (Phase D keeps REST
   // for initial history + recovery, per REALTIME_CHAT_RESEARCH.md).
   useEffect(() => {
     setMessages([]);
@@ -110,28 +122,24 @@ export function useConversation({ project, employee }: Params) {
     setCost(null);
     setExecutionStatus(null);
     setConversationId(null);
+    setHasOlderMessages(false);
+    setOldestPageId(null);
 
     if (!project || !employee) return;
 
     let cancelled = false;
 
-    fetchConversation(project.path, employee.id, employee.name)
-      .then(async (data) => {
+    fetchChatOpen(project.path, employee.id, employee.name)
+      .then((data) => {
         const conversation = data.conversation;
         if (!conversation || cancelled) return;
 
-        const response = await fetchEvents(
-          conversation.id,
-          project.path,
-          employee.id,
-          employee.name,
-        );
-        if (cancelled) return;
-
-        applyIncomingEvents(response.items ?? [], response.work_plan);
+        applyIncomingEvents(data.items ?? [], data.work_plan ?? null);
         setCost(conversation.cost ?? null);
         setExecutionStatus(conversation.execution_status ?? null);
         setConversationId(conversation.id);
+        setHasOlderMessages(data.hasMore ?? false);
+        setOldestPageId(data.nextPageId ?? null);
       })
       .catch(() => {
         // Keep the last known-good conversation state visible.
@@ -178,7 +186,7 @@ export function useConversation({ project, employee }: Params) {
         try {
           const payload = JSON.parse(ev.data);
           if (payload.type === "event" && payload.event) {
-            applyIncomingEvents([payload.event], undefined as unknown as WorkPlan);
+            applyIncomingEvents([payload.event], undefined);
           }
         } catch {
           // ignore malformed frames
@@ -331,6 +339,35 @@ export function useConversation({ project, employee }: Params) {
     }
   }
 
+  /**
+   * Loads the next (older) page of messages when the owner scrolls to
+   * the top of the chat (BUGS_AND_FIXES.md #121) - mergeById (used by
+   * applyIncomingEvents) sorts by timestamp, so older messages fetched
+   * here naturally land above the existing ones regardless of fetch
+   * order, no special merge logic needed here beyond the existing one.
+   */
+  async function loadOlderMessages() {
+    if (!project || !employee || !conversationId || !oldestPageId || loadingOlder) return;
+
+    setLoadingOlder(true);
+    try {
+      const response = await fetchOlderEvents(
+        conversationId,
+        project.path,
+        employee.id,
+        employee.name,
+        oldestPageId,
+      );
+      applyIncomingEvents(response.items, undefined);
+      setHasOlderMessages(response.hasMore);
+      setOldestPageId(response.nextPageId);
+    } catch {
+      // Leave hasOlderMessages/oldestPageId as-is so the owner can retry.
+    } finally {
+      setLoadingOlder(false);
+    }
+  }
+
   return {
     messages,
     activity,
@@ -342,5 +379,8 @@ export function useConversation({ project, employee }: Params) {
     setMessage,
     sendMessage,
     startFreshConversation,
+    hasOlderMessages,
+    loadingOlder,
+    loadOlderMessages,
   };
 }

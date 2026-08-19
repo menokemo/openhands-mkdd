@@ -159,10 +159,31 @@ export type WorkPlan = {
   progressPercent: number;
 };
 
+export type ChatOpenResponse = {
+  conversation: Conversation | null;
+  items?: ConversationEvent[];
+  hasMore?: boolean;
+  nextPageId?: string | null;
+  work_plan?: WorkPlan | null;
+};
+
 export type EventsResponse = {
   items?: ConversationEvent[];
   next_page_id?: string | null;
   work_plan: WorkPlan | null;
+};
+
+export type RecentEventsResponse = {
+  items: ConversationEvent[];
+  hasMore: boolean;
+  nextPageId: string | null;
+  work_plan: WorkPlan | null;
+};
+
+export type OlderEventsResponse = {
+  items: ConversationEvent[];
+  hasMore: boolean;
+  nextPageId: string | null;
 };
 
 export type SendMessageResponse = {

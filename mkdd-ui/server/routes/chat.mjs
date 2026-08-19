@@ -1,5 +1,6 @@
 import { OPENHANDS_URL, sessionKey, openhands } from "../lib/openhands-client.mjs";
 import { findAuthorizedConversation } from "../lib/authorize-conversation.mjs";
+import { normalizeConversation } from "../lib/normalize-conversation.mjs";
 import { normalizeEvent } from "../lib/normalize-event.mjs";
 import { deriveWorkPlan } from "../lib/work-plan.mjs";
 import { readEmployeeDisplayInfo } from "../lib/employee-display-info.mjs";
@@ -306,6 +307,76 @@ export async function handleChatNew(req, res) {
 }
 
 /**
+ * Fetches ONLY the most recent `limit` events (BUGS_AND_FIXES.md #121),
+ * using the real sort_order=TIMESTAMP_DESC support confirmed directly
+ * in the upstream Agent Canvas source (event-service.api.ts) - a single
+ * request for the newest page, instead of fetchAllNormalizedEvents'
+ * walk through the ENTIRE history from the beginning. This is what
+ * makes the chat screen open fast like a real messaging app, matching
+ * the explicit request: load recent messages immediately, older ones
+ * on demand.
+ *
+ * Returns events oldest-first within the fetched page (matching what
+ * the UI expects to render top-to-bottom), plus whether older events
+ * exist and the page_id needed to fetch them (see fetchOlderEvents).
+ */
+async function fetchRecentEvents(conversationId, limit) {
+  const eventQs = new URLSearchParams({
+    limit: String(limit),
+    sort_order: "TIMESTAMP_DESC",
+  });
+
+  const eventsResponse = await openhands(
+    `/api/conversations/${conversationId}/events/search?${eventQs}`,
+  );
+
+  if (!eventsResponse.ok) {
+    return { status: eventsResponse.status, items: [], hasMore: false, nextPageId: null };
+  }
+
+  const pageData = await eventsResponse.json();
+  const items = (pageData.items ?? []).slice().reverse(); // newest-first -> oldest-first
+
+  return {
+    status: eventsResponse.status,
+    items: items.map(normalizeEvent).filter(Boolean),
+    hasMore: Boolean(pageData.next_page_id),
+    nextPageId: pageData.next_page_id ?? null,
+  };
+}
+
+/**
+ * Fetches the NEXT (older) page following on from a previous
+ * fetchRecentEvents/fetchOlderEvents call's nextPageId - same
+ * TIMESTAMP_DESC pagination, one page further back in time.
+ */
+async function fetchOlderEvents(conversationId, pageId, limit) {
+  const eventQs = new URLSearchParams({
+    limit: String(limit),
+    sort_order: "TIMESTAMP_DESC",
+    page_id: pageId,
+  });
+
+  const eventsResponse = await openhands(
+    `/api/conversations/${conversationId}/events/search?${eventQs}`,
+  );
+
+  if (!eventsResponse.ok) {
+    return { status: eventsResponse.status, items: [], hasMore: false, nextPageId: null };
+  }
+
+  const pageData = await eventsResponse.json();
+  const items = (pageData.items ?? []).slice().reverse();
+
+  return {
+    status: eventsResponse.status,
+    items: items.map(normalizeEvent).filter(Boolean),
+    hasMore: Boolean(pageData.next_page_id),
+    nextPageId: pageData.next_page_id ?? null,
+  };
+}
+
+/**
  * Fetches every page of events for a conversation, de-duplicates by id,
  * sorts by timestamp, and normalizes each event - shared by
  * handleChatEvents (full event list for the chat screen) and
@@ -355,6 +426,62 @@ async function fetchAllNormalizedEvents(conversationId) {
   };
 }
 
+const RECENT_EVENTS_PAGE_SIZE = 50;
+
+/**
+ * GET /api/chat/open — the chat screen's actual initial load
+ * (BUGS_AND_FIXES.md #121). Combines what used to be two separate
+ * sequential round-trips (GET /api/conversation, then GET
+ * /api/chat/events) into a SINGLE request: resolves the authorized
+ * conversation once, then fetches only its most recent
+ * RECENT_EVENTS_PAGE_SIZE messages (not the full history - see
+ * fetchRecentEvents above). This is the real fix for the reported
+ * chat-open delay - not just running two requests in parallel (the
+ * events fetch genuinely needs the conversation id the lookup
+ * produces, so true parallelism there was never actually possible),
+ * but eliminating the redundant second round-trip entirely.
+ */
+export async function handleChatOpen(req, res) {
+  if (!req.url?.startsWith("/api/chat/open?")) return false;
+
+  const url = new URL(req.url, "http://mkdd.local");
+  const project = url.searchParams.get("project");
+  const employeeId = url.searchParams.get("employeeId");
+  const employeeName = url.searchParams.get("employeeName");
+
+  if (!project || !employeeId || !employeeName) {
+    res.writeHead(400, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "project_employee_required" }));
+    return true;
+  }
+
+  const found = await findAuthorizedConversation({ project, employeeId, employeeName });
+
+  if (!found) {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ conversation: null }));
+    return true;
+  }
+
+  const conversation = normalizeConversation(found);
+  const { status, items, hasMore, nextPageId } = await fetchRecentEvents(
+    conversation.id,
+    RECENT_EVENTS_PAGE_SIZE,
+  );
+
+  res.writeHead(status, { "content-type": "application/json" });
+  res.end(
+    JSON.stringify({
+      conversation,
+      items,
+      hasMore,
+      nextPageId,
+      work_plan: deriveWorkPlan(items),
+    }),
+  );
+  return true;
+}
+
 export async function handleChatEvents(req, res) {
   if (!req.url?.startsWith("/api/chat/events?")) return false;
 
@@ -389,6 +516,99 @@ export async function handleChatEvents(req, res) {
   res.end(
     JSON.stringify({ items, next_page_id: null, work_plan: deriveWorkPlan(items) }),
   );
+  return true;
+}
+
+/**
+ * GET /api/chat/events/recent — the chat screen's actual initial load
+ * (BUGS_AND_FIXES.md #121), replacing the old handleChatEvents (which
+ * still exists above for callers needing the truly full history, none
+ * currently do from the frontend chat screen anymore). Returns only
+ * the most recent RECENT_EVENTS_PAGE_SIZE events, fast, plus whether
+ * older ones exist so the UI can offer to load them on scroll-up.
+ */
+export async function handleChatRecentEvents(req, res) {
+  if (!req.url?.startsWith("/api/chat/events/recent?")) return false;
+
+  const url = new URL(req.url, "http://mkdd.local");
+  const conversationId = url.searchParams.get("conversation");
+  const project = url.searchParams.get("project");
+  const employeeId = url.searchParams.get("employeeId");
+  const employeeName = url.searchParams.get("employeeName");
+
+  if (!conversationId || !project || !employeeId || !employeeName) {
+    res.writeHead(400, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "conversation_project_employee_required" }));
+    return true;
+  }
+
+  const authorizedConversation = await findAuthorizedConversation({
+    conversationId,
+    project,
+    employeeId,
+    employeeName,
+  });
+
+  if (!authorizedConversation) {
+    res.writeHead(403, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "conversation_employee_mismatch" }));
+    return true;
+  }
+
+  const { status, items, hasMore, nextPageId } = await fetchRecentEvents(
+    conversationId,
+    RECENT_EVENTS_PAGE_SIZE,
+  );
+
+  res.writeHead(status, { "content-type": "application/json" });
+  res.end(
+    JSON.stringify({ items, hasMore, nextPageId, work_plan: deriveWorkPlan(items) }),
+  );
+  return true;
+}
+
+/**
+ * GET /api/chat/events/older — loads the next page of older events
+ * when the owner scrolls to the top of the chat, using the pageId
+ * returned by a previous /recent or /older call.
+ */
+export async function handleChatOlderEvents(req, res) {
+  if (!req.url?.startsWith("/api/chat/events/older?")) return false;
+
+  const url = new URL(req.url, "http://mkdd.local");
+  const conversationId = url.searchParams.get("conversation");
+  const project = url.searchParams.get("project");
+  const employeeId = url.searchParams.get("employeeId");
+  const employeeName = url.searchParams.get("employeeName");
+  const pageId = url.searchParams.get("pageId");
+
+  if (!conversationId || !project || !employeeId || !employeeName || !pageId) {
+    res.writeHead(400, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "conversation_project_employee_pageId_required" }));
+    return true;
+  }
+
+  const authorizedConversation = await findAuthorizedConversation({
+    conversationId,
+    project,
+    employeeId,
+    employeeName,
+  });
+
+  if (!authorizedConversation) {
+    res.writeHead(403, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "conversation_employee_mismatch" }));
+    return true;
+  }
+
+  const { status, items, hasMore, nextPageId } = await fetchOlderEvents(
+    conversationId,
+    pageId,
+    RECENT_EVENTS_PAGE_SIZE,
+  );
+
+  res.writeHead(status, { "content-type": "application/json" });
+  res.end(JSON.stringify({ items, hasMore, nextPageId }));
   return true;
 }
 

@@ -32,6 +32,9 @@ type Props = {
   setMessage: (value: string) => void;
   sendMessage: (imageDataUrls?: string[], overrideText?: string) => Promise<void>;
   startFreshConversation: (imageDataUrls?: string[]) => Promise<void>;
+  hasOlderMessages: boolean;
+  loadingOlder: boolean;
+  loadOlderMessages: () => Promise<void>;
 };
 
 /**
@@ -56,11 +59,16 @@ export default function ChatScreen({
   setMessage,
   sendMessage,
   startFreshConversation,
+  hasOlderMessages,
+  loadingOlder,
+  loadOlderMessages,
 }: Props) {
   const employeeName =
     language === "ar" ? employee.displayNameAr : employee.displayNameEn;
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLElement>(null);
+  const scrollHeightBeforeLoadRef = useRef<number | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composerRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -125,10 +133,55 @@ export default function ChatScreen({
 
   // Land on the latest message whenever the conversation opens or a new
   // message arrives, instead of showing the top and requiring a manual
-  // scroll every time - matches normal chat-app behavior.
+  // scroll every time - matches normal chat-app behavior. BUT if this
+  // messages.length change came from loadOlderMessages prepending older
+  // messages ABOVE the current view (BUGS_AND_FIXES.md #121), jumping
+  // to the end would be exactly wrong - restore the owner's visual
+  // scroll position instead, compensating for the new content's height.
   useEffect(() => {
+    const container = chatContainerRef.current;
+
+    if (container && scrollHeightBeforeLoadRef.current !== null) {
+      const heightDiff = container.scrollHeight - scrollHeightBeforeLoadRef.current;
+      container.scrollTop += heightDiff;
+      scrollHeightBeforeLoadRef.current = null;
+      return;
+    }
+
     messagesEndRef.current?.scrollIntoView({ block: "end" });
   }, [messages.length]);
+
+  /**
+   * Triggered when the owner scrolls near the top of the chat
+   * (BUGS_AND_FIXES.md #121) - saves the current scroll height before
+   * requesting older messages, so the effect above can compensate and
+   * keep the same messages visually in view once they're prepended.
+   */
+  function handleScroll() {
+    const container = chatContainerRef.current;
+    if (!container || !hasOlderMessages || loadingOlder) return;
+
+    if (container.scrollTop < 60) {
+      scrollHeightBeforeLoadRef.current = container.scrollHeight;
+      void loadOlderMessages();
+    }
+  }
+
+  // Clears the pending scroll-compensation marker once loadOlderMessages
+  // finishes (loadingOlder true -> false), whether it succeeded or
+  // failed - loadOlderMessages swallows its own errors internally
+  // (never rejects), so a .catch() on the call above could never
+  // actually fire; watching loadingOlder itself is the only reliable
+  // "the attempt is over" signal. On success, messages.length also
+  // changed, so the scroll-restore effect above already consumed and
+  // cleared the ref by the time this runs - this only matters for the
+  // failure case, where messages.length never changed and the ref
+  // would otherwise stay stuck with a stale value.
+  useEffect(() => {
+    if (!loadingOlder) {
+      scrollHeightBeforeLoadRef.current = null;
+    }
+  }, [loadingOlder]);
 
   // Mark as viewed both when this chat first opens AND whenever new
   // messages arrive while it's still open (BUGS_AND_FIXES.md #106) -
@@ -240,7 +293,12 @@ export default function ChatScreen({
         </div>
       </div>
 
-      <section className="chat">
+      <section className="chat" ref={chatContainerRef} onScroll={handleScroll}>
+        {loadingOlder && (
+          <div className="chat-loading-older">
+            {language === "ar" ? "جاري تحميل رسائل أقدم…" : "Loading older messages…"}
+          </div>
+        )}
         {messages.map((event) => {
           const textParts = event.llm_message.content
             .filter(
