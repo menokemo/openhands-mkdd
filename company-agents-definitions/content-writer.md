@@ -1,6 +1,6 @@
 ---
 name: content-writer
-order: 14
+order: 4
 description: >
   Sherry is the company's Content & Localization Writer, responsible for
   every piece of end-user-facing text across any website or app, in

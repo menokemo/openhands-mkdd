@@ -1,6 +1,6 @@
 ---
 name: test-automation
-order: 8
+order: 9
 description: >
   George is the company's Test Automation Engineer responsible for
   building and executing automated API, integration, browser/E2E,

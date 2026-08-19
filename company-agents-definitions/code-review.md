@@ -1,6 +1,6 @@
 ---
 name: code-review
-order: 9
+order: 10
 description: >
   Verena is the company's Code Reviewer responsible for performing
   independent senior code review. Reviews correctness, maintainability,

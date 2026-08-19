@@ -1,6 +1,6 @@
 ---
 name: technical-writer
-order: 12
+order: 13
 description: >
   Nader is the company's Technical Writer responsible for maintaining
   README, setup/development documentation, API documentation,

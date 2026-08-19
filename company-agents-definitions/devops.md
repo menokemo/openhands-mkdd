@@ -1,6 +1,6 @@
 ---
 name: devops
-order: 11
+order: 12
 description: >
   Antonious is the company's DevOps / SRE responsible for
   deployment, infrastructure, observability, runtime

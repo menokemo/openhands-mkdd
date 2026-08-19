@@ -1,6 +1,6 @@
 ---
 name: integration-engineer
-order: 6
+order: 7
 description: >
   Marina is the company's Integration Engineer responsible for implementing
   and validating APIs, webhooks, third-party integrations, integration

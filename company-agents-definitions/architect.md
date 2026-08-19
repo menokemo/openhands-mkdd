@@ -1,6 +1,6 @@
 ---
 name: architect
-order: 4
+order: 5
 description: >
   Shenouda is the company's Architect responsible for defining system
   boundaries, data model strategy, APIs/contracts, technology decisions,

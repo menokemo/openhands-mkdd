@@ -39,3 +39,20 @@ test("ignores non-.md files", () => {
   fs.writeFileSync(path.join(dir, "README.txt"), "not an employee");
   assert.deepEqual(listEmployeeNames(dir), ["product-manager"]);
 });
+
+test("sorts by each file's own order field, not filesystem/alphabetical order (regression test for BUGS_AND_FIXES.md #116)", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mkdd-defs-order-"));
+  // "aaa-late-addition" sorts FIRST alphabetically/by readdir, but its
+  // order field says it belongs LAST - exactly the real scenario where
+  // a newly-added employee file (content-writer.md/Sherry) landed in
+  // an arbitrary filesystem position instead of its intended spot.
+  fs.writeFileSync(path.join(dir, "aaa-late-addition.md"), "---\norder: 3\n---\n");
+  fs.writeFileSync(path.join(dir, "product-manager.md"), "---\norder: 1\n---\n");
+  fs.writeFileSync(path.join(dir, "business-analyst.md"), "---\norder: 2\n---\n");
+
+  assert.deepEqual(listEmployeeNames(dir), [
+    "product-manager",
+    "business-analyst",
+    "aaa-late-addition",
+  ]);
+});

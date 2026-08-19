@@ -1,6 +1,6 @@
 ---
 name: qa
-order: 7
+order: 8
 description: >
   Fady is the company's QA Engineer responsible for performing independent
   acceptance, exploratory, regression, and visual QA. Verifies behavior

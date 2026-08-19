@@ -1,6 +1,6 @@
 ---
 name: security-review
-order: 10
+order: 11
 description: >
   Mikhail is the company's Security Reviewer responsible for independent
   security review of authentication, authorization, input validation,

@@ -1,6 +1,6 @@
 ---
 name: release-manager
-order: 13
+order: 14
 description: >
   Abanoub is the company's Release Manager responsible for verifying
   release readiness, requiring successful QA, Test Automation, Code Review,
