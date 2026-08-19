@@ -432,8 +432,8 @@ export default function WorkflowStepper({
                         {closingReportId === report.id
                           ? "…"
                           : language === "ar"
-                            ? "قفل نهائي"
-                            : "Close"}
+                            ? "اعتماد التعديل وقفل التقرير"
+                            : "Approve change & close"}
                       </button>
                     )}
                   </li>

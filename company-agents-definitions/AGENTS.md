@@ -201,8 +201,12 @@ the API rejects a decline with no `note`:
       -d '{"project":"/projects/acme-app","action":"respond","reportId":"<id>","status":"declined","note":"This data already exists in section 3 of the PRD, verified with Bagosh"}'
 
 Final closure of a report is a deliberate owner-only action, done from the Project
-Home UI (the "Close" button in the gate's report modal) — never call
-`"action":"close"` from an employee context.
+Home UI (the "Approve change & close" button in the gate's report modal) — never
+call `"action":"close"` from an employee context. This closure genuinely *is* the
+owner's approval of whatever change was made in response to the report - if the
+report concerned work in an already-approved gate, closing the report stands on its
+own as sign-off for that specific change; it does not require (and there is no
+mechanism for) reopening the gate itself.
 
 ## 7. Mandatory Quality Bar Before Release
 
