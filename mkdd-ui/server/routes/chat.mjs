@@ -109,11 +109,12 @@ export function buildOutgoingContent(message, imageDataUrls) {
  * handleChatSend's create-if-missing path and handleChatNew's always-
  * create path (BUGS_AND_FIXES.md #61).
  *
- * Because /api/conversations/search defaults to CREATED_AT_DESC (most
- * recently created first - confirmed live via the real OpenAPI schema),
- * a newly created conversation with the same project/employee tags
- * naturally becomes the one findAuthorizedConversation returns next -
- * no change needed to the search/matching logic itself for a "start
+ * findAuthorizedConversation explicitly requests sort_order=
+ * UPDATED_AT_DESC (BUGS_AND_FIXES.md #122) - a newly created
+ * conversation's most recent update IS its creation, so it still
+ * naturally sorts first and becomes the one findAuthorizedConversation
+ * returns next, exactly as it did under the old (undocumented) default
+ * - no change needed to the search/matching logic itself for a "start
  * fresh" conversation to actually take over as the active one.
  *
  * Returns { ok, status, body } - callers decide how to write the HTTP
@@ -264,11 +265,13 @@ export async function handleChatSend(req, res) {
  * project+employee, even if one already exists (unlike /api/chat/send's
  * create-if-missing behavior). The old conversation is not deleted or
  * modified - it stays reachable directly in OpenHands's own UI - but
- * because /api/conversations/search returns newest-first by default,
- * the new conversation naturally becomes the one MKDD's own UI resolves
- * to going forward (BUGS_AND_FIXES.md #61: needed when an existing
- * conversation is stuck in an unrecoverable state, e.g. one created
- * before a condenser fix was applied to the employee's profile).
+ * since findAuthorizedConversation explicitly sorts by
+ * UPDATED_AT_DESC (BUGS_AND_FIXES.md #122), the new conversation's
+ * creation IS its most recent update, so it naturally becomes the one
+ * MKDD's own UI resolves to going forward (BUGS_AND_FIXES.md #61:
+ * needed when an existing conversation is stuck in an unrecoverable
+ * state, e.g. one created before a condenser fix was applied to the
+ * employee's profile).
  */
 export async function handleChatNew(req, res) {
   if (!(req.method === "POST" && req.url === "/api/chat/new")) return false;

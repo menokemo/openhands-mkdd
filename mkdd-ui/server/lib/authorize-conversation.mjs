@@ -40,7 +40,7 @@ export async function findAllProjectConversations(project) {
   const matches = [];
 
   do {
-    const qs = new URLSearchParams({ limit: "100" });
+    const qs = new URLSearchParams({ limit: "100", sort_order: "UPDATED_AT_DESC" });
     if (pageId) qs.set("page_id", pageId);
 
     const response = await openhands(`/api/conversations/search?${qs}`);
@@ -78,7 +78,7 @@ export async function findAuthorizedConversation({
   let match = null;
 
   do {
-    const qs = new URLSearchParams({ limit: "100" });
+    const qs = new URLSearchParams({ limit: "100", sort_order: "UPDATED_AT_DESC" });
     if (pageId) qs.set("page_id", pageId);
 
     const response = await openhands(`/api/conversations/search?${qs}`);
