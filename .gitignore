@@ -26,6 +26,20 @@ __pycache__/
 # Local backups
 .local-backups/
 
+# Automated data backups (BUGS_AND_FIXES.md #129) - real project data
+# snapshots, never source code; never commit these.
+backups/
+
+# Persisted runtime data (BUGS_AND_FIXES.md #129) - workflow state,
+# hashed user passwords, session tokens, uploaded avatars, push
+# subscriptions. This directory previously had NO gitignore rule at
+# all; a future `git add -A` could have accidentally committed real
+# secrets. The branding logo is the one deliberate, non-sensitive
+# exception (already tracked, kept that way).
+mkdd-data/*
+!mkdd-data/branding/
+!mkdd-data/branding/mkdd-logo.png
+
 # Editor
 .vscode/
 .idea/
