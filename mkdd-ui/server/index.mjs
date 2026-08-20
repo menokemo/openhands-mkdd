@@ -32,12 +32,7 @@ import {
   handleChatLastMessage,
 } from "./routes/chat.mjs";
 import { handlePushVapidKey, handlePushSubscribe } from "./routes/push.mjs";
-import {
-  handleGetAllowedHosts,
-  handlePostAllowedHosts,
-  handleRemoveAllowedHost,
-  handleRestartContainer,
-} from "./routes/settings.mjs";
+import { handleRestartContainer } from "./routes/settings.mjs";
 import { attachChatWebSocketBridge } from "./lib/ws-bridge.mjs";
 
 // Route handlers are tried in order; each returns `true` once it has
@@ -77,9 +72,6 @@ const ROUTES = [
   handleChatLastMessage,
   handlePushVapidKey,
   handlePushSubscribe,
-  handleGetAllowedHosts,
-  handlePostAllowedHosts,
-  handleRemoveAllowedHost,
   handleRestartContainer,
   handleStaticFiles,
 ];

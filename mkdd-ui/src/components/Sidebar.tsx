@@ -9,7 +9,7 @@ import {
   FaChevronLeft,
   FaChevronRight,
 } from "react-icons/fa6";
-import DomainSettingsModal from "./DomainSettingsModal";
+import RestartModal from "./RestartModal";
 import { isLocalAccess } from "../utils/isLocalAccess";
 
 type SidebarMenuKey = "active" | "nearCompletion" | "completed" | "employees";
@@ -116,7 +116,7 @@ export default function Sidebar({ open, language, onClose, onSelect }: Props) {
       )}
 
       {settingsOpen && (
-        <DomainSettingsModal language={language} onClose={() => setSettingsOpen(false)} />
+        <RestartModal language={language} onClose={() => setSettingsOpen(false)} />
       )}
     </>
   );
