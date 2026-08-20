@@ -9,6 +9,7 @@ import {
   removeUser,
 } from "../lib/auth-store.mjs";
 import { readJsonBody } from "../lib/read-json-body.mjs";
+import { buildOwnerAvatarUrl } from "../lib/owner-avatar-store.mjs";
 
 const COOKIE_NAME = "mkdd_session";
 
@@ -69,6 +70,7 @@ export async function handleAuthStatus(req, res) {
       setupRequired: !hasAnyUser(),
       loggedIn: user !== null,
       username: user?.username ?? null,
+      avatarUrl: user ? buildOwnerAvatarUrl(user.id) : null,
     }),
   );
   return true;
@@ -97,7 +99,7 @@ export async function handleAuthSetup(req, res) {
     const token = createSession(user.id);
     setSessionCookie(res, token);
     res.writeHead(200, { "content-type": "application/json" });
-    res.end(JSON.stringify({ username: user.username }));
+    res.end(JSON.stringify({ username: user.username, avatarUrl: null }));
   } catch (err) {
     res.writeHead(400, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: err.message }));
@@ -120,7 +122,9 @@ export async function handleAuthLogin(req, res) {
   const token = createSession(user.id);
   setSessionCookie(res, token);
   res.writeHead(200, { "content-type": "application/json" });
-  res.end(JSON.stringify({ username: user.username }));
+  res.end(
+    JSON.stringify({ username: user.username, avatarUrl: buildOwnerAvatarUrl(user.id) }),
+  );
   return true;
 }
 

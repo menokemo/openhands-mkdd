@@ -11,6 +11,8 @@ import {
   FaRightFromBracket,
 } from "react-icons/fa6";
 import RestartModal from "./RestartModal";
+import OwnerAvatarUpload from "./OwnerAvatarUpload";
+import type { CurrentUser } from "./AuthGate";
 import { isLocalAccess } from "../utils/isLocalAccess";
 import { logout } from "../api/client";
 
@@ -21,6 +23,8 @@ type Props = {
   language: "ar" | "en";
   onClose: () => void;
   onSelect: (key: SidebarMenuKey) => void;
+  currentUser: CurrentUser;
+  onAvatarChange: (avatarUrl: string | null) => void;
 };
 
 const MENU_ITEMS: {
@@ -57,7 +61,14 @@ const MENU_ITEMS: {
  * contained and doesn't need App.tsx-level coordination, so it manages
  * its own open/close state locally rather than going through onSelect.
  */
-export default function Sidebar({ open, language, onClose, onSelect }: Props) {
+export default function Sidebar({
+  open,
+  language,
+  onClose,
+  onSelect,
+  currentUser,
+  onAvatarChange,
+}: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
@@ -76,6 +87,16 @@ export default function Sidebar({ open, language, onClose, onSelect }: Props) {
             >
               <FaXmark />
             </button>
+
+            <div className="sidebar-profile">
+              <OwnerAvatarUpload
+                username={currentUser.username}
+                avatarUrl={currentUser.avatarUrl}
+                language={language}
+                onAvatarChange={onAvatarChange}
+              />
+              <strong className="sidebar-profile-name">{currentUser.username}</strong>
+            </div>
 
             <nav className="sidebar-menu">
               {MENU_ITEMS.map((item) => (

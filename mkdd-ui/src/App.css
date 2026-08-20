@@ -3555,3 +3555,33 @@ header button,
 .auth-card button[type="submit"]:disabled {
   opacity: 0.6;
 }
+
+/* =========================
+   Sidebar profile (owner avatar + name) (BUGS_AND_FIXES.md #128)
+   ========================= */
+
+.sidebar-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 18px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--mkdd-border-subtle);
+}
+
+.owner-avatar-wrap {
+  width: fit-content;
+}
+
+.owner-avatar {
+  width: 72px;
+  height: 72px;
+  font-size: 26px;
+  border: 2px solid var(--mkdd-accent);
+}
+
+.sidebar-profile-name {
+  color: var(--mkdd-text-primary);
+  font-size: 15px;
+}

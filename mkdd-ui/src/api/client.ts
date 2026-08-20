@@ -465,6 +465,7 @@ export type AuthStatus = {
   setupRequired: boolean;
   loggedIn: boolean;
   username: string | null;
+  avatarUrl: string | null;
 };
 
 export async function fetchAuthStatus(): Promise<AuthStatus> {
@@ -475,7 +476,7 @@ export async function fetchAuthStatus(): Promise<AuthStatus> {
 export async function setupFirstAccount(
   username: string,
   password: string,
-): Promise<{ username: string }> {
+): Promise<{ username: string; avatarUrl: string | null }> {
   const r = await fetch("/api/auth/setup", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -489,7 +490,7 @@ export async function setupFirstAccount(
 export async function login(
   username: string,
   password: string,
-): Promise<{ username: string }> {
+): Promise<{ username: string; avatarUrl: string | null }> {
   const r = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -530,4 +531,16 @@ export async function removeAuthUser(userId: string): Promise<void> {
     body: JSON.stringify({ userId }),
   });
   if (!r.ok) throw new Error("remove_user_failed");
+}
+
+/** Uploads (or replaces) the logged-in user's own profile photo. */
+export async function uploadOwnerAvatar(imageDataUrl: string): Promise<string | null> {
+  const r = await fetch("/api/auth/me/avatar", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ imageDataUrl }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error ?? "avatar_upload_failed");
+  return data.avatarUrl ?? null;
 }

@@ -4,6 +4,8 @@ import AuthScreen from "../screens/AuthScreen";
 import App from "../App";
 import { useLanguage } from "../i18n/useLanguage";
 
+export type CurrentUser = { username: string; avatarUrl: string | null };
+
 /**
  * BUGS_AND_FIXES.md #127: gates the entire app behind authentication.
  * Deliberately a separate component wrapping <App />, not logic
@@ -17,13 +19,16 @@ export default function AuthGate() {
   const [status, setStatus] = useState<"loading" | "setup" | "login" | "authenticated">(
     "loading",
   );
+  const [user, setUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
     fetchAuthStatus()
       .then((data) => {
         if (data.setupRequired) setStatus("setup");
-        else if (data.loggedIn) setStatus("authenticated");
-        else setStatus("login");
+        else if (data.loggedIn) {
+          setUser({ username: data.username ?? "", avatarUrl: data.avatarUrl });
+          setStatus("authenticated");
+        } else setStatus("login");
       })
       .catch(() => setStatus("login"));
   }, []);
@@ -37,10 +42,20 @@ export default function AuthGate() {
       <AuthScreen
         mode={status}
         language={language}
-        onAuthenticated={() => setStatus("authenticated")}
+        onAuthenticated={(username, avatarUrl) => {
+          setUser({ username, avatarUrl });
+          setStatus("authenticated");
+        }}
       />
     );
   }
 
-  return <App />;
+  return (
+    user && (
+      <App
+        currentUser={user}
+        onAvatarChange={(avatarUrl) => setUser({ ...user, avatarUrl })}
+      />
+    )
+  );
 }

@@ -43,6 +43,10 @@ import {
   handleAuthRemoveUser,
   currentUser,
 } from "./routes/auth.mjs";
+import {
+  handleServeOwnerAvatar,
+  handleUploadOwnerAvatar,
+} from "./routes/owner-avatar.mjs";
 import { attachChatWebSocketBridge } from "./lib/ws-bridge.mjs";
 
 // Route handlers are tried in order; each returns `true` once it has
@@ -58,6 +62,8 @@ const ROUTES = [
   handleAuthListUsers,
   handleAuthAddUser,
   handleAuthRemoveUser,
+  handleServeOwnerAvatar,
+  handleUploadOwnerAvatar,
   handleBranding,
   handleBrandingIcon,
   handleHealth,

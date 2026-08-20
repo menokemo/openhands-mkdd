@@ -14,6 +14,7 @@ import ProjectHomeScreen from "./screens/ProjectHomeScreen";
 import AppHeader from "./components/AppHeader";
 import BreadcrumbBar from "./components/BreadcrumbBar";
 import Sidebar, { type SidebarMenuKey } from "./components/Sidebar";
+import type { CurrentUser } from "./components/AuthGate";
 import ProjectListModal from "./components/ProjectListModal";
 import EmployeeListModal from "./components/EmployeeListModal";
 import EmployeeProfileModal from "./components/EmployeeProfileModal";
@@ -27,7 +28,12 @@ import { useProjectTotalCost } from "./hooks/useProjectTotalCost";
 import { useProjectWorkflow } from "./hooks/useProjectWorkflow";
 import { groupProjectsByGateStatus } from "./utils/projectGateStatus";
 
-export default function App() {
+type Props = {
+  currentUser: CurrentUser;
+  onAvatarChange: (avatarUrl: string | null) => void;
+};
+
+export default function App({ currentUser, onAvatarChange }: Props) {
   const { language, setLanguage, t } = useLanguage();
   const { theme, setTheme } = useTheme();
   const [projects, setProjects] = useState<Workspace[]>([]);
@@ -215,6 +221,8 @@ export default function App() {
         language={language}
         onClose={() => setSidebarOpen(false)}
         onSelect={setActiveSidebarMenu}
+        currentUser={currentUser}
+        onAvatarChange={onAvatarChange}
       />
 
       {(activeSidebarMenu === "active" ||

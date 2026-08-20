@@ -4,7 +4,7 @@ import { setupFirstAccount, login } from "../api/client";
 type Props = {
   mode: "setup" | "login";
   language: "ar" | "en";
-  onAuthenticated: (username: string) => void;
+  onAuthenticated: (username: string, avatarUrl: string | null) => void;
 };
 
 /**
@@ -76,7 +76,7 @@ export default function AuthScreen({ mode, language, onAuthenticated }: Props) {
         mode === "setup"
           ? await setupFirstAccount(username, password)
           : await login(username, password);
-      onAuthenticated(result.username);
+      onAuthenticated(result.username, result.avatarUrl);
     } catch (err) {
       setError(errorMessage(err instanceof Error ? err.message : ""));
     } finally {
