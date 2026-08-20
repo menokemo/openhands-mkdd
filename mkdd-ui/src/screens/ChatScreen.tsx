@@ -289,6 +289,7 @@ export default function ChatScreen({
             executionStatus={executionStatus}
             cost={cost}
             workPlan={workPlan}
+            currentLlmProfileRef={employee.llm_profile_ref}
           />
         </div>
       </div>

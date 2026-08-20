@@ -14,6 +14,15 @@ type Props = {
   executionStatus: ConversationExecutionStatus | null;
   cost: ConversationCost | null;
   workPlan: WorkPlan | null;
+  /**
+   * The employee's CURRENTLY assigned LLM (BUGS_AND_FIXES.md #131) -
+   * from the agent profile itself, not derived from the conversation's
+   * cumulative usage stats (cost.modelName), which reflects whatever
+   * model was in use when those stats accumulated and can silently go
+   * stale if the model was changed afterward (e.g. from the OpenHands
+   * UI) without a new conversation being started.
+   */
+  currentLlmProfileRef: string;
 };
 
 type TabKey = "cost" | "workplan" | "activity";
@@ -119,6 +128,7 @@ export default function EmployeeInsightsPanel({
   executionStatus,
   cost,
   workPlan,
+  currentLlmProfileRef,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("cost");
@@ -200,9 +210,9 @@ export default function EmployeeInsightsPanel({
                       {language === "ar" ? "توكن" : "tokens"}
                     </span>
                   )}
-                  {cost?.modelName && (
+                  {currentLlmProfileRef && (
                     <small>
-                      {language === "ar" ? "النموذج" : "Model"}: {cost.modelName}
+                      {language === "ar" ? "النموذج" : "Model"}: {currentLlmProfileRef}
                     </small>
                   )}
                 </div>
