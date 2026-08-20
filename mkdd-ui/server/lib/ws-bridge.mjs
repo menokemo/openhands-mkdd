@@ -3,6 +3,7 @@ import { OPENHANDS_URL, sessionKey } from "./openhands-client.mjs";
 import { findAuthorizedConversation } from "./authorize-conversation.mjs";
 import { normalizeEvent } from "./normalize-event.mjs";
 import { sendPushToAll } from "./push-notifications.mjs";
+import { currentUser } from "../routes/auth.mjs";
 
 /**
  * Secure realtime chat bridge — implements Phase C of
@@ -39,6 +40,11 @@ export function attachChatWebSocketBridge(httpServer) {
     const url = new URL(req.url, "http://mkdd.local");
 
     if (url.pathname !== "/ws/chat") {
+      socket.destroy();
+      return;
+    }
+
+    if (!currentUser(req)) {
       socket.destroy();
       return;
     }

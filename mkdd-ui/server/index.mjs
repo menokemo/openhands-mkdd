@@ -33,6 +33,16 @@ import {
 } from "./routes/chat.mjs";
 import { handlePushVapidKey, handlePushSubscribe } from "./routes/push.mjs";
 import { handleRestartContainer } from "./routes/settings.mjs";
+import {
+  handleAuthStatus,
+  handleAuthSetup,
+  handleAuthLogin,
+  handleAuthLogout,
+  handleAuthListUsers,
+  handleAuthAddUser,
+  handleAuthRemoveUser,
+  currentUser,
+} from "./routes/auth.mjs";
 import { attachChatWebSocketBridge } from "./lib/ws-bridge.mjs";
 
 // Route handlers are tried in order; each returns `true` once it has
@@ -41,6 +51,13 @@ import { attachChatWebSocketBridge } from "./lib/ws-bridge.mjs";
 // behavior is unchanged - only the organization is different (see
 // PROJECT_AUDIT_REPORT.md section 2.1 and section 4, step 3).
 const ROUTES = [
+  handleAuthStatus,
+  handleAuthSetup,
+  handleAuthLogin,
+  handleAuthLogout,
+  handleAuthListUsers,
+  handleAuthAddUser,
+  handleAuthRemoveUser,
   handleBranding,
   handleBrandingIcon,
   handleHealth,
@@ -76,8 +93,32 @@ const ROUTES = [
   handleStaticFiles,
 ];
 
+// Paths reachable without being logged in - the absolute minimum
+// needed to check auth status, create the first account, and log in.
+// Every other /api/ route requires a valid session (BUGS_AND_FIXES.md
+// #127) - this is a real security gate, not just hiding UI, so a
+// request that bypasses the frontend entirely (e.g. curl) is rejected
+// just the same as one made through the browser.
+const AUTH_EXEMPT_PATHS = new Set([
+  "/api/auth/status",
+  "/api/auth/setup",
+  "/api/auth/login",
+]);
+
+function requiresAuth(url) {
+  if (!url?.startsWith("/api/")) return false; // static files are never gated here
+  const path = url.split("?")[0];
+  return !AUTH_EXEMPT_PATHS.has(path);
+}
+
 const server = http.createServer(async (req, res) => {
   try {
+    if (requiresAuth(req.url) && !currentUser(req)) {
+      res.writeHead(401, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "not_authenticated" }));
+      return;
+    }
+
     for (const route of ROUTES) {
       // eslint-disable-next-line no-await-in-loop -- routes are tried in
       // priority order; only one will ever actually do async work.

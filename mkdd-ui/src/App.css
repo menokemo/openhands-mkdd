@@ -3470,3 +3470,88 @@ header button,
 .live-app-card-maybe-expired .live-app-open {
   color: var(--mkdd-warning);
 }
+
+/* =========================
+   Auth (setup/login) screen (BUGS_AND_FIXES.md #127)
+   ========================= */
+
+.auth-loading {
+  min-height: 100vh;
+  background: var(--mkdd-page);
+}
+
+.auth-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--mkdd-page);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 24px;
+  border: 1px solid var(--mkdd-border-subtle);
+  border-radius: 20px;
+  background: var(--mkdd-surface);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.auth-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  object-fit: cover;
+  margin-bottom: 4px;
+}
+
+.auth-card h1 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--mkdd-text-primary);
+  text-align: center;
+}
+
+.auth-description {
+  margin: 0 0 6px;
+  color: var(--mkdd-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.auth-card input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--mkdd-border-subtle);
+  border-radius: 12px;
+  background: var(--mkdd-canvas);
+  color: var(--mkdd-text-primary);
+  font-size: 15px;
+}
+
+.auth-card input:focus {
+  outline: none;
+  border-color: var(--mkdd-accent);
+}
+
+.auth-card button[type="submit"] {
+  width: 100%;
+  margin-top: 6px;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--mkdd-accent), var(--mkdd-accent-deep));
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.auth-card button[type="submit"]:disabled {
+  opacity: 0.6;
+}

@@ -8,9 +8,11 @@ import {
   FaXmark,
   FaChevronLeft,
   FaChevronRight,
+  FaRightFromBracket,
 } from "react-icons/fa6";
 import RestartModal from "./RestartModal";
 import { isLocalAccess } from "../utils/isLocalAccess";
+import { logout } from "../api/client";
 
 type SidebarMenuKey = "active" | "nearCompletion" | "completed" | "employees";
 
@@ -110,6 +112,21 @@ export default function Sidebar({ open, language, onClose, onSelect }: Props) {
                   </span>
                 </button>
               )}
+
+              <button
+                className="sidebar-menu-item"
+                onClick={() => {
+                  logout().finally(() => window.location.reload());
+                }}
+              >
+                <span className="sidebar-menu-icon">
+                  <FaRightFromBracket />
+                </span>
+                {language === "ar" ? "تسجيل الخروج" : "Log out"}
+                <span className="sidebar-menu-arrow">
+                  {language === "ar" ? <FaChevronLeft /> : <FaChevronRight />}
+                </span>
+              </button>
             </nav>
           </aside>
         </div>

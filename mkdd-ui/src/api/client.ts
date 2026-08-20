@@ -455,3 +455,79 @@ export async function updateWorkflowReview(
 export async function restartContainer(): Promise<void> {
   await fetch("/api/settings/restart-container", { method: "POST" });
 }
+
+/**
+ * Authentication (BUGS_AND_FIXES.md #127). All these calls include
+ * credentials (the session cookie) automatically since they're same-
+ * origin fetches.
+ */
+export type AuthStatus = {
+  setupRequired: boolean;
+  loggedIn: boolean;
+  username: string | null;
+};
+
+export async function fetchAuthStatus(): Promise<AuthStatus> {
+  const r = await fetch("/api/auth/status");
+  return r.json();
+}
+
+export async function setupFirstAccount(
+  username: string,
+  password: string,
+): Promise<{ username: string }> {
+  const r = await fetch("/api/auth/setup", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error ?? "setup_failed");
+  return data;
+}
+
+export async function login(
+  username: string,
+  password: string,
+): Promise<{ username: string }> {
+  const r = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error ?? "login_failed");
+  return data;
+}
+
+export async function logout(): Promise<void> {
+  await fetch("/api/auth/logout", { method: "POST" });
+}
+
+export type AuthUser = { id: string; username: string };
+
+export async function fetchAuthUsers(): Promise<AuthUser[]> {
+  const r = await fetch("/api/auth/users");
+  const data = await r.json();
+  return data.users ?? [];
+}
+
+export async function addAuthUser(username: string, password: string): Promise<AuthUser> {
+  const r = await fetch("/api/auth/users", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error ?? "add_user_failed");
+  return data;
+}
+
+export async function removeAuthUser(userId: string): Promise<void> {
+  const r = await fetch("/api/auth/users/remove", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ userId }),
+  });
+  if (!r.ok) throw new Error("remove_user_failed");
+}
