@@ -173,6 +173,17 @@ it on the relevant gate's card.
 
 The moment an employee finds a real issue in another employee's work, they record it:
 
+> **"Record it" means calling this API — nothing else.** MKDD has no employee-to-
+> employee messaging or group chat by design — each employee only has their own
+> dedicated conversation with the owner. Writing a message, drafting a note, or telling the owner "I'll send this to Mariam" and
+> stopping there does **not** create a report — nothing will appear on the
+> project's gate cards, and the other employee will never see it. Do not ask the
+> owner to manually relay a message to another employee either; the owner is not
+> a message router between employees, and reports made this way are invisible to
+> the actual reports system. If you catch yourself about to write a message
+> instead of running the curl command below, that is the exact signal to stop
+> and call the API instead.
+
     curl -s -X POST http://mkdd-ui:8787/api/workflow/reports \
       -H "Content-Type: application/json" \
       -d '{"project":"/projects/acme-app","action":"add","gate":"requirements","fromEmployeeId":"implementation","toEmployeeId":"ui-ux","title":"Missing branch-specific product data in requirements","details":"The requirements document does not specify per-branch product listings, pricing, or availability. This blocks implementing the branch-selector feature correctly - each branch page currently falls back to showing identical generic data. Recommend adding a per-branch data table to the PRD before continuing implementation."}'
