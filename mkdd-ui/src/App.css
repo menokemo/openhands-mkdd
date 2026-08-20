@@ -80,7 +80,7 @@ input {
 }
 
 .app {
-  min-height: 100vh;
+  min-height: 100dvh;
   max-width: 820px;
   margin: auto;
   padding: 18px;
@@ -3476,12 +3476,12 @@ header button,
    ========================= */
 
 .auth-loading {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--mkdd-page);
 }
 
 .auth-screen {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
