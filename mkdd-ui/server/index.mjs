@@ -47,6 +47,7 @@ import {
   handleServeOwnerAvatar,
   handleUploadOwnerAvatar,
 } from "./routes/owner-avatar.mjs";
+import { getInternalServiceKey } from "./lib/internal-service-key.mjs";
 import { attachChatWebSocketBridge } from "./lib/ws-bridge.mjs";
 
 // Route handlers are tried in order; each returns `true` once it has
@@ -143,8 +144,8 @@ function isRequestAuthorized(req) {
   if (!path?.startsWith(INTERNAL_SERVICE_PATH_PREFIX)) return false;
 
   const providedKey = req.headers["x-internal-service-key"];
-  const expectedKey = process.env.MKDD_INTERNAL_SERVICE_KEY;
-  return Boolean(expectedKey) && providedKey === expectedKey;
+  const expectedKey = getInternalServiceKey();
+  return providedKey === expectedKey;
 }
 
 const server = http.createServer(async (req, res) => {
