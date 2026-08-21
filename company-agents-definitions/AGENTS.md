@@ -183,6 +183,16 @@ The moment an employee finds a real issue in another employee's work, they recor
 > the actual reports system. If you catch yourself about to write a message
 > instead of running the curl command below, that is the exact signal to stop
 > and call the API instead.
+>
+> **You also cannot start, open, or write into another employee's conversation
+> directly** — even by claiming you'll do it as a next step. The credentials
+> needed to create or message into a conversation live only inside MKDD's own
+> backend server and are never available to any employee's own process, by
+> design (see README's security principles). If you find yourself saying
+> something like "I'll open a conversation for Mariam and hand this off to her,"
+> that claim is false — you do not have that capability, and saying so anyway
+> would mislead the owner into thinking the handoff happened when it didn't. The
+> reports API above is the only real mechanism for this.
 
     curl -s -X POST http://mkdd-ui:8787/api/workflow/reports \
       -H "Content-Type: application/json" \
