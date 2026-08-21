@@ -111,15 +111,45 @@ const AUTH_EXEMPT_PATHS = new Set([
   "/api/auth/login",
 ]);
 
+// Paths an employee's own process legitimately calls directly via curl
+// (documented in AGENTS.md - workflow gate approvals, blockers,
+// findings, reviews, reports) - see isRequestAuthorized below.
+const INTERNAL_SERVICE_PATH_PREFIX = "/api/workflow/";
+
 function requiresAuth(url) {
   if (!url?.startsWith("/api/")) return false; // static files are never gated here
   const path = url.split("?")[0];
   return !AUTH_EXEMPT_PATHS.has(path);
 }
 
+/**
+ * A request passes if EITHER of two independent things is true:
+ * 1. It carries a valid owner browser session (currentUser) - works
+ *    for every route, exactly as before #134.
+ * 2. It's hitting /api/workflow/* specifically AND carries the correct
+ *    shared secret header (BUGS_AND_FIXES.md #134) - this is the ONLY
+ *    other legitimate caller in this system: an employee's own agent
+ *    process, which has no browser and can never have a session
+ *    cookie, but genuinely needs to record gate approvals/reports/
+ *    findings per AGENTS.md's own documented instructions. Deliberately
+ *    scoped to this one path prefix only - never widened to any other
+ *    endpoint (chat, settings, projects, etc.), keeping the blast
+ *    radius of a leaked service key as narrow as possible.
+ */
+function isRequestAuthorized(req) {
+  if (currentUser(req)) return true;
+
+  const path = req.url?.split("?")[0];
+  if (!path?.startsWith(INTERNAL_SERVICE_PATH_PREFIX)) return false;
+
+  const providedKey = req.headers["x-internal-service-key"];
+  const expectedKey = process.env.MKDD_INTERNAL_SERVICE_KEY;
+  return Boolean(expectedKey) && providedKey === expectedKey;
+}
+
 const server = http.createServer(async (req, res) => {
   try {
-    if (requiresAuth(req.url) && !currentUser(req)) {
+    if (requiresAuth(req.url) && !isRequestAuthorized(req)) {
       res.writeHead(401, { "content-type": "application/json" });
       res.end(JSON.stringify({ error: "not_authenticated" }));
       return;

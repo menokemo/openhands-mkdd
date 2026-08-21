@@ -30,6 +30,11 @@ services:
       # anyone who hasn't set it; deployments accessed via a LAN IP MUST
       # set this to http://<that-ip>:<MKDD_AGENT_CANVAS_UI_PORT>.
       AUTOMATION_BASE_URL: ${AUTOMATION_BASE_URL:-}
+      # Same shared secret as mkdd-ui below (BUGS_AND_FIXES.md #134) -
+      # employees run INSIDE this container, so this is where they
+      # actually read the value to include in their documented curl
+      # commands (AGENTS.md references it as $MKDD_INTERNAL_SERVICE_KEY).
+      MKDD_INTERNAL_SERVICE_KEY: ${MKDD_INTERNAL_SERVICE_KEY:-change-me-generate-a-real-secret}
     ports:
       - "${MKDD_AGENT_CANVAS_PORT:-8000}:8000"
       - "${MKDD_AGENT_CANVAS_UI_PORT:-3000}:3000"
@@ -52,12 +57,15 @@ services:
     restart: unless-stopped
     environment:
       OPENHANDS_URL: http://agent-canvas:8000
-      # Comma-separated list of domains allowed to reach Vite's dev
-      # server (BUGS_AND_FIXES.md #108) - e.g. "mkdd.example.com". Unset
-      # by default (Vite falls back to its normal localhost-only
-      # behavior). Set this in your own .env file, never commit a real
-      # domain into this file directly.
-      MKDD_ALLOWED_HOSTS: ${MKDD_ALLOWED_HOSTS:-}
+      # Shared secret letting employee curl calls (documented in
+      # AGENTS.md) authenticate to /api/workflow/* specifically
+      # (BUGS_AND_FIXES.md #134) - an employee's own process has no
+      # browser session cookie and can never get one, so the normal
+      # owner-login auth gate (#127) would otherwise reject every
+      # workflow update an employee makes. Generate a real random value
+      # for this in your own .env file - the default below is only a
+      # placeholder and must be changed before deploying.
+      MKDD_INTERNAL_SERVICE_KEY: ${MKDD_INTERNAL_SERVICE_KEY:-change-me-generate-a-real-secret}
       # The container's own name (BUGS_AND_FIXES.md #110), passed in so
       # the app knows exactly what to tell the Docker Engine API to
       # restart via the socket mount below - kept in sync with

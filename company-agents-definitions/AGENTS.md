@@ -91,6 +91,13 @@ All calls are `POST` to `http://mkdd-ui:8787/api/workflow/{...}` with a JSON bod
 (same internal hostname used for the GitHub repo and file-upload checks). Always
 include `project` (the exact working-directory path, e.g. `/projects/acme-app`).
 
+Every call also requires the header `X-Internal-Service-Key: $MKDD_INTERNAL_SERVICE_KEY`
+(BUGS_AND_FIXES.md #134) — `$MKDD_INTERNAL_SERVICE_KEY` is an environment variable
+already set in this container; the shell substitutes its real value automatically when
+you run the command, so copy it exactly as shown below rather than typing a literal
+value. Without this header, every call in this section is rejected with 401 — this is
+not optional or only needed "sometimes."
+
 ### Approving a gate
 
 The role who presented that gate calls this **the moment the owner gives explicit
@@ -99,6 +106,7 @@ Gate 3, release-manager for Gate 4:
 
     curl -s -X POST http://mkdd-ui:8787/api/workflow/approve-gate \
       -H "Content-Type: application/json" \
+      -H "X-Internal-Service-Key: $MKDD_INTERNAL_SERVICE_KEY" \
       -d '{"project":"/projects/acme-app","gate":"requirements","approvedBy":"Bagosh"}'
 
 `gate` is one of `requirements`, `ui_ux`, `architecture`, `production`. This call
@@ -114,6 +122,7 @@ the moment their review actually passes — never in advance of doing it:
 
     curl -s -X POST http://mkdd-ui:8787/api/workflow/reviews \
       -H "Content-Type: application/json" \
+      -H "X-Internal-Service-Key: $MKDD_INTERNAL_SERVICE_KEY" \
       -d '{"project":"/projects/acme-app","action":"complete","reviewRole":"qa","reviewedBy":"Fady"}'
 
 `reviewRole` is one of `qa`, `test_automation`, `code_review`, `security_review`.
@@ -126,12 +135,14 @@ Any employee records a real blocker the moment they hit one:
 
     curl -s -X POST http://mkdd-ui:8787/api/workflow/blockers \
       -H "Content-Type: application/json" \
+      -H "X-Internal-Service-Key: $MKDD_INTERNAL_SERVICE_KEY" \
       -d '{"project":"/projects/acme-app","action":"add","title":"Missing production database credentials","createdBy":"Kirollos"}'
 
 Whoever resolves it marks it resolved:
 
     curl -s -X POST http://mkdd-ui:8787/api/workflow/blockers \
       -H "Content-Type: application/json" \
+      -H "X-Internal-Service-Key: $MKDD_INTERNAL_SERVICE_KEY" \
       -d '{"project":"/projects/acme-app","action":"resolve","blockerId":"<id from the add response>","resolvedBy":"Kirollos"}'
 
 ### Recording a review finding
@@ -141,18 +152,21 @@ roles) — the moment they find a real issue during their review:
 
     curl -s -X POST http://mkdd-ui:8787/api/workflow/findings \
       -H "Content-Type: application/json" \
+      -H "X-Internal-Service-Key: $MKDD_INTERNAL_SERVICE_KEY" \
       -d '{"project":"/projects/acme-app","action":"add","title":"SQL injection risk in search endpoint","reviewer":"Mikhail"}'
 
 The implementer (never the same person as `reviewer`) marks it fixed once resolved:
 
     curl -s -X POST http://mkdd-ui:8787/api/workflow/findings \
       -H "Content-Type: application/json" \
+      -H "X-Internal-Service-Key: $MKDD_INTERNAL_SERVICE_KEY" \
       -d '{"project":"/projects/acme-app","action":"mark-fixed","findingId":"<id>","fixedBy":"Kirollos"}'
 
 The SAME reviewer who created the finding (never anyone else) verifies the fix:
 
     curl -s -X POST http://mkdd-ui:8787/api/workflow/findings \
       -H "Content-Type: application/json" \
+      -H "X-Internal-Service-Key: $MKDD_INTERNAL_SERVICE_KEY" \
       -d '{"project":"/projects/acme-app","action":"verify","findingId":"<id>","verifiedBy":"Mikhail"}'
 
 The API itself rejects a mismatched `fixedBy`/`verifiedBy` — this enforces Section
@@ -196,6 +210,7 @@ The moment an employee finds a real issue in another employee's work, they recor
 
     curl -s -X POST http://mkdd-ui:8787/api/workflow/reports \
       -H "Content-Type: application/json" \
+      -H "X-Internal-Service-Key: $MKDD_INTERNAL_SERVICE_KEY" \
       -d '{"project":"/projects/acme-app","action":"add","gate":"requirements","fromEmployeeId":"implementation","toEmployeeId":"ui-ux","title":"Missing branch-specific product data in requirements","details":"The requirements document does not specify per-branch product listings, pricing, or availability. This blocks implementing the branch-selector feature correctly - each branch page currently falls back to showing identical generic data. Recommend adding a per-branch data table to the PRD before continuing implementation."}'
 
 `gate` is one of `requirements`, `ui_ux`, `architecture`, `production`. `fromEmployeeId`
@@ -212,6 +227,7 @@ either confirming they implemented the fix:
 
     curl -s -X POST http://mkdd-ui:8787/api/workflow/reports \
       -H "Content-Type: application/json" \
+      -H "X-Internal-Service-Key: $MKDD_INTERNAL_SERVICE_KEY" \
       -d '{"project":"/projects/acme-app","action":"respond","reportId":"<id from the add response>","status":"implemented","note":"Added branch data for all 4 languages"}'
 
 or explaining why they will not act on it — a real explanation is **mandatory** here,
@@ -219,6 +235,7 @@ the API rejects a decline with no `note`:
 
     curl -s -X POST http://mkdd-ui:8787/api/workflow/reports \
       -H "Content-Type: application/json" \
+      -H "X-Internal-Service-Key: $MKDD_INTERNAL_SERVICE_KEY" \
       -d '{"project":"/projects/acme-app","action":"respond","reportId":"<id>","status":"declined","note":"This data already exists in section 3 of the PRD, verified with Bagosh"}'
 
 Final closure of a report is a deliberate owner-only action, done from the Project
