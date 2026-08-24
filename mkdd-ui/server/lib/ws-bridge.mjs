@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket as UpstreamWebSocket } from "ws";
-import { OPENHANDS_URL, sessionKey } from "./openhands-client.mjs";
+import { OPENHANDS_URL, sessionKey, invalidateSessionKey } from "./openhands-client.mjs";
 import { findAuthorizedConversation } from "./authorize-conversation.mjs";
 import { normalizeEvent } from "./normalize-event.mjs";
 import { sendPushToAll } from "./push-notifications.mjs";
@@ -84,75 +84,107 @@ export function attachChatWebSocketBridge(httpServer) {
     }
 
     const upstreamUrl = `${toWebSocketUrl(OPENHANDS_URL)}/sockets/events/${conversationId}`;
-    const upstream = new UpstreamWebSocket(upstreamUrl);
 
-    upstream.on("open", () => {
-      // Auth message shape confirmed in
-      // openhands-agent-canvas/src/utils/websocket-auth.ts.
-      upstream.send(JSON.stringify({ type: "auth", session_api_key: sessionKey() }));
-    });
+    let currentUpstream = null;
 
-    upstream.on("message", (data) => {
-      let rawEvent;
-      try {
-        rawEvent = JSON.parse(data.toString());
-      } catch {
-        return; // ignore malformed frames rather than crashing the bridge
+    /**
+     * Opens (or reopens, on retry) the upstream connection to
+     * OpenHands' event WebSocket for this conversation, authenticating
+     * with the current session key. If the connection closes/errors
+     * before ever receiving a single message, that's a strong signal
+     * the auth message itself was rejected (BUGS_AND_FIXES.md #137) -
+     * most likely because the cached session key (see openhands-
+     * client.mjs's caching from #124) went stale, e.g. after
+     * agent-canvas restarted independently of this container. REST
+     * calls already retry this automatically via openhands()/
+     * openhandsFetch(); this WebSocket bridge never had that, and a
+     * connection failing here previously meant this feature stayed
+     * silently broken until mkdd-ui itself was restarted - forcing the
+     * owner to rely on manual refresh instead of live updates.
+     */
+    function connectUpstream(isRetry) {
+      const upstream = new UpstreamWebSocket(upstreamUrl);
+      currentUpstream = upstream;
+      let receivedAnyMessage = false;
+
+      upstream.on("open", () => {
+        // Auth message shape confirmed in
+        // openhands-agent-canvas/src/utils/websocket-auth.ts.
+        upstream.send(JSON.stringify({ type: "auth", session_api_key: sessionKey() }));
+      });
+
+      upstream.on("message", (data) => {
+        receivedAnyMessage = true;
+
+        let rawEvent;
+        try {
+          rawEvent = JSON.parse(data.toString());
+        } catch {
+          return; // ignore malformed frames rather than crashing the bridge
+        }
+
+        const normalized = normalizeEvent(rawEvent);
+        if (normalized && browserSocket.readyState === browserSocket.OPEN) {
+          browserSocket.send(JSON.stringify({ type: "event", event: normalized }));
+        }
+
+        // Push notification for a genuine new agent message (BUGS_AND_FIXES.md
+        // #107) - never for the owner's own messages, and never blocks/
+        // delays delivering the event to the open browser tab above.
+        if (normalized?.kind === "MessageEvent" && normalized.source === "agent") {
+          const firstTextBlock = normalized.llm_message?.content?.find(
+            (item) => item.type === "text",
+          );
+          const preview = firstTextBlock?.text?.slice(0, 120) ?? "";
+
+          void sendPushToAll({
+            title: employeeName,
+            body: preview,
+            // No per-conversation deep link exists yet (MKDD is a
+            // client-side-state SPA, not URL-routed per conversation) -
+            // opens the app root; the owner navigates from there.
+            url: "/",
+            tag: `mkdd-message-${employeeId}`,
+          });
+        }
+      });
+
+      function handleUpstreamDown() {
+        if (!receivedAnyMessage && !isRetry) {
+          invalidateSessionKey();
+          connectUpstream(true);
+          return;
+        }
+        if (browserSocket.readyState === browserSocket.OPEN) {
+          browserSocket.close(1011, "upstream_unavailable");
+        }
       }
 
-      const normalized = normalizeEvent(rawEvent);
-      if (normalized && browserSocket.readyState === browserSocket.OPEN) {
-        browserSocket.send(JSON.stringify({ type: "event", event: normalized }));
-      }
+      upstream.on("close", handleUpstreamDown);
+      upstream.on("error", handleUpstreamDown);
+    }
 
-      // Push notification for a genuine new agent message (BUGS_AND_FIXES.md
-      // #107) - never for the owner's own messages, and never blocks/
-      // delays delivering the event to the open browser tab above.
-      if (normalized?.kind === "MessageEvent" && normalized.source === "agent") {
-        const firstTextBlock = normalized.llm_message?.content?.find(
-          (item) => item.type === "text",
-        );
-        const preview = firstTextBlock?.text?.slice(0, 120) ?? "";
+    connectUpstream(false);
 
-        void sendPushToAll({
-          title: employeeName,
-          body: preview,
-          // No per-conversation deep link exists yet (MKDD is a
-          // client-side-state SPA, not URL-routed per conversation) -
-          // opens the app root; the owner navigates from there.
-          url: "/",
-          tag: `mkdd-message-${employeeId}`,
-        });
-      }
-    });
-
-    upstream.on("close", () => {
-      if (browserSocket.readyState === browserSocket.OPEN) {
-        browserSocket.close(1000, "upstream_closed");
-      }
-    });
-
-    upstream.on("error", () => {
-      if (browserSocket.readyState === browserSocket.OPEN) {
-        browserSocket.close(1011, "upstream_error");
-      }
-    });
-
+    // Registered ONCE, outside connectUpstream, so a retry never
+    // duplicates these listeners - always closes whichever upstream
+    // connection is current at the time (currentUpstream is kept in
+    // sync by connectUpstream on every call, including the retry).
     browserSocket.on("close", () => {
       if (
-        upstream.readyState === UpstreamWebSocket.OPEN ||
-        upstream.readyState === UpstreamWebSocket.CONNECTING
+        currentUpstream?.readyState === UpstreamWebSocket.OPEN ||
+        currentUpstream?.readyState === UpstreamWebSocket.CONNECTING
       ) {
-        upstream.close();
+        currentUpstream.close();
       }
     });
 
     browserSocket.on("error", () => {
       if (
-        upstream.readyState === UpstreamWebSocket.OPEN ||
-        upstream.readyState === UpstreamWebSocket.CONNECTING
+        currentUpstream?.readyState === UpstreamWebSocket.OPEN ||
+        currentUpstream?.readyState === UpstreamWebSocket.CONNECTING
       ) {
-        upstream.close();
+        currentUpstream.close();
       }
     });
   });
