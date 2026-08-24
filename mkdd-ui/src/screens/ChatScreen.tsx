@@ -34,6 +34,7 @@ type Props = {
   startFreshConversation: (imageDataUrls?: string[]) => Promise<void>;
   hasOlderMessages: boolean;
   loadingOlder: boolean;
+  isOpeningConversation: boolean;
   loadOlderMessages: () => Promise<void>;
 };
 
@@ -61,6 +62,7 @@ export default function ChatScreen({
   startFreshConversation,
   hasOlderMessages,
   loadingOlder,
+  isOpeningConversation,
   loadOlderMessages,
 }: Props) {
   const employeeName =
@@ -295,6 +297,11 @@ export default function ChatScreen({
       </div>
 
       <section className="chat" ref={chatContainerRef} onScroll={handleScroll}>
+        {isOpeningConversation && messages.length === 0 && (
+          <div className="chat-loading-initial">
+            {language === "ar" ? "جاري تحميل المحادثة…" : "Loading conversation…"}
+          </div>
+        )}
         {loadingOlder && (
           <div className="chat-loading-older">
             {language === "ar" ? "جاري تحميل رسائل أقدم…" : "Loading older messages…"}

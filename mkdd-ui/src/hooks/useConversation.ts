@@ -70,6 +70,7 @@ function buildChatWebSocketUrl(
 
 export function useConversation({ project, employee }: Params) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isOpeningConversation, setIsOpeningConversation] = useState(false);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
   const [workPlan, setWorkPlan] = useState<WorkPlan | null>(null);
   const [cost, setCost] = useState<ConversationCost | null>(null);
@@ -127,12 +128,15 @@ export function useConversation({ project, employee }: Params) {
 
     if (!project || !employee) return;
 
+    setIsOpeningConversation(true);
     let cancelled = false;
 
     fetchChatOpen(project.path, employee.id, employee.name)
       .then((data) => {
         const conversation = data.conversation;
-        if (!conversation || cancelled) return;
+        if (cancelled) return;
+        setIsOpeningConversation(false);
+        if (!conversation) return;
 
         applyIncomingEvents(data.items ?? [], data.work_plan ?? null);
         setCost(conversation.cost ?? null);
@@ -143,6 +147,7 @@ export function useConversation({ project, employee }: Params) {
       })
       .catch(() => {
         // Keep the last known-good conversation state visible.
+        if (!cancelled) setIsOpeningConversation(false);
       });
 
     return () => {
@@ -382,5 +387,6 @@ export function useConversation({ project, employee }: Params) {
     hasOlderMessages,
     loadingOlder,
     loadOlderMessages,
+    isOpeningConversation,
   };
 }
