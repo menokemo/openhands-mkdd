@@ -110,6 +110,14 @@ const AUTH_EXEMPT_PATHS = new Set([
   "/api/auth/status",
   "/api/auth/setup",
   "/api/auth/login",
+  // BUGS_AND_FIXES.md #142 - critical bug: this was missing after #127
+  // introduced the auth gate, silently breaking the auto-deploy system's
+  // health check for every commit since (no browser session exists to
+  // check health), causing an infinite rollback loop back to the last
+  // pre-authentication commit every 20 seconds. A health check reveals
+  // no sensitive data (see branding.mjs's handleHealth), so exempting it
+  // is safe.
+  "/api/health",
 ]);
 
 // Paths an employee's own process legitimately calls directly via curl
