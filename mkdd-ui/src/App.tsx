@@ -103,6 +103,28 @@ export default function App({ currentUser, onAvatarChange }: Props) {
       .finally(() => setLoading(false));
   }, []);
 
+  /**
+   * Employees are refreshed periodically in the background
+   * (BUGS_AND_FIXES.md #141) - the one-time load above meant a model
+   * changed on an employee's Agent Profile (from OpenHands directly,
+   * outside MKDD) after the app was already open never showed up until
+   * a full page reload. Last-known-good: on failure, silently keeps the
+   * existing list rather than blanking anything; on success, replaces
+   * it without any loading indicator, since this is a quiet background
+   * sync, not an initial load.
+   */
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchEmployees()
+        .then(setEmployees)
+        .catch(() => {
+          // Keep the last known-good employee list visible.
+        });
+    }, 30_000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Refreshed on every sidebar open so the active/near-completion/completed
   // grouping reflects the latest gate approvals without needing a full
   // page reload.
