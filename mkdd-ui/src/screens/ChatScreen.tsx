@@ -77,6 +77,16 @@ export default function ChatScreen({
   const genericFileInputRef = useRef<HTMLInputElement>(null);
   const [pendingImages, setPendingImages] = useState<string[]>([]);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [openingTakingLong, setOpeningTakingLong] = useState(false);
+
+  useEffect(() => {
+    if (!isOpeningConversation) {
+      setOpeningTakingLong(false);
+      return;
+    }
+    const timer = setTimeout(() => setOpeningTakingLong(true), 8000);
+    return () => clearTimeout(timer);
+  }, [isOpeningConversation]);
 
   // The project's slug on disk is the last path segment (e.g.
   // "/projects/test-site" -> "test-site") - matches the same computation
@@ -299,7 +309,16 @@ export default function ChatScreen({
       <section className="chat" ref={chatContainerRef} onScroll={handleScroll}>
         {isOpeningConversation && messages.length === 0 && (
           <div className="chat-loading-initial">
-            {language === "ar" ? "جاري تحميل المحادثة…" : "Loading conversation…"}
+            <div>
+              {language === "ar" ? "جاري تحميل المحادثة…" : "Loading conversation…"}
+            </div>
+            {openingTakingLong && (
+              <div className="chat-loading-initial-hint">
+                {language === "ar"
+                  ? "أول تحميل لهذا الموظف قد يستغرق وقتًا أطول قليلاً"
+                  : "First load for this employee can take a bit longer"}
+              </div>
+            )}
           </div>
         )}
         {loadingOlder && (
