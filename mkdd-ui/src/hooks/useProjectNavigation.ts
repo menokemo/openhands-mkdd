@@ -36,7 +36,18 @@ export function useProjectNavigation({ projects, employees }: Params) {
     return () => {
       window.removeEventListener("popstate", syncFromUrl);
     };
-  }, [projects, employees]);
+    // Depends on LENGTH, not the arrays themselves (BUGS_AND_FIXES.md
+    // #144) - employees now refreshes silently every 30s (#141), giving
+    // a brand-new array reference each time even when the actual data
+    // is identical. Depending on the array directly re-ran this effect
+    // on every refresh, reassigning selectedEmployee with a fresh
+    // object reference each time - which in turn made useConversation's
+    // effect (which depends on the employee object) reset and reload
+    // the entire open conversation every 30 seconds. Length only
+    // changes when an employee/project is genuinely added or removed,
+    // which is the only time this effect actually needs to re-sync.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects.length, employees.length]);
 
   function openProject(project: Workspace) {
     const url = new URL(window.location.href);
