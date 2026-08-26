@@ -3602,3 +3602,16 @@ header button,
   color: var(--mkdd-text-primary);
   font-size: 15px;
 }
+
+/* =========================
+   Send error message (BUGS_AND_FIXES.md #148)
+   ========================= */
+
+.composer-error {
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--mkdd-danger) 12%, transparent);
+  color: var(--mkdd-danger);
+  font-size: 13px;
+}

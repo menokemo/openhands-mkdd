@@ -29,6 +29,7 @@ type Props = {
   executionStatus: ConversationExecutionStatus | null;
   message: string;
   sending: boolean;
+  sendError: string | null;
   setMessage: (value: string) => void;
   sendMessage: (imageDataUrls?: string[], overrideText?: string) => Promise<void>;
   startFreshConversation: (imageDataUrls?: string[]) => Promise<void>;
@@ -57,6 +58,7 @@ export default function ChatScreen({
   executionStatus,
   message,
   sending,
+  sendError,
   setMessage,
   sendMessage,
   startFreshConversation,
@@ -452,6 +454,12 @@ export default function ChatScreen({
           await sendMessage(images.length > 0 ? images : undefined);
         }}
       >
+        {sendError && (
+          <div className="composer-error">
+            {language === "ar" ? "فشل الإرسال: " : "Send failed: "}
+            {sendError}
+          </div>
+        )}
         {pendingImages.length > 0 && (
           <div className="composer-attachments">
             {pendingImages.map((src, i) => (

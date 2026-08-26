@@ -63,6 +63,7 @@ export default function App({ currentUser, onAvatarChange }: Props) {
     executionStatus,
     message,
     sending,
+    sendError,
     setMessage,
     sendMessage,
     startFreshConversation,
@@ -173,6 +174,7 @@ export default function App({ currentUser, onAvatarChange }: Props) {
         executionStatus={executionStatus}
         message={message}
         sending={sending}
+        sendError={sendError}
         setMessage={setMessage}
         sendMessage={sendMessage}
         startFreshConversation={startFreshConversation}

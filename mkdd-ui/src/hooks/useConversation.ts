@@ -78,6 +78,7 @@ export function useConversation({ project, employee }: Params) {
     useState<ConversationExecutionStatus | null>(null);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [hasOlderMessages, setHasOlderMessages] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
@@ -278,6 +279,7 @@ export function useConversation({ project, employee }: Params) {
     };
 
     setSending(true);
+    setSendError(null);
     setMessage("");
     setMessages((current) => [...current, optimisticMessage]);
 
@@ -298,11 +300,16 @@ export function useConversation({ project, employee }: Params) {
       // clears the optimistic placeholder once it does (see
       // applyIncomingEvents). If the WebSocket is down, the 15s REST
       // resync will eventually reconcile it as a fallback.
-    } catch {
+    } catch (error) {
       // Sending genuinely failed - remove the optimistic bubble and give
-      // the user their text back instead of silently losing it.
+      // the user their text back instead of silently losing it. Also
+      // surface WHY it failed (BUGS_AND_FIXES.md #148) - previously this
+      // was completely silent, leaving the owner with no way to tell a
+      // real, actionable server error (e.g. "LLM profile not found")
+      // from a mysterious glitch.
       setMessages((current) => current.filter((m) => m.id !== optimisticId));
       setMessage(text);
+      setSendError(error instanceof Error ? error.message : "send_message_failed");
     } finally {
       setSending(false);
     }
@@ -323,6 +330,7 @@ export function useConversation({ project, employee }: Params) {
 
     const text = message.trim();
     setSending(true);
+    setSendError(null);
     setMessage("");
 
     try {
@@ -337,8 +345,9 @@ export function useConversation({ project, employee }: Params) {
       const id = sendData.conversation?.id ?? sendData.conversation_id;
       setMessages([]);
       if (id) setConversationId(id);
-    } catch {
+    } catch (error) {
       setMessage(text);
+      setSendError(error instanceof Error ? error.message : "send_message_failed");
     } finally {
       setSending(false);
     }
@@ -381,6 +390,7 @@ export function useConversation({ project, employee }: Params) {
     executionStatus,
     message,
     sending,
+    sendError,
     setMessage,
     sendMessage,
     startFreshConversation,
