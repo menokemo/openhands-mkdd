@@ -76,7 +76,7 @@ This staging stack is FULLY ISOLATED from any production instance running
 on this VM (different ports, container names, image tag, volume, and
 Docker Compose project — see deploy/README.md for the full table).
 
-Staging MKDD UI: http://localhost:15173  (production, if running, stays on 5173)
+Staging MKDD UI: http://localhost:18787  (production, if running, stays on 8787)
 
 Useful commands:
     systemctl status mkdd-auto-deploy.timer     # confirm the timer is active
