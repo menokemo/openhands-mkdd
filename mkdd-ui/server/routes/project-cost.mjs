@@ -1,4 +1,7 @@
-import { findAllProjectConversations } from "../lib/authorize-conversation.mjs";
+import {
+  fetchAllConversations,
+  findAllProjectConversations,
+} from "../lib/authorize-conversation.mjs";
 import { normalizeConversation } from "../lib/normalize-conversation.mjs";
 
 /**
@@ -21,7 +24,8 @@ export async function handleProjectTotalCost(req, res) {
   const projectSlug = decodeURIComponent(match[1]);
   const project = `/projects/${projectSlug}`;
 
-  const conversations = await findAllProjectConversations(project);
+  const allConversations = await fetchAllConversations();
+  const conversations = findAllProjectConversations(project, allConversations);
 
   const totalCost = conversations.reduce((sum, conversation) => {
     const normalized = normalizeConversation(conversation);

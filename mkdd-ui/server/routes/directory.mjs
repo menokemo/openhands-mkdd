@@ -4,7 +4,10 @@ import { readEmployeeDisplayInfo } from "../lib/employee-display-info.mjs";
 import { buildEmployeeAvatarUrl } from "./avatars.mjs";
 import { getProjectColor } from "../lib/project-metadata.mjs";
 import { getWorkflowState } from "../workflow-state.mjs";
-import { findAllProjectConversations } from "../lib/authorize-conversation.mjs";
+import {
+  fetchAllConversations,
+  findAllProjectConversations,
+} from "../lib/authorize-conversation.mjs";
 
 export async function handleProjects(req, res) {
   if (req.method !== "GET" || req.url !== "/api/projects") return false;
@@ -19,23 +22,32 @@ export async function handleProjects(req, res) {
   // lastActivityAt is the most recent updated_at across every real
   // conversation tied to this project - not a guess, not the
   // workspace's own creation time.
-  data.workspaces = await Promise.all(
-    (data.workspaces ?? []).map(async (workspace) => {
-      const conversations = await findAllProjectConversations(workspace.path);
-      const lastActivityAt = conversations.reduce((latest, conversation) => {
-        const updatedAt = conversation.updated_at ?? conversation.created_at;
-        if (!updatedAt) return latest;
-        return !latest || updatedAt > latest ? updatedAt : latest;
-      }, null);
+  //
+  // Fetched ONCE for the whole request (BUGS_AND_FIXES.md #145) - not
+  // once per project. The old code called findAllProjectConversations
+  // (which fully re-paginates every conversation on the server) inside
+  // the per-project map below, so N projects meant N complete re-scans
+  // of the exact same data. After days of testing had accumulated many
+  // conversations, this made the endpoint take minutes and eventually
+  // time out with a 502. Now the expensive scan happens exactly once,
+  // and each project just filters the already-fetched list locally.
+  const allConversations = await fetchAllConversations();
 
-      return {
-        ...workspace,
-        color: getProjectColor(workspace.path),
-        currentGate: getWorkflowState(workspace.path).currentGate,
-        lastActivityAt,
-      };
-    }),
-  );
+  data.workspaces = (data.workspaces ?? []).map((workspace) => {
+    const conversations = findAllProjectConversations(workspace.path, allConversations);
+    const lastActivityAt = conversations.reduce((latest, conversation) => {
+      const updatedAt = conversation.updated_at ?? conversation.created_at;
+      if (!updatedAt) return latest;
+      return !latest || updatedAt > latest ? updatedAt : latest;
+    }, null);
+
+    return {
+      ...workspace,
+      color: getProjectColor(workspace.path),
+      currentGate: getWorkflowState(workspace.path).currentGate,
+      lastActivityAt,
+    };
+  });
 
   res.writeHead(r.status, { "content-type": "application/json" });
   res.end(JSON.stringify(data));

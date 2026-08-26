@@ -35,9 +35,23 @@ export function matchesEmployee(conversation, { project, employeeId, employeeNam
  * level cost total, computed once and refreshed on a much slower
  * schedule than the per-employee status poll.
  */
-export async function findAllProjectConversations(project) {
+/**
+ * Paginates through EVERY conversation on the server exactly once,
+ * returning the full raw list. Callers filter locally afterward
+ * (BUGS_AND_FIXES.md #145) - critical performance fix: previously,
+ * findAllProjectConversations re-paginated through the ENTIRE
+ * conversation list from scratch on every single call, and
+ * handleProjects called it once PER PROJECT - so N projects meant N
+ * full re-scans of everything, even though each scan visited the
+ * exact same pages. After days of heavy testing had accumulated many
+ * conversations, this made /api/projects take minutes and eventually
+ * time out (502). This function paginates once; findAllProjectConversations
+ * below now just filters the already-fetched list, and handleProjects
+ * fetches this once total, not once per project.
+ */
+export async function fetchAllConversations() {
   let pageId = null;
-  const matches = [];
+  const all = [];
 
   do {
     const qs = new URLSearchParams({ limit: "100", sort_order: "UPDATED_AT_DESC" });
@@ -46,16 +60,22 @@ export async function findAllProjectConversations(project) {
     const response = await openhands(`/api/conversations/search?${qs}`);
     const data = await response.json();
 
-    for (const conversation of data.items ?? []) {
-      if (conversation.tags?.mkddproject === project) {
-        matches.push(conversation);
-      }
-    }
-
+    all.push(...(data.items ?? []));
     pageId = data.next_page_id ?? null;
   } while (pageId);
 
-  return matches;
+  return all;
+}
+
+/**
+ * Filters an already-fetched conversation list (see fetchAllConversations
+ * above) down to the ones belonging to a specific project - no network
+ * call of its own, purely a local filter.
+ */
+export function findAllProjectConversations(project, allConversations) {
+  return allConversations.filter(
+    (conversation) => conversation.tags?.mkddproject === project,
+  );
 }
 
 /**
