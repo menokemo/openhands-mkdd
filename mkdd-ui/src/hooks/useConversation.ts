@@ -154,12 +154,23 @@ export function useConversation({ project, employee }: Params) {
     return () => {
       cancelled = true;
     };
+    // Depends on project?.path and employee?.id specifically (BUGS_AND_FIXES.md
+    // #149), not the project/employee objects themselves - matching #144's fix
+    // for the same underlying issue. Depending on the objects directly meant
+    // ANY code path producing a new object reference for the same actual
+    // project/employee (e.g. the periodic employee refresh in #141, or the
+    // employees array being replaced after an avatar upload) re-triggered this
+    // whole effect - cancelling any in-flight fetchChatOpen request and
+    // restarting it from scratch. That's exactly what looked like "loading
+    // appears then disappears with no conversation shown" (the request got
+    // cancelled before its .then() ever ran) and "conversation loads
+    // incompletely" (cancelled after messages were half-applied).
     // eslint-disable-next-line react-hooks/exhaustive-deps -- applyIncomingEvents is stable in intent
-  }, [project, employee]);
+  }, [project?.path, employee?.id]);
 
   useEffect(() => {
     setMessage("");
-  }, [project, employee]);
+  }, [project?.path, employee?.id]);
 
   // --- Live WebSocket subscription (Phase D). Connects once a
   // conversation id is known; reconnects with backoff on drop; falls back
@@ -219,7 +230,7 @@ export function useConversation({ project, employee }: Params) {
       socket?.close();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- applyIncomingEvents is stable in intent
-  }, [project, employee, conversationId]);
+  }, [project?.path, employee?.id, employee?.name, conversationId]);
 
   // --- REST recovery fallback: periodically re-syncs execution status and
   // cost (not covered by the chat WebSocket, which only streams events),
@@ -258,7 +269,7 @@ export function useConversation({ project, employee }: Params) {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [project, employee, conversationId]);
+  }, [project?.path, employee?.id, employee?.name, conversationId]);
 
   async function sendMessage(imageDataUrls?: string[], overrideText?: string) {
     const hasImages = imageDataUrls && imageDataUrls.length > 0;
