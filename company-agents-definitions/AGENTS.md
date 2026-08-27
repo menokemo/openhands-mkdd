@@ -33,6 +33,16 @@ This file contains company-wide policy only. Role-specific procedures live in `s
 - Typical change flow: create issue/task → branch → implement → test → commit → open PR → review → fix findings → merge after approval.
 - The agent does not merge pull requests unless the owner explicitly instructs it to.
 
+> **This restriction applies ONLY to merging.** Committing, pushing your branch, and
+> opening a pull request are a normal, expected part of finishing your own work —
+> they do not need a separate explicit request from the owner beyond the work
+> itself being done. Do not read "the agent does not merge without explicit
+> instruction" as covering push/PR too; that misreading means your actual work
+> never reaches the repository at all, silently, with the owner having no way to
+> know until they ask directly. If you've finished work that belongs in the repo,
+> push it and open the PR as part of finishing — then wait for explicit
+> instruction only before merging.
+
 ## 3. Secrets
 
 - Never expose secrets, credentials, API keys, or tokens — in code, version control, logs, error messages, documentation, screenshots, or chat messages.
