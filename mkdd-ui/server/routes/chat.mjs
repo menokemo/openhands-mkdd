@@ -138,13 +138,6 @@ async function createNewConversation({
     return { ok: false, status: 404, body: { error: "agent_profile_not_found" } };
   }
 
-  const secrets = process.env.MKDD_GITHUB_TOKEN
-    ? {
-        GITHUB_TOKEN: { kind: "StaticSecret", value: process.env.MKDD_GITHUB_TOKEN },
-        GH_TOKEN: { kind: "StaticSecret", value: process.env.MKDD_GITHUB_TOKEN },
-      }
-    : undefined;
-
   const r = await fetch(OPENHANDS_URL + "/api/conversations", {
     method: "POST",
     headers: {
@@ -174,7 +167,6 @@ async function createNewConversation({
         content: buildOutgoingContent(message, imageDataUrls),
         run: true,
       },
-      ...(secrets ? { secrets } : {}),
     }),
   });
 

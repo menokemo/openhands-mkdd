@@ -57,15 +57,6 @@ services:
       # restart via the socket mount below - kept in sync with
       # container_name above rather than hardcoded twice.
       MKDD_UI_CONTAINER_NAME: ${MKDD_UI_CONTAINER_NAME:-mkdd-ui}
-      # GitHub Personal Access Token, passed directly into every new
-      # employee conversation's secrets (BUGS_AND_FIXES.md #151) - not
-      # relying on OpenHands' own "Secrets" settings page, since live
-      # investigation confirmed the documented "encrypted secret
-      # retrieval via X-Expose-Secrets" mechanism isn't actually
-      # available in this deployed agent-server version (1.42.1-python).
-      # Generate at github.com/settings/tokens (classic, "repo" scope).
-      # Leave unset if employees don't need git push/gh access.
-      MKDD_GITHUB_TOKEN: ${MKDD_GITHUB_TOKEN:-}
     depends_on:
       - agent-canvas
     ports:
