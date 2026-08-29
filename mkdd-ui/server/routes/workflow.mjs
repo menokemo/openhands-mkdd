@@ -8,6 +8,8 @@ import {
 } from "../workflow-state.mjs";
 import { readJsonBody } from "../lib/read-json-body.mjs";
 import { sendPushToAll } from "../lib/push-notifications.mjs";
+import { deliverMessageToEmployee } from "./chat.mjs";
+import { readEmployeeDisplayInfo } from "../lib/employee-display-info.mjs";
 
 /**
  * GET /api/workflow/summary — returns gate status for every project that
@@ -422,6 +424,53 @@ export async function handleReports(req, res) {
       url: "/",
       tag: `mkdd-report-${gate}`,
     });
+
+    // Deliver the report directly into the receiving employee's own
+    // conversation so they see it and can start working on it right
+    // away, instead of requiring the owner to manually relay it
+    // (BUGS_AND_FIXES.md #154). This is the one place that can do this:
+    // AGENTS.md documents that no employee process can start or message
+    // into another employee's conversation directly - only MKDD's own
+    // backend holds real conversation-creation credentials. Best-effort
+    // and fire-and-forget (not awaited): a delivery failure must never
+    // fail the report itself, and the report-add request shouldn't have
+    // to wait for delivery (which may involve creating a whole new
+    // conversation) - the report record already succeeded and remains
+    // visible on the gate card as a fallback either way.
+    try {
+      const fromInfo = readEmployeeDisplayInfo(fromEmployeeId);
+      const toInfo = readEmployeeDisplayInfo(toEmployeeId);
+      const fromName = fromInfo.displayNameAr || fromInfo.displayNameEn || fromEmployeeId;
+      const toName = toInfo.displayNameAr || toInfo.displayNameEn || toEmployeeId;
+      const newReportId = workflow?.reports?.[workflow.reports.length - 1]?.id ?? "";
+
+      const reportMessage = [
+        `تقرير جديد من ${fromName}:`,
+        "",
+        title.trim(),
+        details?.trim() ? `\n${details.trim()}` : "",
+        "",
+        "راجع التقرير وابدأ الشغل عليه دلوقتي. لما تخلص، سجّل ردّك عبر:",
+        "",
+        "    curl -s -X POST http://mkdd-ui:8787/api/workflow/reports \\",
+        '      -H "Content-Type: application/json" \\',
+        '      -H "X-Internal-Service-Key: $(cat /projects/.mkdd-internal/service-key.txt)" \\',
+        `      -d '{"project":"${project}","action":"respond","reportId":"${newReportId}","status":"implemented","note":"<what you did>"}'`,
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      deliverMessageToEmployee({
+        project,
+        employeeId: toEmployeeId,
+        employeeName: toName,
+        message: reportMessage,
+      }).catch((deliveryError) => {
+        console.error("Failed to auto-deliver report to employee:", deliveryError);
+      });
+    } catch (buildMessageError) {
+      console.error("Failed to build/queue report delivery:", buildMessageError);
+    }
   }
 
   res.writeHead(200, { "content-type": "application/json" });

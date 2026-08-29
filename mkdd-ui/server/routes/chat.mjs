@@ -192,6 +192,51 @@ async function createNewConversation({
   return { ok: true, status: r.status, body: { conversation: created } };
 }
 
+/**
+ * Delivers a message into an employee's conversation for a project -
+ * reusing the exact same logic as /api/chat/send (find existing
+ * conversation and send into it, or create a new one if none exists),
+ * but callable directly from other server-side code without an HTTP
+ * request/response cycle (BUGS_AND_FIXES.md #154). Used by the reports
+ * system to deliver a report directly into the receiving employee's
+ * conversation the moment it's filed - MKDD's own backend is the only
+ * place real conversation-creation credentials exist (see AGENTS.md's
+ * documented security boundary: no employee process can start or
+ * message into another employee's conversation directly), so this is
+ * the correct place for that capability to live.
+ */
+export async function deliverMessageToEmployee({
+  project,
+  employeeId,
+  employeeName,
+  message,
+}) {
+  const conversation = await findAuthorizedConversation({
+    project,
+    employeeId,
+    employeeName,
+  });
+
+  if (!conversation) {
+    return createNewConversation({ project, employeeId, employeeName, message });
+  }
+
+  const r = await fetch(OPENHANDS_URL + `/api/conversations/${conversation.id}/events`, {
+    method: "POST",
+    headers: {
+      "X-Session-API-Key": sessionKey(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      role: "user",
+      content: buildOutgoingContent(message),
+      run: true,
+    }),
+  });
+
+  return { ok: r.ok, status: r.status, body: { conversation_id: conversation.id } };
+}
+
 export async function handleChatSend(req, res) {
   if (!(req.method === "POST" && req.url === "/api/chat/send")) return false;
 
