@@ -189,6 +189,16 @@ written policy.
 
 ### Recording a cross-employee report
 
+> **If the owner directly asks you to "make a report," "file a report," "write up a
+> report," or similar about another employee's work, this section is what they
+> mean — call the reports API below, not write a markdown document.** A written
+> handoff document in `docs/` is a fine thing to also produce for your own
+> project's record-keeping, but it does not satisfy "make a report" by itself:
+> nothing will show up on the project's gate cards, the other employee will never
+> be notified, and the owner will have to manually go relay it — exactly the
+> friction this system exists to remove. If the owner's request names another
+> employee or references their work/gate, treat it as a request for this API.
+
 Separate from the mandatory-review findings above (which only the four review roles
 can create, and which gate Production approval), this is general peer-to-peer
 feedback: **any** employee can flag a real issue in **any other** employee's work,
@@ -199,7 +209,8 @@ report tagged to the `requirements` gate even though the project has moved past 
 This does not block gate approval; it exists purely so the owner can see and track
 it on the relevant gate's card.
 
-The moment an employee finds a real issue in another employee's work, they record it:
+The moment an employee finds a real issue in another employee's work — or the owner
+asks for one to be filed — they record it:
 
 > **"Record it" means calling this API — nothing else.** MKDD has no employee-to-
 > employee messaging or group chat by design — each employee only has their own
