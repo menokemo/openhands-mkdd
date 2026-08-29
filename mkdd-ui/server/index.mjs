@@ -173,6 +173,17 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(404, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "not_found" }));
   } catch (e) {
+    // BUGS_AND_FIXES.md #153: if a route already sent a response (headers
+    // written) before throwing - e.g. an exception raised while building
+    // a JSON.stringify() argument, after writeHead() already ran - writing
+    // headers again here throws ERR_HTTP_HEADERS_SENT and crashes the
+    // entire Node.js process, breaking every in-flight request (not just
+    // this one) until the container auto-restarts. Checking headersSent
+    // first means this class of bug degrades to a logged failure instead.
+    if (res.headersSent) {
+      console.error("Unhandled error after response headers were already sent:", e);
+      return;
+    }
     const status = WORKFLOW_ERROR_CODES.has(e.message) ? 409 : 502;
     res.writeHead(status, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: e.message }));

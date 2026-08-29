@@ -28,8 +28,17 @@ export function buildOwnerAvatarUrl(userId) {
   const found = findOwnerAvatarFile(userId);
   if (!found) return null;
 
-  const mtimeMs = Math.round(fs.statSync(found.file).mtimeMs);
-  return `/avatars/owner/${userId}?v=${mtimeMs}`;
+  try {
+    const mtimeMs = Math.round(fs.statSync(found.file).mtimeMs);
+    return `/avatars/owner/${userId}?v=${mtimeMs}`;
+  } catch {
+    // The file findOwnerAvatarFile located may have been removed or
+    // become unreadable between that check and this stat (e.g. after a
+    // volume recreation). Degrade gracefully - no avatar - rather than
+    // letting this throw propagate up past a response whose headers
+    // were already sent, which would crash the whole process.
+    return null;
+  }
 }
 
 export { AVATARS_DIR };
