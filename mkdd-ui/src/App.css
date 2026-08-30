@@ -3716,3 +3716,97 @@ header button,
   gap: 2px;
   font-size: 13px;
 }
+
+/* =========================
+   Project Git Info card (BUGS_AND_FIXES.md #166)
+   ========================= */
+
+.project-git-info-empty {
+  font-size: 13px;
+  color: var(--mkdd-text-muted);
+  margin: 4px 0 0;
+}
+
+.project-git-info-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 8px 0 16px;
+}
+
+.project-git-info-repo-link {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--mkdd-accent);
+  text-decoration: none;
+}
+
+.project-git-info-repo-link:hover {
+  text-decoration: underline;
+}
+
+.project-git-info-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.project-git-info-clean {
+  background: color-mix(in srgb, var(--mkdd-success) 14%, transparent);
+  color: var(--mkdd-success);
+}
+
+.project-git-info-dirty {
+  background: color-mix(in srgb, var(--mkdd-warning) 18%, transparent);
+  color: var(--mkdd-warning);
+}
+
+.project-git-info-commits-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mkdd-text-muted);
+  margin: 0 0 8px;
+}
+
+.project-git-info-commits {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.project-git-info-commit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--mkdd-border-subtle);
+  font-size: 13px;
+}
+
+.project-git-info-commit-row:last-child {
+  border-bottom: none;
+}
+
+.project-git-info-commit-sha {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--mkdd-text-muted);
+  flex-shrink: 0;
+}
+
+.project-git-info-commit-subject {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-git-info-commit-meta {
+  font-size: 12px;
+  color: var(--mkdd-text-muted);
+  flex-shrink: 0;
+}

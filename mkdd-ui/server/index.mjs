@@ -12,6 +12,7 @@ import {
   WORKFLOW_ERROR_CODES,
 } from "./routes/workflow.mjs";
 import { handleProjects, handleEmployees } from "./routes/directory.mjs";
+import { handleProjectGitInfo } from "./routes/project-git-info.mjs";
 import { handleCreateProject } from "./routes/projects.mjs";
 import { handleProjectUpload } from "./routes/project-upload.mjs";
 import { handleServeAvatar, handleUploadAvatar } from "./routes/avatars.mjs";
@@ -83,6 +84,7 @@ const ROUTES = [
   handleFindings,
   handleReports,
   handleProjects,
+  handleProjectGitInfo,
   handleCreateProject,
   handleProjectUpload,
   handleEmployees,

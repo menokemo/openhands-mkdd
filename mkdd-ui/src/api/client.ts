@@ -24,6 +24,34 @@ export async function fetchProjectFiles(projectSlug: string): Promise<ProjectFil
 }
 
 /**
+ * Real git repo info for a project (BUGS_AND_FIXES.md #166) - repo name
+ * from the local .git/config, recent commits and clean/dirty status
+ * from OpenHands' own git endpoints. No live GitHub PR/CI status - see
+ * the backend endpoint's own comment for why that's deliberately out of
+ * scope for the open-source OpenHands this deployment runs.
+ */
+export type ProjectCommit = {
+  sha: string;
+  short_sha: string;
+  subject: string;
+  author: string;
+  timestamp: string;
+};
+
+export type ProjectGitInfo = {
+  repoUrl: string | null;
+  commits: ProjectCommit[];
+  uncommittedChanges: number | null;
+};
+
+export async function fetchProjectGitInfo(projectPath: string): Promise<ProjectGitInfo> {
+  const r = await fetch(
+    `/api/projects/git-info?project=${encodeURIComponent(projectPath)}`,
+  );
+  return r.json();
+}
+
+/**
  * Real sum across every conversation ever created for a project
  * (across all employees). Deliberately a separate call from
  * fetchConversation - see BUGS_AND_FIXES.md #65.

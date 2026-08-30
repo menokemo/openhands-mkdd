@@ -24,6 +24,7 @@ import type { ProjectEmployeeStatus } from "../hooks/useProjectTeamStatus";
 import type { ProjectFile, WorkflowState, WorkflowReviewRole } from "../api/client";
 import { fetchProjectFiles, uploadProjectFiles } from "../api/client";
 import WorkflowStepper from "../components/WorkflowStepper";
+import ProjectGitInfoCard from "../components/ProjectGitInfoCard";
 import {
   REVIEW_ROLES,
   getGateLabel,
@@ -276,6 +277,8 @@ export default function ProjectHomeScreen({
           onWorkflowChange={onWorkflowChange}
         />
       </section>
+
+      <ProjectGitInfoCard projectPath={project.path} language={language} />
 
       <section className="dashboard-grid">
         <article className="dashboard-card">
