@@ -153,8 +153,15 @@ check_git_ownership() {
 # re-anchor OnUnitActiveSec.)
 # ---------------------------------------------------------------------------
 check_auto_deploy_timer() {
-  next=$(systemctl show "$AUTO_DEPLOY_TIMER" -p NextElapseUSecRealtime --value 2>/dev/null)
-  if [ -n "$next" ] && [ "$next" != "0" ]; then
+  # BUGS_AND_FIXES.md #161: NextElapseUSecRealtime only applies to
+  # OnCalendar= timers - mkdd-auto-deploy.timer uses OnBootSec/
+  # OnUnitActiveSec (relative scheduling), whose real next-run property
+  # is NextElapseUSecMonotonic instead. Checking both covers either
+  # kind of timer correctly.
+  next_realtime=$(systemctl show "$AUTO_DEPLOY_TIMER" -p NextElapseUSecRealtime --value 2>/dev/null)
+  next_monotonic=$(systemctl show "$AUTO_DEPLOY_TIMER" -p NextElapseUSecMonotonic --value 2>/dev/null)
+  if { [ -n "$next_realtime" ] && [ "$next_realtime" != "0" ]; } || \
+     { [ -n "$next_monotonic" ] && [ "$next_monotonic" != "0" ]; }; then
     log_pass "auto_deploy_timer" "$AUTO_DEPLOY_TIMER has a real scheduled next run"
   else
     log_fail "auto_deploy_timer" "$AUTO_DEPLOY_TIMER has NO scheduled next run (needs: systemctl start ${AUTO_DEPLOY_TIMER%.timer}.service to re-anchor)"
