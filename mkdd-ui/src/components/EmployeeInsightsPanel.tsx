@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { FaCircleInfo } from "react-icons/fa6";
+import { useEffect, useState } from "react";
+import { FaCircleInfo, FaRotate } from "react-icons/fa6";
 import type {
   ActivityEvent,
   ConversationCost,
@@ -7,6 +7,8 @@ import type {
   WorkPlan,
 } from "../types";
 import WorkPlanPanel from "./WorkPlanPanel";
+import { fetchEmployeeAutoResumeLog, type AutoResumeLogEntry } from "../api/client";
+import { formatMessageTime } from "../utils/formatMessageTime";
 
 type Props = {
   language: "ar" | "en";
@@ -23,9 +25,12 @@ type Props = {
    * UI) without a new conversation being started.
    */
   currentLlmProfileRef: string;
+  /** Needed to look up this employee's auto-resume log (BUGS_AND_FIXES.md #176). */
+  project: string;
+  employeeId: string;
 };
 
-type TabKey = "cost" | "workplan" | "activity";
+type TabKey = "cost" | "workplan" | "activity" | "autoResume";
 
 const statusText = {
   ar: {
@@ -129,9 +134,27 @@ export default function EmployeeInsightsPanel({
   cost,
   workPlan,
   currentLlmProfileRef,
+  project,
+  employeeId,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("cost");
+  const [autoResumeLog, setAutoResumeLog] = useState<AutoResumeLogEntry[] | null>(null);
+
+  useEffect(() => {
+    if (!open || activeTab !== "autoResume") return;
+    let cancelled = false;
+    fetchEmployeeAutoResumeLog(project, employeeId)
+      .then((entries) => {
+        if (!cancelled) setAutoResumeLog(entries);
+      })
+      .catch(() => {
+        if (!cancelled) setAutoResumeLog([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, activeTab, project, employeeId]);
 
   const statusKey = executionStatus ?? "unknown";
   const colorClass = statusColorClass(executionStatus);
@@ -148,6 +171,10 @@ export default function EmployeeInsightsPanel({
     { key: "cost", label: language === "ar" ? "التكلفة" : "Cost" },
     { key: "workplan", label: language === "ar" ? "خطة العمل" : "Work Plan" },
     { key: "activity", label: language === "ar" ? "النشاط" : "Activity" },
+    {
+      key: "autoResume",
+      label: language === "ar" ? "الاستئناف التلقائي" : "Auto-Resume",
+    },
   ];
 
   return (
@@ -244,6 +271,36 @@ export default function EmployeeInsightsPanel({
                       </article>
                     ))
                   )}
+                </div>
+              )}
+
+              {activeTab === "autoResume" && (
+                <div className="activity-list">
+                  {autoResumeLog === null && (
+                    <p className="activity-empty">
+                      {language === "ar" ? "جاري التحميل..." : "Loading..."}
+                    </p>
+                  )}
+                  {autoResumeLog?.length === 0 && (
+                    <p className="activity-empty">
+                      {language === "ar"
+                        ? "لسه ماحصلش أي استئناف تلقائي لهذا الموظف."
+                        : "No auto-resume events for this employee yet."}
+                    </p>
+                  )}
+                  {autoResumeLog?.map((entry, i) => (
+                    <article className="activity-item" key={`${entry.at}-${i}`}>
+                      <FaRotate className="activity-marker" aria-hidden="true" />
+                      <div>
+                        <strong>
+                          {language === "ar"
+                            ? "رجع يشتغل تلقائيًا بعد ما حد الاستخدام انتهى"
+                            : "Auto-resumed after the usage limit cleared"}
+                        </strong>
+                        <time>{formatMessageTime(entry.at, language)}</time>
+                      </div>
+                    </article>
+                  ))}
                 </div>
               )}
             </div>

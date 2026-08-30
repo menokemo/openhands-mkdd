@@ -1,6 +1,8 @@
 import { openhands } from "../lib/openhands-client.mjs";
 import { sendMessageToConversationId } from "./chat.mjs";
 import { sendPushToAll } from "../lib/push-notifications.mjs";
+import { withAutoResumeMarker } from "../lib/auto-resume-marker.mjs";
+import { appendAutoResumeLogEntry, getAutoResumeLog } from "../lib/auto-resume-log.mjs";
 
 const RESUME_MESSAGE =
   "الحد وصل لوقت إعادة التشغيل ورجع يشتغل تاني. كمل من حيث ما وقفت - راجع docs/project-context.md لآخر نقطة تحقق موثَّقة لو محتاج.";
@@ -70,12 +72,21 @@ async function resumeAllEligibleConversations() {
     if (!eligible) continue;
 
     // eslint-disable-next-line no-await-in-loop -- see above.
-    const result = await sendMessageToConversationId(conversation.id, RESUME_MESSAGE);
+    const result = await sendMessageToConversationId(
+      conversation.id,
+      withAutoResumeMarker(RESUME_MESSAGE),
+    );
     if (!result.ok) continue;
 
+    const employeeId = conversation.tags?.mkddemployeeid ?? "?";
     const employeeName = conversation.tags?.mkddemployee ?? "?";
     const project = conversation.tags?.mkddproject ?? "?";
-    resumed.push({ conversationId: conversation.id, employeeName, project });
+    resumed.push({ conversationId: conversation.id, employeeId, employeeName, project });
+
+    // BUGS_AND_FIXES.md #176: record this so the owner can see it in the
+    // employee's own insights panel instead of it appearing as a normal
+    // chat message.
+    appendAutoResumeLogEntry({ project, employeeId, employeeName });
 
     // eslint-disable-next-line no-await-in-loop -- see above.
     await sendPushToAll({
@@ -143,4 +154,32 @@ function extractResetsAt(event) {
   } catch {
     return null;
   }
+}
+
+/**
+ * GET /api/employee-auto-resume-log?project=...&employeeId=... — reads
+ * the auto-resume log for one project+employee (BUGS_AND_FIXES.md
+ * #176), for the new "Auto-Resume" tab on the Employee Insights panel.
+ * Normal owner-session authentication (not the internal service key -
+ * this is called directly from the browser).
+ */
+export async function handleEmployeeAutoResumeLog(req, res) {
+  if (!(req.method === "GET" && req.url?.startsWith("/api/employee-auto-resume-log"))) {
+    return false;
+  }
+
+  const url = new URL(req.url, "http://mkdd.local");
+  const project = url.searchParams.get("project");
+  const employeeId = url.searchParams.get("employeeId");
+
+  if (!project || !employeeId) {
+    res.writeHead(400, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "project_employee_required" }));
+    return true;
+  }
+
+  const entries = getAutoResumeLog(project, employeeId);
+  res.writeHead(200, { "content-type": "application/json" });
+  res.end(JSON.stringify({ entries }));
+  return true;
 }

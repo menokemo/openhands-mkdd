@@ -304,6 +304,8 @@ export default function ChatScreen({
             cost={cost}
             workPlan={workPlan}
             currentLlmProfileRef={employee.llm_profile_ref}
+            project={project.path}
+            employeeId={employee.id}
           />
         </div>
       </div>

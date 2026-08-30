@@ -611,3 +611,23 @@ export async function uploadOwnerAvatar(imageDataUrl: string): Promise<string | 
   if (!r.ok) throw new Error(data.error ?? "avatar_upload_failed");
   return data.avatarUrl ?? null;
 }
+
+/**
+ * Auto-resume events for one employee on one project (BUGS_AND_FIXES.md
+ * #176) - shown in a dedicated Employee Insights tab instead of as a
+ * normal chat message, per explicit owner request.
+ */
+export type AutoResumeLogEntry = {
+  at: string;
+  employeeName: string;
+};
+
+export async function fetchEmployeeAutoResumeLog(
+  project: string,
+  employeeId: string,
+): Promise<AutoResumeLogEntry[]> {
+  const qs = new URLSearchParams({ project, employeeId });
+  const r = await fetch(`/api/employee-auto-resume-log?${qs}`);
+  const data = await r.json();
+  return data.entries ?? [];
+}

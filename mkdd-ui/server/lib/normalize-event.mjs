@@ -13,6 +13,7 @@
  */
 
 import { stripTimeContext } from "./time-context.mjs";
+import { isAutoResumeMessage } from "./auto-resume-marker.mjs";
 
 /**
  * Normalizes message content into the array-of-TextContent shape that
@@ -86,6 +87,29 @@ export function normalizeEvent(event) {
   switch (event.kind) {
     case "MessageEvent": {
       const content = messageContent(event.llm_message?.content);
+
+      // BUGS_AND_FIXES.md #176: the auto-resume system's message is
+      // entirely system-generated (not real owner-authored text) - the
+      // owner explicitly asked for it to never show up as a normal
+      // chat bubble, only surface in the employee's insights panel
+      // instead. Unlike the time-context marker below (which just gets
+      // stripped from an otherwise-real message), this whole event
+      // must be filtered out - returning null here, which every call
+      // site already does `.filter(Boolean)` on (REST x3 and the
+      // WebSocket bridge), so one change here covers every transport.
+      // Checked AFTER stripping the time-context marker: every
+      // outgoing message (including this one) gets that marker
+      // prepended automatically by buildOutgoingContent, so the raw
+      // text is "<!--mkdd:time:...-->\n<!--mkdd:auto-resume-->\n...",
+      // not the auto-resume marker at position 0.
+      const firstItemText =
+        base.source === "user" && content[0]?.type === "text"
+          ? stripTimeContext(content[0].text)
+          : null;
+      if (firstItemText && isAutoResumeMessage(firstItemText)) {
+        return null;
+      }
+
       // Only user messages ever carry the time-context marker (see
       // server/lib/time-context.mjs) - strip it here so neither transport
       // (REST or WebSocket, both routed through this same function) ever
