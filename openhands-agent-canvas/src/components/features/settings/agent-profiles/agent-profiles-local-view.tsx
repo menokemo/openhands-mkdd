@@ -50,9 +50,17 @@ function toAgentSettingsOverride(
       acp_model: profile.acp_model ?? "",
     };
   }
+  // `enable_switch_llm_tool` rides untyped — the pinned ts-client predates it
+  // on the profile model (same pattern as `disabled_skills` in the merge
+  // fixtures). Fall back to the SDK default (true) when a stored profile
+  // predates the field.
+  const switchLlmToolEnabled =
+    (profile as { enable_switch_llm_tool?: boolean }).enable_switch_llm_tool ??
+    true;
   return {
     agent_kind: "openhands",
     enable_sub_agents: profile.enable_sub_agents,
+    enable_switch_llm_tool: switchLlmToolEnabled,
     tool_concurrency_limit: profile.tool_concurrency_limit,
   };
 }
@@ -318,24 +326,6 @@ export function AgentProfilesLocalView() {
         onSaveControlChange={setSaveControl}
       />
 
-      {isOpenHands && (
-        <div className="flex flex-col gap-2.5">
-          <Typography.Text className="text-sm">
-            Employee Instructions
-          </Typography.Text>
-          <textarea
-            data-testid="agent-profile-system-message-suffix"
-            className="bg-tertiary border border-[#717888] rounded-sm p-2 text-sm text-white placeholder:text-[#717888] min-h-[140px] resize-y focus:outline-none focus:border-white"
-            value={systemMessageSuffix}
-            placeholder="Define this employee's role, personality, communication style, and persistent instructions."
-            onChange={(e) => setSystemMessageSuffix(e.target.value)}
-          />
-          <Typography.Text className="text-xs text-[#717888]">
-            Persistent instructions added to this employee's system context.
-          </Typography.Text>
-        </div>
-      )}
-
       {/* OpenHands profiles reference an LLM profile (required). */}
       {isOpenHands &&
         (llmProfiles.length > 0 ? (
@@ -358,6 +348,24 @@ export function AgentProfilesLocalView() {
             {t(I18nKey.SETTINGS$AGENT_PROFILE_NO_LLM)}
           </p>
         ))}
+
+      {isOpenHands && (
+        <div className="flex flex-col gap-2.5">
+          <Typography.Text className="text-sm">
+            Employee Instructions
+          </Typography.Text>
+          <textarea
+            data-testid="agent-profile-system-message-suffix"
+            className="bg-tertiary border border-[#717888] rounded-sm p-2 text-sm text-white placeholder:text-[#717888] min-h-[140px] resize-y focus:outline-none focus:border-white"
+            value={systemMessageSuffix}
+            placeholder="Define this employee's role, personality, communication style, and persistent instructions."
+            onChange={(e) => setSystemMessageSuffix(e.target.value)}
+          />
+          <Typography.Text className="text-xs text-[#717888]">
+            Persistent instructions added to this employee's system context.
+          </Typography.Text>
+        </div>
+      )}
 
       <div className="flex justify-start gap-3 pt-4">
         <BrandButton

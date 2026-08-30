@@ -56,11 +56,13 @@ RUN node -e " \
     'CONFIG_AGENT_SERVER_PORT=' + c.ports.agentServer, \
     'CONFIG_AUTOMATION_PORT=' + c.ports.automation, \
     'CONFIG_PROXY_PORT=' + c.ports.proxy, \
+    'CONFIG_VSCODE_PORT=' + c.ports.vscode, \
     'CONFIG_STATE_SUBDIR=' + c.paths.stateSubdir, \
     'CONFIG_CONVERSATIONS=' + c.paths.conversations, \
     'CONFIG_BASH_EVENTS=' + c.paths.bashEvents, \
     'CONFIG_AUTOMATION_DB=' + c.paths.automationDb, \
     'CONFIG_CANVAS_BASE_PATH=' + c.paths.canvasBasePath, \
+    'CONFIG_VSCODE_BASE_PATH=' + c.paths.vscodeBasePath, \
     'CONFIG_POSTHOG_API_KEY=' + c.telemetry.posthogApiKey, \
     'CONFIG_POSTHOG_HOST=' + c.telemetry.posthogHost, \
   ]; \
@@ -153,19 +155,6 @@ RUN mkdir -p /home/openhands/.openhands/agent-canvas/conversations \
     chown -R openhands:openhands /home/openhands/.openhands /projects
 
 USER openhands
-
-# Trust every repository under /projects regardless of file ownership
-# (BUGS_AND_FIXES.md #152) - /projects is an external, shared volume, so
-# its ownership doesn't always exactly match the openhands user here
-# (e.g. after volume recreation during a reinstall, or any external
-# process touching the files). Git's "dubious ownership" safety check
-# (CVE-2022-24765) then rejects EVERY git command in that repo - including
-# `git worktree add`, which the agent-server runs to create a new
-# conversation - with a 500 error. Setting this at image-build time (in
-# the openhands user's own git config) makes the fix permanent across
-# every container start, instead of a manual `docker exec git config`
-# that's lost on every rebuild.
-RUN git config --global --add safe.directory '*'
 
 # Persistence volumes:
 #   /home/openhands/.openhands — settings, secrets, conversations, automation DB
