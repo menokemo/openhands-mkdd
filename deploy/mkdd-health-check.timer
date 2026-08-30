@@ -1,0 +1,16 @@
+[Unit]
+Description=Run mkdd-health-check every 5 minutes
+
+[Timer]
+# Fires 2 minutes after boot (giving the stack time to actually start),
+# then every 5 minutes thereafter. 5 minutes is frequent enough to catch
+# a real incident (like this session's stuck-loading bug) within minutes
+# instead of hours, while staying lightweight - every check here is
+# read-only (see health-check.sh's own header comment).
+OnBootSec=2min
+OnUnitActiveSec=5min
+# If the VM was off when a run was due, run once on the next boot.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

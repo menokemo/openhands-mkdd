@@ -18,6 +18,7 @@ import { handleServeAvatar, handleUploadAvatar } from "./routes/avatars.mjs";
 import { handlePreview } from "./routes/preview.mjs";
 import { handleProjectFiles } from "./routes/project-files.mjs";
 import { handleProjectLivePort } from "./routes/project-live-port.mjs";
+import { handleInternalAlert, handleInternalHealthDeep } from "./routes/internal-health.mjs";
 import { handleProjectTotalCost } from "./routes/project-cost.mjs";
 import { startLivePortProxies } from "./live-port-proxy.mjs";
 import { handleConversation } from "./routes/conversation.mjs";
@@ -97,6 +98,8 @@ const ROUTES = [
   handlePushVapidKey,
   handlePushSubscribe,
   handleRestartContainer,
+  handleInternalAlert,
+  handleInternalHealthDeep,
   handleStaticFiles,
 ];
 
@@ -122,8 +125,10 @@ const AUTH_EXEMPT_PATHS = new Set([
 
 // Paths an employee's own process legitimately calls directly via curl
 // (documented in AGENTS.md - workflow gate approvals, blockers,
-// findings, reviews, reports) - see isRequestAuthorized below.
-const INTERNAL_SERVICE_PATH_PREFIX = "/api/workflow/";
+// findings, reviews, reports), plus the health-check system's own
+// alert endpoint (BUGS_AND_FIXES.md #157, called only from the VM
+// host's own bash script) - see isRequestAuthorized below.
+const INTERNAL_SERVICE_PATH_PREFIXES = ["/api/workflow/", "/api/internal/"];
 
 function requiresAuth(url) {
   if (!url?.startsWith("/api/")) return false; // static files are never gated here
@@ -135,21 +140,24 @@ function requiresAuth(url) {
  * A request passes if EITHER of two independent things is true:
  * 1. It carries a valid owner browser session (currentUser) - works
  *    for every route, exactly as before #134.
- * 2. It's hitting /api/workflow/* specifically AND carries the correct
- *    shared secret header (BUGS_AND_FIXES.md #134) - this is the ONLY
- *    other legitimate caller in this system: an employee's own agent
- *    process, which has no browser and can never have a session
- *    cookie, but genuinely needs to record gate approvals/reports/
- *    findings per AGENTS.md's own documented instructions. Deliberately
- *    scoped to this one path prefix only - never widened to any other
- *    endpoint (chat, settings, projects, etc.), keeping the blast
- *    radius of a leaked service key as narrow as possible.
+ * 2. It's hitting /api/workflow/* or /api/internal/* specifically AND
+ *    carries the correct shared secret header (BUGS_AND_FIXES.md #134,
+ *    #157) - these are the only other legitimate callers in this
+ *    system: an employee's own agent process (workflow endpoints, per
+ *    AGENTS.md's documented instructions) and the VM host's own
+ *    health-check script (internal endpoints) - neither has a browser
+ *    and can never have a session cookie. Deliberately scoped to only
+ *    these two path prefixes - never widened to any other endpoint
+ *    (chat, settings, projects, etc.), keeping the blast radius of a
+ *    leaked service key as narrow as possible.
  */
 function isRequestAuthorized(req) {
   if (currentUser(req)) return true;
 
   const path = req.url?.split("?")[0];
-  if (!path?.startsWith(INTERNAL_SERVICE_PATH_PREFIX)) return false;
+  if (!INTERNAL_SERVICE_PATH_PREFIXES.some((prefix) => path?.startsWith(prefix))) {
+    return false;
+  }
 
   const providedKey = req.headers["x-internal-service-key"];
   const expectedKey = getInternalServiceKey();

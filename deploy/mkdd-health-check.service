@@ -1,0 +1,22 @@
+[Unit]
+Description=MKDD periodic health check (containers, endpoints, git, auto-deploy timer, conversation lookup)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+Environment=HOME=/root
+ExecStart=/opt/mkdd-live/deploy/health-check.sh
+# Environment overrides (uncomment/edit as needed):
+# Environment=MKDD_DEPLOY_DIR=/opt/mkdd-live
+# Environment=MKDD_UI_CONTAINER_NAME=mkdd-ui-staging
+# Environment=MKDD_AGENT_CANVAS_CONTAINER_NAME=openhands-agent-canvas-staging
+# Environment=MKDD_UI_BACKEND_PORT=18787
+# Environment=MKDD_AGENT_CANVAS_PORT=18000
+# Environment=MKDD_AUTO_DEPLOY_TIMER=mkdd-auto-deploy.timer
+# Environment=MKDD_PROJECTS_DIR=/opt/openhands/projects
+# Optional deep conversation-lookup check - a real project/employee that
+# genuinely exists in this deployment:
+# Environment=MKDD_HEALTH_CHECK_PROJECT=/projects/your-project
+# Environment=MKDD_HEALTH_CHECK_EMPLOYEE_ID=implementation
+# Environment=MKDD_HEALTH_CHECK_EMPLOYEE_NAME=Kirollos
