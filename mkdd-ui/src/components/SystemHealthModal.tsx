@@ -14,6 +14,7 @@ import {
   type SystemHealthHistoryEvent,
 } from "../api/client";
 import { formatMessageTime } from "../utils/formatMessageTime";
+import LiveCountdown from "./LiveCountdown";
 
 type Props = {
   language: "ar" | "en";
@@ -169,7 +170,15 @@ export default function SystemHealthModal({ language, onClose }: Props) {
                       {check.ok === null && (
                         <FaCircleQuestion className="system-health-icon-skip" />
                       )}
-                      <span>{check.message}</span>
+                      <span>
+                        {check.message}
+                        {check.meta?.resetsAt && (
+                          <LiveCountdown
+                            resetsAt={check.meta.resetsAt}
+                            language={language}
+                          />
+                        )}
+                      </span>
                     </div>
                   ))}
                 </div>

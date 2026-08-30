@@ -114,11 +114,13 @@ export async function handleInternalHealthDeep(req, res) {
         const eventsData = await eventsRes.json();
         const lastEvent = eventsData.items?.[0];
         if (lastEvent?.kind === "ConversationErrorEvent") {
+          const humanError = buildHumanReadableErrorMessage(lastEvent);
           recentError = {
             code: lastEvent.code ?? null,
             classification: lastEvent.classification ?? null,
             detail: lastEvent.detail ?? null,
-            humanMessage: buildHumanReadableErrorMessage(lastEvent),
+            humanMessage: humanError.text,
+            resetsAt: humanError.resetsAt,
           };
         }
       } catch {
@@ -376,6 +378,13 @@ function buildHumanReadableErrorMessage(event) {
   }
 
   if (kind === "rate_limit") {
+    // BUGS_AND_FIXES.md #172: expose the real resets_at as an absolute
+    // epoch-ms timestamp (not just a "roughly N hours" text computed
+    // once) so the frontend can render a real live countdown - the
+    // provider's resets_at is Unix seconds, JS Date math needs ms.
+    const resetsAt =
+      typeof providerInfo?.resets_at === "number" ? providerInfo.resets_at * 1000 : null;
+
     if (typeof providerInfo?.resets_in_seconds === "number") {
       const minutes = Math.round(providerInfo.resets_in_seconds / 60);
       const hours = Math.floor(minutes / 60);
@@ -385,10 +394,19 @@ function buildHumanReadableErrorMessage(event) {
           ? `حوالي ${hours} ساعة${remainingMinutes > 0 ? ` و${remainingMinutes} دقيقة` : ""}`
           : `حوالي ${minutes} دقيقة`;
       const planText = providerInfo.plan_type ? ` (خطة ${providerInfo.plan_type})` : "";
-      return `الاشتراك لسه شغال ومتصل${planText}، لكن وصل لحد الاستخدام المؤقت. هيرجع يشتغل تلقائيًا خلال ${timeText} تقريبًا - مفيش حاجة تتصلح، بس محتاج تستنى.`;
+      return {
+        text: `الاشتراك لسه شغال ومتصل${planText}، لكن وصل لحد الاستخدام المؤقت. هيرجع يشتغل تلقائيًا خلال ${timeText} تقريبًا - مفيش حاجة تتصلح، بس محتاج تستنى.`,
+        resetsAt,
+      };
     }
-    return "الاشتراك لسه شغال ومتصل، لكن وصل لحد الاستخدام المؤقت. هيرجع يشتغل تلقائيًا بعد فترة - مفيش حاجة تتصلح، بس محتاج تستنى.";
+    return {
+      text: "الاشتراك لسه شغال ومتصل، لكن وصل لحد الاستخدام المؤقت. هيرجع يشتغل تلقائيًا بعد فترة - مفيش حاجة تتصلح، بس محتاج تستنى.",
+      resetsAt,
+    };
   }
 
-  return `حصل خطأ حقيقي في آخر رد من الموديل (${event.code ?? "unknown"}). راجع التفاصيل الكاملة في واجهة OpenHands نفسها.`;
+  return {
+    text: `حصل خطأ حقيقي في آخر رد من الموديل (${event.code ?? "unknown"}). راجع التفاصيل الكاملة في واجهة OpenHands نفسها.`,
+    resetsAt: null,
+  };
 }

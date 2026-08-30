@@ -495,6 +495,7 @@ export type SystemHealthCheck = {
   name: string;
   ok: boolean | null;
   message: string;
+  meta?: { resetsAt?: number } | null;
 };
 
 export type SystemHealthStatus = {

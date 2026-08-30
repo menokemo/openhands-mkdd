@@ -76,22 +76,22 @@ RESULTS=()
 
 # ---------------------------------------------------------------------------
 record() {
-  # record <name> <ok:true|false|null> <message>
-  RESULTS+=("$1"$'\t'"$2"$'\t'"$3")
+  # record <name> <ok:true|false|null> <message> [meta_json]
+  RESULTS+=("$1"$'\t'"$2"$'\t'"$3"$'\t'"${4:-}")
 }
 
 log_pass() {
-  # log_pass <check_id> <message>
+  # log_pass <check_id> <message> [meta_json]
   echo "  ✅ $2"
   PASS_COUNT=$((PASS_COUNT + 1))
-  record "$1" "true" "$2"
+  record "$1" "true" "$2" "${3:-}"
 }
 
 log_fail() {
-  # log_fail <check_id> <message>
+  # log_fail <check_id> <message> [meta_json]
   echo "  ❌ $2"
   FAILURES+=("$2")
-  record "$1" "false" "$2"
+  record "$1" "false" "$2" "${3:-}"
 }
 
 log_skip() {
@@ -217,7 +217,12 @@ check_deep_conversation_lookup() {
   # explanation (which includes real parsed details like time-until-
   # reset and plan type, when the provider's error payload includes
   # them) over the bare code/kind summary.
-  error_summary=$(echo "$response" | python3 -c '
+  # BUGS_AND_FIXES.md #172: also extract resetsAt (a real epoch-ms
+  # timestamp, when the provider's error included one) as structured
+  # meta data - not baked into the message text - so the frontend can
+  # render a real live countdown instead of a static "roughly N hours"
+  # snapshot that goes stale the moment it's printed.
+  parsed=$(echo "$response" | python3 -c '
 import json, sys
 try:
     data = json.load(sys.stdin)
@@ -232,12 +237,16 @@ if err:
         code = err.get("code", "unknown")
         kind = (err.get("classification") or {}).get("kind", "unknown")
         print(f"{code} ({kind})")
+    resets_at = err.get("resetsAt")
+    print(json.dumps({"resetsAt": resets_at}) if resets_at else "")
 ' 2>/dev/null)
+  error_summary=$(echo "$parsed" | sed -n '1p')
+  error_meta=$(echo "$parsed" | sed -n '2p')
 
   if echo "$response" | grep -q '"ok":true'; then
     log_pass "deep_lookup" "محادثة الموظف التجريبي شغالة وبترد عادي"
   elif [ -n "$error_summary" ]; then
-    log_fail "deep_lookup" "$error_summary"
+    log_fail "deep_lookup" "$error_summary" "$error_meta"
   else
     log_fail "deep_lookup" "الفحص العميق للمحادثة فشل - مفيش رد خلال 12 ثانية (ممكن تكون المحادثة معلّقة)"
   fi
@@ -367,12 +376,19 @@ for line in sys.stdin:
     line = line.rstrip("\n")
     if not line:
         continue
-    parts = line.split("\t", 2)
-    if len(parts) != 3:
+    parts = line.split("\t", 3)
+    if len(parts) not in (3, 4):
         continue
-    name, ok_raw, message = parts
+    name, ok_raw, message = parts[0], parts[1], parts[2]
+    meta_raw = parts[3] if len(parts) == 4 else ""
     ok = {"true": True, "false": False, "null": None}.get(ok_raw)
-    checks.append({"name": name, "ok": ok, "message": message})
+    check = {"name": name, "ok": ok, "message": message}
+    if meta_raw:
+        try:
+            check["meta"] = json.loads(meta_raw)
+        except json.JSONDecodeError:
+            pass  # malformed meta must never break the whole status file
+    checks.append(check)
 
 overall_ok = all(c["ok"] is not False for c in checks)
 now = datetime.datetime.now(datetime.timezone.utc).isoformat()

@@ -3837,3 +3837,16 @@ header button,
   color: var(--mkdd-text-muted);
   margin: 0 0 12px;
 }
+
+.live-countdown {
+  font-family: monospace;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--mkdd-warning);
+}
+
+.live-countdown-done {
+  color: var(--mkdd-success);
+  font-family: inherit;
+  font-weight: 500;
+}
