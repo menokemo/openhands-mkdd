@@ -117,6 +117,8 @@ export async function handleInternalHealthDeep(req, res) {
           recentError = {
             code: lastEvent.code ?? null,
             classification: lastEvent.classification ?? null,
+            detail: lastEvent.detail ?? null,
+            humanMessage: buildHumanReadableErrorMessage(lastEvent),
           };
         }
       } catch {
@@ -339,4 +341,54 @@ async function checkOneProfile(name, expiryWarningHours) {
       error: error instanceof Error ? error.message : "unknown_error",
     };
   }
+}
+
+/**
+ * Builds a clear, human-readable Arabic explanation of a
+ * ConversationErrorEvent (BUGS_AND_FIXES.md #170) - going beyond the
+ * bare error code to explain what actually happened and, where the
+ * provider's own error payload includes it (e.g. OpenAI's usage-limit
+ * errors embed a small JSON blob with resets_in_seconds/plan_type),
+ * roughly when it should resolve on its own. Best-effort: if the
+ * detail text doesn't contain a parseable JSON blob, falls back to a
+ * message built from the classification alone, which is always real
+ * structured data from OpenHands itself either way - never fabricated.
+ */
+function buildHumanReadableErrorMessage(event) {
+  const kind = event.classification?.kind;
+  const detail = event.detail ?? "";
+
+  // Provider errors (e.g. OpenAI's litellm.RateLimitError) often embed
+  // a JSON object at the end of the message text, which may itself
+  // contain nested objects (e.g. {"error": {...}}) - a simple
+  // brace-matching regex can't reliably handle nesting, so instead find
+  // the first { and let JSON.parse validate the full structure from
+  // there to the end of the string.
+  const firstBraceIndex = detail.indexOf("{");
+  let providerInfo = null;
+  if (firstBraceIndex !== -1) {
+    try {
+      const parsed = JSON.parse(detail.slice(firstBraceIndex));
+      providerInfo = parsed.error ?? parsed;
+    } catch {
+      // Not parseable - fall through to the classification-only message.
+    }
+  }
+
+  if (kind === "rate_limit") {
+    if (typeof providerInfo?.resets_in_seconds === "number") {
+      const minutes = Math.round(providerInfo.resets_in_seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      const timeText =
+        hours > 0
+          ? `حوالي ${hours} ساعة${remainingMinutes > 0 ? ` و${remainingMinutes} دقيقة` : ""}`
+          : `حوالي ${minutes} دقيقة`;
+      const planText = providerInfo.plan_type ? ` (خطة ${providerInfo.plan_type})` : "";
+      return `الاشتراك لسه شغال ومتصل${planText}، لكن وصل لحد الاستخدام المؤقت. هيرجع يشتغل تلقائيًا خلال ${timeText} تقريبًا - مفيش حاجة تتصلح، بس محتاج تستنى.`;
+    }
+    return "الاشتراك لسه شغال ومتصل، لكن وصل لحد الاستخدام المؤقت. هيرجع يشتغل تلقائيًا بعد فترة - مفيش حاجة تتصلح، بس محتاج تستنى.";
+  }
+
+  return `حصل خطأ حقيقي في آخر رد من الموديل (${event.code ?? "unknown"}). راجع التفاصيل الكاملة في واجهة OpenHands نفسها.`;
 }
