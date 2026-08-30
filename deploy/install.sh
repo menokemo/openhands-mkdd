@@ -5,7 +5,7 @@
 #   1. Create the dedicated deploy checkout at /opt/mkdd-live (separate
 #      from any manual development checkout — see auto-deploy.sh header).
 #   2. Install and enable a systemd timer that runs auto-deploy.sh every
-#      minute.
+#      20 seconds.
 #
 # After this, any commit pushed to `main` on GitHub is automatically
 # pulled, built, restarted, health-checked, and (if it fails) rolled back
@@ -84,7 +84,7 @@ cat <<EOF
 
 ==> Done.
 
-Auto-deploy is now active: mkdd-auto-deploy.timer runs every minute and
+Auto-deploy is now active: mkdd-auto-deploy.timer runs every 20 seconds and
 will automatically pull, build, restart, and health-check any new commit
 pushed to 'main'. On failure it rolls back to the last known good commit.
 
