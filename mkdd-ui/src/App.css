@@ -3810,3 +3810,30 @@ header button,
   color: var(--mkdd-text-muted);
   flex-shrink: 0;
 }
+
+.project-git-info-commits-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.project-git-info-view-all {
+  background: none;
+  border: none;
+  color: var(--mkdd-accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.project-git-info-view-all:hover {
+  text-decoration: underline;
+}
+
+.project-git-info-modal-note {
+  font-size: 12px;
+  color: var(--mkdd-text-muted);
+  margin: 0 0 12px;
+}

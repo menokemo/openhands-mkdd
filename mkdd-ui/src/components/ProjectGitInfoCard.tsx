@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FaCodeBranch, FaCircleCheck, FaCircleExclamation } from "react-icons/fa6";
 import { fetchProjectGitInfo, type ProjectGitInfo } from "../api/client";
 import { formatMessageTime } from "../utils/formatMessageTime";
+import ProjectCommitHistoryModal from "./ProjectCommitHistoryModal";
 
 type Props = {
   projectPath: string;
@@ -21,6 +22,7 @@ type Props = {
 export default function ProjectGitInfoCard({ projectPath, language }: Props) {
   const [info, setInfo] = useState<ProjectGitInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,6 +58,7 @@ export default function ProjectGitInfoCard({ projectPath, language }: Props) {
           dirtyMany: (n: number) => `${n} تعديلات لسه مش محفوظة`,
           recentCommits: "آخر التعديلات",
           noCommits: "لسه مفيش أي Commit.",
+          viewAll: "شوف الكل",
         }
       : {
           title: "Code Repository",
@@ -65,6 +68,7 @@ export default function ProjectGitInfoCard({ projectPath, language }: Props) {
           dirtyMany: (n: number) => `${n} uncommitted changes`,
           recentCommits: "Recent commits",
           noCommits: "No commits yet.",
+          viewAll: "View all",
         };
 
   if (loading && !info) return null;
@@ -75,61 +79,84 @@ export default function ProjectGitInfoCard({ projectPath, language }: Props) {
     : null;
 
   return (
-    <section className="project-home-section project-git-info-section">
-      <div className="section-heading">
-        <h2>
-          <FaCodeBranch className="section-heading-icon" />
-          {t.title}
-        </h2>
-      </div>
+    <>
+      <section className="project-home-section project-git-info-section">
+        <div className="section-heading">
+          <h2>
+            <FaCodeBranch className="section-heading-icon" />
+            {t.title}
+          </h2>
+        </div>
 
-      {!repoName && <p className="project-git-info-empty">{t.noRepo}</p>}
+        {!repoName && <p className="project-git-info-empty">{t.noRepo}</p>}
 
-      {repoName && (
-        <>
-          <div className="project-git-info-summary">
-            <a
-              href={info.repoUrl ?? "#"}
-              target="_blank"
-              rel="noreferrer"
-              className="project-git-info-repo-link"
-            >
-              {repoName}
-            </a>
-            {info.uncommittedChanges !== null && (
-              <span
-                className={
-                  info.uncommittedChanges === 0
-                    ? "project-git-info-status project-git-info-clean"
-                    : "project-git-info-status project-git-info-dirty"
-                }
+        {repoName && (
+          <>
+            <div className="project-git-info-summary">
+              <a
+                href={info.repoUrl ?? "#"}
+                target="_blank"
+                rel="noreferrer"
+                className="project-git-info-repo-link"
               >
-                {info.uncommittedChanges === 0 && <FaCircleCheck />}
-                {info.uncommittedChanges > 0 && <FaCircleExclamation />}
-                {info.uncommittedChanges === 0 && t.clean}
-                {info.uncommittedChanges === 1 && t.dirtyOne}
-                {info.uncommittedChanges > 1 && t.dirtyMany(info.uncommittedChanges)}
-              </span>
-            )}
-          </div>
-
-          <h3 className="project-git-info-commits-title">{t.recentCommits}</h3>
-          {info.commits.length === 0 && (
-            <p className="project-git-info-empty">{t.noCommits}</p>
-          )}
-          <div className="project-git-info-commits">
-            {info.commits.map((commit) => (
-              <div key={commit.sha} className="project-git-info-commit-row">
-                <span className="project-git-info-commit-sha">{commit.short_sha}</span>
-                <span className="project-git-info-commit-subject">{commit.subject}</span>
-                <span className="project-git-info-commit-meta">
-                  {commit.author} · {formatMessageTime(commit.timestamp, language)}
+                {repoName}
+              </a>
+              {info.uncommittedChanges !== null && (
+                <span
+                  className={
+                    info.uncommittedChanges === 0
+                      ? "project-git-info-status project-git-info-clean"
+                      : "project-git-info-status project-git-info-dirty"
+                  }
+                >
+                  {info.uncommittedChanges === 0 && <FaCircleCheck />}
+                  {info.uncommittedChanges > 0 && <FaCircleExclamation />}
+                  {info.uncommittedChanges === 0 && t.clean}
+                  {info.uncommittedChanges === 1 && t.dirtyOne}
+                  {info.uncommittedChanges > 1 && t.dirtyMany(info.uncommittedChanges)}
                 </span>
-              </div>
-            ))}
-          </div>
-        </>
+              )}
+            </div>
+
+            <div className="project-git-info-commits-heading">
+              <h3 className="project-git-info-commits-title">{t.recentCommits}</h3>
+              {info.commits.length > 0 && (
+                <button
+                  type="button"
+                  className="project-git-info-view-all"
+                  onClick={() => setHistoryOpen(true)}
+                >
+                  {t.viewAll}
+                </button>
+              )}
+            </div>
+            {info.commits.length === 0 && (
+              <p className="project-git-info-empty">{t.noCommits}</p>
+            )}
+            <div className="project-git-info-commits">
+              {info.commits.map((commit) => (
+                <div key={commit.sha} className="project-git-info-commit-row">
+                  <span className="project-git-info-commit-sha">{commit.short_sha}</span>
+                  <span className="project-git-info-commit-subject">
+                    {commit.subject}
+                  </span>
+                  <span className="project-git-info-commit-meta">
+                    {commit.author} · {formatMessageTime(commit.timestamp, language)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
+
+      {historyOpen && (
+        <ProjectCommitHistoryModal
+          projectPath={projectPath}
+          language={language}
+          onClose={() => setHistoryOpen(false)}
+        />
       )}
-    </section>
+    </>
   );
 }

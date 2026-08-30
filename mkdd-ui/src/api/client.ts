@@ -44,10 +44,13 @@ export type ProjectGitInfo = {
   uncommittedChanges: number | null;
 };
 
-export async function fetchProjectGitInfo(projectPath: string): Promise<ProjectGitInfo> {
-  const r = await fetch(
-    `/api/projects/git-info?project=${encodeURIComponent(projectPath)}`,
-  );
+export async function fetchProjectGitInfo(
+  projectPath: string,
+  limit?: number,
+): Promise<ProjectGitInfo> {
+  const qs = new URLSearchParams({ project: projectPath });
+  if (limit) qs.set("limit", String(limit));
+  const r = await fetch(`/api/projects/git-info?${qs}`);
   return r.json();
 }
 

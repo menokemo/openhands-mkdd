@@ -32,6 +32,14 @@ export async function handleProjectGitInfo(req, res) {
 
   const url = new URL(req.url, "http://mkdd.local");
   const project = url.searchParams.get("project");
+  const requestedLimit = Number(url.searchParams.get("limit"));
+  // OpenHands' own /api/git/commits caps at 200 (no true pagination
+  // beyond that - just a higher single-request limit) - clamp to that
+  // real ceiling rather than silently passing through an invalid value.
+  const limit =
+    Number.isInteger(requestedLimit) && requestedLimit > 0
+      ? Math.min(requestedLimit, 200)
+      : 10;
 
   if (!project) {
     res.writeHead(400, { "content-type": "application/json" });
@@ -42,7 +50,7 @@ export async function handleProjectGitInfo(req, res) {
   const repoUrl = readRepoUrl(project);
 
   const [commitsResult, changesResult] = await Promise.allSettled([
-    fetchCommits(project),
+    fetchCommits(project, limit),
     fetchChangesCount(project),
   ]);
 
@@ -81,8 +89,8 @@ function readRepoUrl(projectPath) {
   return match ? match[1] : null;
 }
 
-async function fetchCommits(projectPath) {
-  const qs = new URLSearchParams({ path: projectPath, limit: "10" });
+async function fetchCommits(projectPath, limit) {
+  const qs = new URLSearchParams({ path: projectPath, limit: String(limit) });
   const r = await openhands(`/api/git/commits?${qs}`);
   if (!r.ok) return [];
   const data = await r.json();
