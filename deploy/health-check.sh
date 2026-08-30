@@ -212,8 +212,29 @@ check_deep_conversation_lookup() {
 
   response=$(curl -fsS -m 12 -H "X-Internal-Service-Key: $service_key" \
     "http://localhost:${MKDD_UI_PORT}/api/internal/health-deep?${qs}" 2>/dev/null)
+
+  # BUGS_AND_FIXES.md #169: distinguish a real ConversationErrorEvent
+  # (e.g. an LLM rate/usage limit surfaced inside a real conversation -
+  # the exact incident that motivated this check) from a genuine
+  # timeout/hang - a clearer message than dumping the raw JSON response,
+  # parsed safely via python3 rather than string-matching.
+  error_summary=$(echo "$response" | python3 -c '
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except json.JSONDecodeError:
+    sys.exit(0)
+err = data.get("recentError")
+if err:
+    code = err.get("code", "unknown")
+    kind = (err.get("classification") or {}).get("kind", "unknown")
+    print(f"{code} ({kind})")
+' 2>/dev/null)
+
   if echo "$response" | grep -q '"ok":true'; then
     log_pass "deep_lookup" "Deep conversation lookup succeeded ($response)"
+  elif [ -n "$error_summary" ]; then
+    log_fail "deep_lookup" "Recent conversation error detected: $error_summary"
   else
     log_fail "deep_lookup" "Deep conversation lookup FAILED (response: ${response:-no response within 12s})"
   fi

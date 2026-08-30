@@ -87,14 +87,52 @@ export async function handleInternalHealthDeep(req, res) {
   const TIMEOUT_MS = 10_000;
 
   try {
-    await Promise.race([
+    const conversation = await Promise.race([
       findAuthorizedConversation({ project, employeeId, employeeName }),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error("health_check_timeout")), TIMEOUT_MS),
       ),
     ]);
+
+    // BUGS_AND_FIXES.md #169: also check whether the most recent event in
+    // this conversation is a real ConversationErrorEvent (e.g. an LLM
+    // rate/usage limit) - discovered live via a real owner incident where
+    // OpenHands' own error surfaced inside the conversation (litellm.
+    // RateLimitError / usage_limit_reached), but the separate LLM
+    // subscription check (#162) reported "healthy" because /api/llm/
+    // subscription/*/status only reports connection/expiry state, not
+    // usage quota - a genuinely different failure mode with no other
+    // detectable signal. Uses OpenHands' own structured classification
+    // (code, classification.kind) - real categorized data from the
+    // platform itself, not free-text parsing.
+    let recentError = null;
+    if (conversation) {
+      try {
+        const eventsRes = await openhands(
+          `/api/conversations/${conversation.id}/events/search?limit=1&sort_order=TIMESTAMP_DESC`,
+        );
+        const eventsData = await eventsRes.json();
+        const lastEvent = eventsData.items?.[0];
+        if (lastEvent?.kind === "ConversationErrorEvent") {
+          recentError = {
+            code: lastEvent.code ?? null,
+            classification: lastEvent.classification ?? null,
+          };
+        }
+      } catch {
+        // Best-effort - a failure checking for a recent error must never
+        // mask the successful conversation lookup itself.
+      }
+    }
+
     res.writeHead(200, { "content-type": "application/json" });
-    res.end(JSON.stringify({ ok: true, elapsedMs: Date.now() - start }));
+    res.end(
+      JSON.stringify({
+        ok: recentError === null,
+        elapsedMs: Date.now() - start,
+        recentError,
+      }),
+    );
   } catch (error) {
     res.writeHead(502, { "content-type": "application/json" });
     res.end(
