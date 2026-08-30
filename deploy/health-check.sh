@@ -111,9 +111,9 @@ check_containers() {
   for container in "$MKDD_UI_CONTAINER" "$AGENT_CANVAS_CONTAINER"; do
     status=$(docker inspect -f '{{.State.Status}}' "$container" 2>/dev/null)
     if [ "$status" = "running" ]; then
-      log_pass "container_$container" "Container $container is running"
+      log_pass "container_$container" "الحاوية $container شغالة عادي"
     else
-      log_fail "container_$container" "Container $container is NOT running (status: ${status:-not found})"
+      log_fail "container_$container" "الحاوية $container مش شغالة (الحالة: ${status:-غير موجودة}) - محتاجة إعادة تشغيل"
     fi
   done
 }
@@ -125,9 +125,9 @@ check_containers() {
 # ---------------------------------------------------------------------------
 check_mkdd_health() {
   if curl -fsS -m 10 "http://localhost:${MKDD_UI_PORT}/api/health" >/dev/null 2>&1; then
-    log_pass "mkdd_health" "MKDD backend /api/health responds"
+    log_pass "mkdd_health" "واجهة MKDD الأساسية بترد عادي"
   else
-    log_fail "mkdd_health" "MKDD backend /api/health did NOT respond within 10s"
+    log_fail "mkdd_health" "واجهة MKDD الأساسية مش بترد - محتاج تتأكد إن حاوية mkdd-ui شغالة"
   fi
 }
 
@@ -136,9 +136,9 @@ check_mkdd_health() {
 # ---------------------------------------------------------------------------
 check_agent_canvas_ready() {
   if curl -fsS -m 10 "http://localhost:${AGENT_CANVAS_PORT}/ready" >/dev/null 2>&1; then
-    log_pass "agent_canvas_ready" "Agent Canvas /ready responds"
+    log_pass "agent_canvas_ready" "محرك OpenHands (Agent Canvas) بيرد عادي"
   else
-    log_fail "agent_canvas_ready" "Agent Canvas /ready did NOT respond within 10s"
+    log_fail "agent_canvas_ready" "محرك OpenHands مش بيرد - محتاج تتأكد إن حاوية agent-canvas شغالة"
   fi
 }
 
@@ -157,9 +157,9 @@ check_git_ownership() {
      git config --global --get-all safe.directory 2>/dev/null | grep -qx '\*' && echo OK || echo MISSING" \
     2>/dev/null)
   if [ "$output" = "OK" ]; then
-    log_pass "git_ownership" "Git safe.directory exception is present in agent-canvas"
+    log_pass "git_ownership" "صلاحيات Git سليمة - المحادثات الجديدة هتشتغل عادي"
   else
-    log_fail "git_ownership" "Git safe.directory exception is MISSING in agent-canvas (new conversations will fail with 'dubious ownership')"
+    log_fail "git_ownership" "في مشكلة صلاحيات في ملفات Git - أي محادثة جديدة هتفشل حاليًا (محتاجة إصلاح دائم في الـDockerfile)"
   fi
 }
 
@@ -181,9 +181,9 @@ check_auto_deploy_timer() {
   next_monotonic=$(systemctl show "$AUTO_DEPLOY_TIMER" -p NextElapseUSecMonotonic --value 2>/dev/null)
   if { [ -n "$next_realtime" ] && [ "$next_realtime" != "0" ]; } || \
      { [ -n "$next_monotonic" ] && [ "$next_monotonic" != "0" ]; }; then
-    log_pass "auto_deploy_timer" "$AUTO_DEPLOY_TIMER has a real scheduled next run"
+    log_pass "auto_deploy_timer" "نظام النشر التلقائي مجدول ومستعد"
   else
-    log_fail "auto_deploy_timer" "$AUTO_DEPLOY_TIMER has NO scheduled next run (needs: systemctl start ${AUTO_DEPLOY_TIMER%.timer}.service to re-anchor)"
+    log_fail "auto_deploy_timer" "نظام النشر التلقائي مش مجدول - نفّذي: sudo systemctl start ${AUTO_DEPLOY_TIMER%.timer}.service"
   fi
 }
 
@@ -198,11 +198,11 @@ check_auto_deploy_timer() {
 # ---------------------------------------------------------------------------
 check_deep_conversation_lookup() {
   if [ -z "$HEALTH_CHECK_PROJECT" ] || [ -z "$HEALTH_CHECK_EMPLOYEE_ID" ] || [ -z "$HEALTH_CHECK_EMPLOYEE_NAME" ]; then
-    log_skip "deep_lookup" "Deep conversation lookup skipped (MKDD_HEALTH_CHECK_PROJECT/EMPLOYEE_ID/EMPLOYEE_NAME not set)"
+    log_skip "deep_lookup" "الفحص العميق للمحادثة غير مفعَّل (محتاج ضبط MKDD_HEALTH_CHECK_PROJECT/EMPLOYEE_ID/EMPLOYEE_NAME في .env)"
     return
   fi
   if [ ! -f "$INTERNAL_KEY_FILE" ]; then
-    log_skip "deep_lookup" "Deep conversation lookup skipped (internal service key not found yet at $INTERNAL_KEY_FILE)"
+    log_skip "deep_lookup" "الفحص العميق للمحادثة اتأجل - مفتاح الخدمة الداخلي لسه مبيتولدش (هيتولد أول ما تُستخدَم المنظومة)"
     return
   fi
   service_key=$(cat "$INTERNAL_KEY_FILE")
@@ -235,11 +235,11 @@ if err:
 ' 2>/dev/null)
 
   if echo "$response" | grep -q '"ok":true'; then
-    log_pass "deep_lookup" "Deep conversation lookup succeeded ($response)"
+    log_pass "deep_lookup" "محادثة الموظف التجريبي شغالة وبترد عادي"
   elif [ -n "$error_summary" ]; then
-    log_fail "deep_lookup" "Recent conversation error detected: $error_summary"
+    log_fail "deep_lookup" "$error_summary"
   else
-    log_fail "deep_lookup" "Deep conversation lookup FAILED (response: ${response:-no response within 12s})"
+    log_fail "deep_lookup" "الفحص العميق للمحادثة فشل - مفيش رد خلال 12 ثانية (ممكن تكون المحادثة معلّقة)"
   fi
 }
 
@@ -257,7 +257,7 @@ if err:
 # ---------------------------------------------------------------------------
 check_llm_health() {
   if [ ! -f "$INTERNAL_KEY_FILE" ]; then
-    log_skip "llm_health" "LLM subscription check skipped (internal service key not found yet at $INTERNAL_KEY_FILE)"
+    log_skip "llm_health" "فحص اشتراكات LLM اتأجل - مفتاح الخدمة الداخلي لسه مبيتولدش"
     return
   fi
   service_key=$(cat "$INTERNAL_KEY_FILE")
@@ -265,17 +265,18 @@ check_llm_health() {
     "http://localhost:${MKDD_UI_PORT}/api/internal/llm-health" 2>/dev/null)
 
   if [ -z "$response" ]; then
-    log_fail "llm_health" "LLM subscription check FAILED (no response within 12s)"
+    log_fail "llm_health" "فحص اشتراكات LLM فشل - مفيش رد خلال 12 ثانية"
     return
   fi
 
-  # Summarize per-profile results into readable pass/fail lines via
-  # python3 (never hand-parsed with grep/sed - directly avoiding the
-  # kind of fragile string-matching mistakes found elsewhere in this
-  # script during earlier live testing). Uses a STABLE check_id (the
-  # profile name alone) separate from the variable descriptive message
-  # - directly avoiding a repeat of #159's bug, where using the full
-  # (variable) message as the identity broke transition tracking.
+  # Summarize per-profile results into readable Arabic pass/fail
+  # messages via python3 (never hand-parsed with grep/sed - directly
+  # avoiding the kind of fragile string-matching mistakes found
+  # elsewhere in this script during earlier live testing). Uses a
+  # STABLE check_id (the profile name alone) separate from the
+  # variable descriptive message - directly avoiding a repeat of
+  # #159's bug, where using the full (variable) message as the
+  # identity broke transition tracking.
   summary=$(echo "$response" | python3 -c '
 import json, sys
 try:
@@ -283,30 +284,42 @@ try:
 except json.JSONDecodeError:
     print("PARSE_ERROR")
     sys.exit(0)
+
+REASON_AR = {
+    "expired": "الاشتراك منتهي",
+    "expiring_soon": "الاشتراك هينتهي قريب",
+    "not_connected": "الاشتراك مش متصل",
+    "check_failed": "حصل خطأ أثناء الفحص",
+}
+
 for p in data.get("profiles", []):
     if not p.get("checked"):
         continue
     name = p.get("name", "?")
     vendor = p.get("vendor", "?")
     status = "OK" if p.get("ok") else "FAIL"
-    reason = p.get("reason", "")
+    reason_key = p.get("reason", "")
+    reason_ar = REASON_AR.get(reason_key, reason_key)
     hours = p.get("hoursRemaining")
-    extra = " (" + str(hours) + "h remaining)" if hours is not None else ""
-    message = name + " (" + vendor + "): " + reason + extra
+    extra = " (باقي حوالي " + str(hours) + " ساعة)" if hours is not None else ""
+    if status == "OK":
+        message = "ملف " + name + " (" + vendor + ") سليم وشغال عادي"
+    else:
+        message = "ملف " + name + " (" + vendor + "): " + reason_ar + extra
     print(status + "\t" + name + "\t" + message)
 ' 2>/dev/null)
 
   if [ -z "$summary" ]; then
-    log_pass "llm_health" "No subscription-based LLM profiles to check"
+    log_pass "llm_health" "مفيش أي اشتراك LLM محتاج فحص حاليًا"
     return
   fi
 
   while IFS=$'\t' read -r result profile_name message; do
     [ -z "$result" ] && continue
     if [ "$result" = "OK" ]; then
-      log_pass "llm_profile_$profile_name" "LLM profile healthy: $message"
+      log_pass "llm_profile_$profile_name" "$message"
     else
-      log_fail "llm_profile_$profile_name" "LLM profile issue: $message"
+      log_fail "llm_profile_$profile_name" "$message"
     fi
   done <<< "$summary"
 }
