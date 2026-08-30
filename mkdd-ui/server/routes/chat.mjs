@@ -203,7 +203,21 @@ async function createNewConversation({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        title: `${employeeDisplayName} — ${projectDisplayName}`,
+        // BUGS_AND_FIXES.md #174: the explicit "start new conversation"
+        // button (#61) intentionally creates multiple real conversations
+        // for the same employee+project pair - a genuinely common,
+        // deliberate action, not a rare edge case. Without a
+        // distinguishing detail, every one would carry the exact same
+        // static title, making them indistinguishable in OpenHands' own
+        // UI. A readable date/time helps at a glance, but live testing
+        // proved timestamp precision alone isn't a real guarantee - two
+        // conversations created within the same minute (a realistic
+        // scenario using the button twice in quick succession) still
+        // produced identical titles, even with seconds added. The
+        // conversation's own real ID (a genuine UUID) is the only true
+        // guarantee against collision, so the last 4 characters of it
+        // are appended as well.
+        title: `${employeeDisplayName} — ${projectDisplayName} · ${new Date().toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })} · ${created.id.slice(-4)}`,
       }),
     });
   } catch {
