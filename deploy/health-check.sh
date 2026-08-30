@@ -24,6 +24,25 @@
 set -uo pipefail
 
 DEPLOY_DIR="${MKDD_DEPLOY_DIR:-/opt/mkdd-live}"
+
+# BUGS_AND_FIXES.md #168: load values from the real .env file, the same
+# one docker compose itself reads (deploy/README.md's optional
+# MKDD_HEALTH_CHECK_* activation step assumes this happens automatically
+# - it didn't, since nothing here or in mkdd-health-check.service ever
+# actually sourced it, only commented-out examples that looked like
+# activation but weren't). `set -a` auto-exports every KEY=VALUE line so
+# they're visible to the rest of this script exactly like real
+# environment variables, without overwriting anything already exported
+# by the caller (e.g. a manual override on the command line still wins,
+# since bash's own variable-already-set behavior isn't touched here -
+# .env values simply fill in whatever wasn't already set).
+if [ -f "$DEPLOY_DIR/.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$DEPLOY_DIR/.env"
+  set +a
+fi
+
 MKDD_UI_CONTAINER="${MKDD_UI_CONTAINER_NAME:-mkdd-ui-staging}"
 AGENT_CANVAS_CONTAINER="${MKDD_AGENT_CANVAS_CONTAINER_NAME:-openhands-agent-canvas-staging}"
 MKDD_UI_PORT="${MKDD_UI_BACKEND_PORT:-18787}"
