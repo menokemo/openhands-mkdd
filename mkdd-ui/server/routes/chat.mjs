@@ -151,12 +151,6 @@ async function createNewConversation({
       },
       agent_profile_id: agentProfileUuid,
       autotitle: false,
-      // Confirmed real field (README/ENGINEERING_PRINCIPLES.md #1): the
-      // real Agent Canvas create-conversation payload sends `title`
-      // (see use-create-conversation.ts). Without it, conversations
-      // MKDD creates show up unnamed in Agent Canvas's own UI
-      // (BUGS_AND_FIXES.md #24).
-      title: `${employeeDisplayName} — ${projectDisplayName}`,
       tags: {
         mkddproject: project,
         mkddemployee: employeeName,
@@ -187,6 +181,33 @@ async function createNewConversation({
         detail: created,
       },
     };
+  }
+
+  // BUGS_AND_FIXES.md #173: OpenHands' create-conversation payload
+  // (StartConversationRequest) no longer has a `title` field at all in
+  // the current agent-server (only autotitle/title_llm_profile) - a
+  // previous title field sent in the request above was silently
+  // dropped by the server, confirmed live: real conversations were
+  // showing title: null despite the field being sent. The server DOES
+  // support setting a title, but only via a separate follow-up call
+  // (UpdateConversationRequest, PATCH /api/conversations/{id}) after
+  // creation - so that's what actually sets it now. Best-effort: a
+  // failed title update must never fail the conversation creation
+  // itself, since the conversation is already real and usable either
+  // way.
+  try {
+    await fetch(OPENHANDS_URL + `/api/conversations/${created.id}`, {
+      method: "PATCH",
+      headers: {
+        "X-Session-API-Key": sessionKey(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: `${employeeDisplayName} — ${projectDisplayName}`,
+      }),
+    });
+  } catch {
+    // Best-effort - see comment above.
   }
 
   return { ok: true, status: r.status, body: { conversation: created } };
