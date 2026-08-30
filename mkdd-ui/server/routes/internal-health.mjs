@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { readJsonBody } from "../lib/read-json-body.mjs";
 import { sendPushToAll } from "../lib/push-notifications.mjs";
 import { findAuthorizedConversation } from "../lib/authorize-conversation.mjs";
+import { openhands } from "../lib/openhands-client.mjs";
 
 const HEALTH_STATUS_FILE =
   process.env.MKDD_HEALTH_STATUS_FILE ?? "/mkdd-data/health-status.json";
@@ -184,4 +185,120 @@ export async function handleSystemHealthHistory(req, res) {
     res.end(JSON.stringify({ events: [] }));
   }
   return true;
+}
+
+/**
+ * GET /api/internal/llm-health — checks whether every LLM profile
+ * currently in use is actually usable (BUGS_AND_FIXES.md #162),
+ * specifically the failure mode that showed up earlier this session
+ * as conversations mysteriously stopping mid-task with a
+ * litellm.BadRequestError-style error: a subscription-based auth
+ * (e.g. OpenAI Codex, "auth_type": "subscription") disconnecting or
+ * its expires_at passing.
+ *
+ * Deliberately generic - no vendor or model name is hardcoded
+ * anywhere. It discovers every registered profile via /api/profiles,
+ * reads each one's actual auth_type/subscription_vendor from
+ * /api/profiles/{name}, and only checks subscription status for
+ * profiles that are genuinely subscription-based - this way it keeps
+ * working correctly if the model/vendor changes in the future without
+ * any code change needed.
+ */
+export async function handleInternalLlmHealth(req, res) {
+  if (!(req.method === "GET" && req.url === "/api/internal/llm-health")) {
+    return false;
+  }
+
+  const TIMEOUT_MS = 10_000;
+  const EXPIRY_WARNING_HOURS = 24;
+
+  try {
+    const results = await Promise.race([
+      checkAllLlmProfiles(EXPIRY_WARNING_HOURS),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("llm_health_timeout")), TIMEOUT_MS),
+      ),
+    ]);
+
+    const ok = results.every((r) => r.ok !== false);
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ ok, profiles: results }));
+  } catch (error) {
+    res.writeHead(502, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({
+        ok: false,
+        profiles: [],
+        error: error instanceof Error ? error.message : "unknown_error",
+      }),
+    );
+  }
+  return true;
+}
+
+async function checkAllLlmProfiles(expiryWarningHours) {
+  const listRes = await openhands("/api/profiles");
+  const { profiles: profileNames } = await listRes.json();
+
+  const results = [];
+  for (const { name } of profileNames ?? []) {
+    // eslint-disable-next-line no-await-in-loop -- a small, bounded list
+    // of profiles; sequential is simpler and this whole call already
+    // has its own overall timeout above.
+    const detail = await checkOneProfile(name, expiryWarningHours);
+    results.push(detail);
+  }
+  return results;
+}
+
+async function checkOneProfile(name, expiryWarningHours) {
+  try {
+    const detailRes = await openhands(`/api/profiles/${encodeURIComponent(name)}`);
+    const detail = await detailRes.json();
+    const authType = detail.config?.auth_type;
+    const vendor = detail.config?.subscription_vendor;
+
+    if (authType !== "subscription" || !vendor) {
+      // A regular API-key-based profile - nothing subscription-related
+      // to check here; it either has a key set or it doesn't, which
+      // is visible directly on the Agent Profiles settings page.
+      return { name, ok: true, checked: false, reason: "not_subscription_based" };
+    }
+
+    const statusRes = await openhands(
+      `/api/llm/subscription/${encodeURIComponent(vendor)}/status`,
+    );
+    const status = await statusRes.json();
+
+    if (status.connected !== true) {
+      return { name, ok: false, checked: true, vendor, reason: "not_connected" };
+    }
+
+    if (typeof status.expires_at === "number") {
+      const hoursRemaining = (status.expires_at - Date.now()) / (1000 * 60 * 60);
+      if (hoursRemaining <= 0) {
+        return { name, ok: false, checked: true, vendor, reason: "expired" };
+      }
+      if (hoursRemaining <= expiryWarningHours) {
+        return {
+          name,
+          ok: false,
+          checked: true,
+          vendor,
+          reason: "expiring_soon",
+          hoursRemaining: Math.round(hoursRemaining),
+        };
+      }
+    }
+
+    return { name, ok: true, checked: true, vendor };
+  } catch (error) {
+    return {
+      name,
+      ok: false,
+      checked: true,
+      reason: "check_failed",
+      error: error instanceof Error ? error.message : "unknown_error",
+    };
+  }
 }

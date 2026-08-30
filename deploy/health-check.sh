@@ -201,6 +201,74 @@ check_deep_conversation_lookup() {
 }
 
 # ---------------------------------------------------------------------------
+# Check 7: every subscription-based LLM profile currently registered is
+# actually connected and not expired/expiring soon.
+# (BUGS_AND_FIXES.md #162: this is the exact failure mode behind
+# litellm.BadRequestError-style incidents seen earlier this session -
+# an employee's conversation mysteriously stopping because the
+# subscription backing their model disconnected or its expires_at
+# passed. Deliberately generic: no vendor or model name is hardcoded
+# anywhere - it discovers whatever profiles are actually registered and
+# only checks the ones that are genuinely subscription-based, so it
+# keeps working correctly if the model/vendor changes in the future.)
+# ---------------------------------------------------------------------------
+check_llm_health() {
+  if [ ! -f "$INTERNAL_KEY_FILE" ]; then
+    log_skip "llm_health" "LLM subscription check skipped (internal service key not found yet at $INTERNAL_KEY_FILE)"
+    return
+  fi
+  service_key=$(cat "$INTERNAL_KEY_FILE")
+  response=$(curl -fsS -m 12 -H "X-Internal-Service-Key: $service_key" \
+    "http://localhost:${MKDD_UI_PORT}/api/internal/llm-health" 2>/dev/null)
+
+  if [ -z "$response" ]; then
+    log_fail "llm_health" "LLM subscription check FAILED (no response within 12s)"
+    return
+  fi
+
+  # Summarize per-profile results into readable pass/fail lines via
+  # python3 (never hand-parsed with grep/sed - directly avoiding the
+  # kind of fragile string-matching mistakes found elsewhere in this
+  # script during earlier live testing). Uses a STABLE check_id (the
+  # profile name alone) separate from the variable descriptive message
+  # - directly avoiding a repeat of #159's bug, where using the full
+  # (variable) message as the identity broke transition tracking.
+  summary=$(echo "$response" | python3 -c '
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except json.JSONDecodeError:
+    print("PARSE_ERROR")
+    sys.exit(0)
+for p in data.get("profiles", []):
+    if not p.get("checked"):
+        continue
+    name = p.get("name", "?")
+    vendor = p.get("vendor", "?")
+    status = "OK" if p.get("ok") else "FAIL"
+    reason = p.get("reason", "")
+    hours = p.get("hoursRemaining")
+    extra = " (" + str(hours) + "h remaining)" if hours is not None else ""
+    message = name + " (" + vendor + "): " + reason + extra
+    print(status + "\t" + name + "\t" + message)
+' 2>/dev/null)
+
+  if [ -z "$summary" ]; then
+    log_pass "llm_health" "No subscription-based LLM profiles to check"
+    return
+  fi
+
+  while IFS=$'\t' read -r result profile_name message; do
+    [ -z "$result" ] && continue
+    if [ "$result" = "OK" ]; then
+      log_pass "llm_profile_$profile_name" "LLM profile healthy: $message"
+    else
+      log_fail "llm_profile_$profile_name" "LLM profile issue: $message"
+    fi
+  done <<< "$summary"
+}
+
+# ---------------------------------------------------------------------------
 echo "MKDD health check — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 echo "---------------------------------------------------------------------"
 check_containers
@@ -209,6 +277,7 @@ check_agent_canvas_ready
 check_git_ownership
 check_auto_deploy_timer
 check_deep_conversation_lookup
+check_llm_health
 echo "---------------------------------------------------------------------"
 
 # ---------------------------------------------------------------------------

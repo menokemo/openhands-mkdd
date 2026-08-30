@@ -21,6 +21,7 @@ import { handleProjectLivePort } from "./routes/project-live-port.mjs";
 import {
   handleInternalAlert,
   handleInternalHealthDeep,
+  handleInternalLlmHealth,
   handleSystemHealth,
   handleSystemHealthHistory,
 } from "./routes/internal-health.mjs";
@@ -105,6 +106,7 @@ const ROUTES = [
   handleRestartContainer,
   handleInternalAlert,
   handleInternalHealthDeep,
+  handleInternalLlmHealth,
   handleSystemHealth,
   handleSystemHealthHistory,
   handleStaticFiles,
