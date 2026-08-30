@@ -37,7 +37,7 @@ AUTO_DEPLOY_TIMER="${MKDD_AUTO_DEPLOY_TIMER:-mkdd-auto-deploy.timer}"
 HEALTH_CHECK_PROJECT="${MKDD_HEALTH_CHECK_PROJECT:-}"
 HEALTH_CHECK_EMPLOYEE_ID="${MKDD_HEALTH_CHECK_EMPLOYEE_ID:-}"
 HEALTH_CHECK_EMPLOYEE_NAME="${MKDD_HEALTH_CHECK_EMPLOYEE_NAME:-}"
-INTERNAL_KEY_FILE="${MKDD_PROJECTS_DIR:-/opt/openhands/projects}/.mkdd-internal/service-key.txt"
+INTERNAL_KEY_FILE="${MKDD_PROJECTS_DIR:-$DEPLOY_DIR/projects}/.mkdd-internal/service-key.txt"
 # Where the JSON status file is written, for MKDD's own UI to read via
 # GET /api/system-health (BUGS_AND_FIXES.md #158). Defaults to the same
 # shared mkdd-data volume both containers already mount.
