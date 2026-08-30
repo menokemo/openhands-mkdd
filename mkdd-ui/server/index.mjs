@@ -26,6 +26,7 @@ import {
   handleSystemHealth,
   handleSystemHealthHistory,
 } from "./routes/internal-health.mjs";
+import { handleResumeStoppedConversations } from "./routes/auto-resume.mjs";
 import { handleProjectTotalCost } from "./routes/project-cost.mjs";
 import { startLivePortProxies } from "./live-port-proxy.mjs";
 import { handleConversation } from "./routes/conversation.mjs";
@@ -109,6 +110,7 @@ const ROUTES = [
   handleInternalAlert,
   handleInternalHealthDeep,
   handleInternalLlmHealth,
+  handleResumeStoppedConversations,
   handleSystemHealth,
   handleSystemHealthHistory,
   handleStaticFiles,

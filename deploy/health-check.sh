@@ -343,6 +343,38 @@ check_git_ownership
 check_auto_deploy_timer
 check_deep_conversation_lookup
 check_llm_health
+
+# ---------------------------------------------------------------------------
+# Auto-resume any conversation that stopped from a real rate/usage limit
+# whose reset time has genuinely passed (BUGS_AND_FIXES.md #175). This is
+# an ACTION, not a pass/fail check - so it's not recorded as one of the
+# numbered checks above, just a brief log line and (via the endpoint
+# itself) a push notification per conversation actually resumed.
+# ---------------------------------------------------------------------------
+resume_stopped_conversations() {
+  if [ ! -f "$INTERNAL_KEY_FILE" ]; then
+    return
+  fi
+  service_key=$(cat "$INTERNAL_KEY_FILE")
+  response=$(curl -fsS -m 60 -H "X-Internal-Service-Key: $service_key" \
+    "http://localhost:${MKDD_UI_PORT}/api/internal/resume-stopped-conversations" 2>/dev/null)
+
+  count=$(echo "$response" | python3 -c '
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    print(len(data.get("resumed", [])))
+except json.JSONDecodeError:
+    print(0)
+' 2>/dev/null)
+
+  if [ -n "$count" ] && [ "$count" -gt 0 ] 2>/dev/null; then
+    echo "🔄 استئناف تلقائي: $count محادثة رجعت تشتغل بعد انتهاء حد الاستخدام"
+  fi
+}
+
+resume_stopped_conversations
+
 echo "---------------------------------------------------------------------"
 
 # ---------------------------------------------------------------------------

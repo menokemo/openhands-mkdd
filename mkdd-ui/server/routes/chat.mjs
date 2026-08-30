@@ -240,6 +240,31 @@ async function createNewConversation({
  * message into another employee's conversation directly), so this is
  * the correct place for that capability to live.
  */
+/**
+ * Sends a message directly into a known conversation ID - no lookup, no
+ * re-resolution by project/employee. Used by the auto-resume system
+ * (BUGS_AND_FIXES.md #175) which already has the exact stopped
+ * conversation's ID from its own event scan, and must send back into
+ * that precise conversation - re-searching by project+employee could
+ * resolve to a different, newer conversation if "start new
+ * conversation" (#61) was used for the same employee since the stop.
+ */
+export async function sendMessageToConversationId(conversationId, message) {
+  const r = await fetch(OPENHANDS_URL + `/api/conversations/${conversationId}/events`, {
+    method: "POST",
+    headers: {
+      "X-Session-API-Key": sessionKey(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      role: "user",
+      content: buildOutgoingContent(message),
+      run: true,
+    }),
+  });
+  return { ok: r.ok, status: r.status };
+}
+
 export async function deliverMessageToEmployee({
   project,
   employeeId,
@@ -256,20 +281,8 @@ export async function deliverMessageToEmployee({
     return createNewConversation({ project, employeeId, employeeName, message });
   }
 
-  const r = await fetch(OPENHANDS_URL + `/api/conversations/${conversation.id}/events`, {
-    method: "POST",
-    headers: {
-      "X-Session-API-Key": sessionKey(),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      role: "user",
-      content: buildOutgoingContent(message),
-      run: true,
-    }),
-  });
-
-  return { ok: r.ok, status: r.status, body: { conversation_id: conversation.id } };
+  const result = await sendMessageToConversationId(conversation.id, message);
+  return { ...result, body: { conversation_id: conversation.id } };
 }
 
 export async function handleChatSend(req, res) {
