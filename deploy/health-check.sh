@@ -3,8 +3,9 @@
 # health-check.sh — runs a comprehensive set of checks against the live MKDD
 # stack, covering every real failure mode discovered live throughout the
 # project's development sessions (see BUGS_AND_FIXES.md #157 for the full
-# story behind each check). Prints a clear pass/fail report and exits
-# non-zero if anything failed.
+# story behind each check). Prints a clear pass/fail report, writes a
+# structured JSON status file MKDD's own UI can display, and exits non-zero
+# if anything failed.
 #
 # Two intended uses:
 # 1. Manual smoke-testing: run this by hand right after any OpenHands
@@ -37,19 +38,41 @@ HEALTH_CHECK_PROJECT="${MKDD_HEALTH_CHECK_PROJECT:-}"
 HEALTH_CHECK_EMPLOYEE_ID="${MKDD_HEALTH_CHECK_EMPLOYEE_ID:-}"
 HEALTH_CHECK_EMPLOYEE_NAME="${MKDD_HEALTH_CHECK_EMPLOYEE_NAME:-}"
 INTERNAL_KEY_FILE="${MKDD_PROJECTS_DIR:-/opt/openhands/projects}/.mkdd-internal/service-key.txt"
+# Where the JSON status file is written, for MKDD's own UI to read via
+# GET /api/system-health (BUGS_AND_FIXES.md #158). Defaults to the same
+# shared mkdd-data volume both containers already mount.
+STATUS_FILE="${MKDD_HEALTH_STATUS_FILE:-$DEPLOY_DIR/mkdd-data/health-status.json}"
 
 FAILURES=()
 PASS_COUNT=0
+# Structured results as NAME<TAB>OK<TAB>MESSAGE lines (tab-separated,
+# not comma/UTF-8-delimiter-separated - directly avoiding a repeat of
+# the Arabic-comma-as-paste-delimiter corruption bug found earlier in
+# this same script). Built into JSON via python3 at the end, never by
+# hand-assembling a JSON string in bash.
+RESULTS=()
 
 # ---------------------------------------------------------------------------
+record() {
+  # record <name> <ok:true|false|null> <message>
+  RESULTS+=("$1"$'\t'"$2"$'\t'"$3")
+}
+
 log_pass() {
   echo "  ✅ $1"
   PASS_COUNT=$((PASS_COUNT + 1))
+  record "$1" "true" "$1"
 }
 
 log_fail() {
   echo "  ❌ $1"
   FAILURES+=("$1")
+  record "$1" "false" "$1"
+}
+
+log_skip() {
+  echo "  ⏭️  $1"
+  record "$1" "null" "$1"
 }
 
 # ---------------------------------------------------------------------------
@@ -143,11 +166,11 @@ check_auto_deploy_timer() {
 # ---------------------------------------------------------------------------
 check_deep_conversation_lookup() {
   if [ -z "$HEALTH_CHECK_PROJECT" ] || [ -z "$HEALTH_CHECK_EMPLOYEE_ID" ] || [ -z "$HEALTH_CHECK_EMPLOYEE_NAME" ]; then
-    echo "  ⏭️  Deep conversation lookup skipped (MKDD_HEALTH_CHECK_PROJECT/EMPLOYEE_ID/EMPLOYEE_NAME not set)"
+    log_skip "Deep conversation lookup skipped (MKDD_HEALTH_CHECK_PROJECT/EMPLOYEE_ID/EMPLOYEE_NAME not set)"
     return
   fi
   if [ ! -f "$INTERNAL_KEY_FILE" ]; then
-    echo "  ⏭️  Deep conversation lookup skipped (internal service key not found yet at $INTERNAL_KEY_FILE)"
+    log_skip "Deep conversation lookup skipped (internal service key not found yet at $INTERNAL_KEY_FILE)"
     return
   fi
   service_key=$(cat "$INTERNAL_KEY_FILE")
@@ -174,6 +197,49 @@ check_git_ownership
 check_auto_deploy_timer
 check_deep_conversation_lookup
 echo "---------------------------------------------------------------------"
+
+# ---------------------------------------------------------------------------
+# Write the structured JSON status file (BUGS_AND_FIXES.md #158) - read by
+# MKDD's own GET /api/system-health, and displayed in a new sidebar screen
+# so the owner can see live system health inside the app itself, not only
+# via a push notification when something breaks. Built entirely through
+# python3's json.dumps (never a hand-assembled JSON string), which safely
+# handles the Arabic text in check messages - directly avoiding a repeat
+# of this same script's earlier UTF-8 delimiter corruption bug.
+# ---------------------------------------------------------------------------
+write_status_file() {
+  mkdir -p "$(dirname "$STATUS_FILE")" 2>/dev/null || true
+  printf '%s\n' "${RESULTS[@]}" | python3 -c '
+import json, sys, datetime
+
+checks = []
+for line in sys.stdin:
+    line = line.rstrip("\n")
+    if not line:
+        continue
+    parts = line.split("\t", 2)
+    if len(parts) != 3:
+        continue
+    name, ok_raw, message = parts
+    ok = {"true": True, "false": False, "null": None}.get(ok_raw)
+    checks.append({"name": name, "ok": ok, "message": message})
+
+overall_ok = all(c["ok"] is not False for c in checks)
+status = {
+    "checkedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    "ok": overall_ok,
+    "checks": checks,
+}
+
+try:
+    with open(sys.argv[1], "w", encoding="utf-8") as f:
+        json.dump(status, f, ensure_ascii=False, indent=2)
+except OSError as e:
+    print(f"Failed to write status file: {e}", file=sys.stderr)
+' "$STATUS_FILE" 2>&1 || echo "Warning: failed to write $STATUS_FILE" >&2
+}
+
+write_status_file
 
 if [ "${#FAILURES[@]}" -eq 0 ]; then
   echo "All checks passed ($PASS_COUNT/$PASS_COUNT)."

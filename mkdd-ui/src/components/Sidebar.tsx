@@ -5,12 +5,14 @@ import {
   FaCircleCheck,
   FaUsers,
   FaGear,
+  FaHeartPulse,
   FaXmark,
   FaChevronLeft,
   FaChevronRight,
   FaRightFromBracket,
 } from "react-icons/fa6";
 import RestartModal from "./RestartModal";
+import SystemHealthModal from "./SystemHealthModal";
 import OwnerAvatarUpload from "./OwnerAvatarUpload";
 import type { CurrentUser } from "./AuthGate";
 import { isLocalAccess } from "../utils/isLocalAccess";
@@ -70,6 +72,7 @@ export default function Sidebar({
   onAvatarChange,
 }: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [healthOpen, setHealthOpen] = useState(false);
 
   return (
     <>
@@ -116,6 +119,22 @@ export default function Sidebar({
                 </button>
               ))}
 
+              <button
+                className="sidebar-menu-item"
+                onClick={() => {
+                  setHealthOpen(true);
+                  onClose();
+                }}
+              >
+                <span className="sidebar-menu-icon">
+                  <FaHeartPulse />
+                </span>
+                {language === "ar" ? "صحة النظام" : "System Health"}
+                <span className="sidebar-menu-arrow">
+                  {language === "ar" ? <FaChevronLeft /> : <FaChevronRight />}
+                </span>
+              </button>
+
               {isLocalAccess() && (
                 <button
                   className="sidebar-menu-item"
@@ -155,6 +174,10 @@ export default function Sidebar({
 
       {settingsOpen && (
         <RestartModal language={language} onClose={() => setSettingsOpen(false)} />
+      )}
+
+      {healthOpen && (
+        <SystemHealthModal language={language} onClose={() => setHealthOpen(false)} />
       )}
     </>
   );

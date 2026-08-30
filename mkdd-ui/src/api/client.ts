@@ -457,6 +457,27 @@ export async function restartContainer(): Promise<void> {
 }
 
 /**
+ * System health status (BUGS_AND_FIXES.md #158) - the current result of
+ * deploy/health-check.sh's last run, for the sidebar health screen.
+ */
+export type SystemHealthCheck = {
+  name: string;
+  ok: boolean | null;
+  message: string;
+};
+
+export type SystemHealthStatus = {
+  checkedAt: string | null;
+  ok: boolean | null;
+  checks: SystemHealthCheck[];
+};
+
+export async function fetchSystemHealth(): Promise<SystemHealthStatus> {
+  const r = await fetch("/api/system-health");
+  return r.json();
+}
+
+/**
  * Authentication (BUGS_AND_FIXES.md #127). All these calls include
  * credentials (the session cookie) automatically since they're same-
  * origin fetches.

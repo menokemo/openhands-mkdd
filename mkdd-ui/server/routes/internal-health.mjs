@@ -1,6 +1,10 @@
+import fs from "node:fs";
 import { readJsonBody } from "../lib/read-json-body.mjs";
 import { sendPushToAll } from "../lib/push-notifications.mjs";
 import { findAuthorizedConversation } from "../lib/authorize-conversation.mjs";
+
+const HEALTH_STATUS_FILE =
+  process.env.MKDD_HEALTH_STATUS_FILE ?? "/mkdd-data/health-status.json";
 
 /**
  * POST /api/internal/alert — lets the health-check system (a
@@ -99,6 +103,37 @@ export async function handleInternalHealthDeep(req, res) {
         error: error instanceof Error ? error.message : "unknown_error",
       }),
     );
+  }
+  return true;
+}
+
+/**
+ * GET /api/system-health — reads the JSON status file deploy/health-
+ * check.sh writes after every run (BUGS_AND_FIXES.md #158), for a new
+ * sidebar screen showing live system health inside MKDD's own UI -
+ * not just a push notification when something breaks, but a real
+ * place to look and see the current state.
+ *
+ * Uses normal owner-session authentication (not the internal service
+ * key) - this is called directly from the browser, unlike the other
+ * two endpoints in this file which are only ever called from the
+ * trusted VM host's own script.
+ */
+export async function handleSystemHealth(req, res) {
+  if (!(req.method === "GET" && req.url === "/api/system-health")) return false;
+
+  try {
+    const raw = fs.readFileSync(HEALTH_STATUS_FILE, "utf-8");
+    const status = JSON.parse(raw);
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify(status));
+  } catch {
+    // No status file yet (health-check.sh hasn't run at all, e.g.
+    // right after a fresh install before the timer's first tick) -
+    // report this explicitly rather than as a generic server error,
+    // so the frontend can show a clear "not checked yet" state.
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ checkedAt: null, ok: null, checks: [] }));
   }
   return true;
 }

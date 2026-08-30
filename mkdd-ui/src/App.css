@@ -3615,3 +3615,62 @@ header button,
   color: var(--mkdd-danger);
   font-size: 13px;
 }
+
+/* =========================
+   System Health screen (BUGS_AND_FIXES.md #158)
+   ========================= */
+
+.system-health-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 8px 0;
+}
+
+.system-health-ok {
+  background: color-mix(in srgb, var(--mkdd-success) 14%, transparent);
+  color: var(--mkdd-success);
+}
+
+.system-health-fail {
+  background: color-mix(in srgb, var(--mkdd-danger) 14%, transparent);
+  color: var(--mkdd-danger);
+}
+
+.system-health-timestamp {
+  font-size: 12px;
+  color: var(--mkdd-text-muted);
+  margin: 0 0 12px;
+}
+
+.system-health-check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--mkdd-border-subtle);
+  font-size: 13px;
+}
+
+.system-health-check-row:last-child {
+  border-bottom: none;
+}
+
+.system-health-icon-ok {
+  color: var(--mkdd-success);
+  flex-shrink: 0;
+}
+
+.system-health-icon-fail {
+  color: var(--mkdd-danger);
+  flex-shrink: 0;
+}
+
+.system-health-icon-skip {
+  color: var(--mkdd-text-muted);
+  flex-shrink: 0;
+}
