@@ -42,6 +42,9 @@ INTERNAL_KEY_FILE="${MKDD_PROJECTS_DIR:-/opt/openhands/projects}/.mkdd-internal/
 # GET /api/system-health (BUGS_AND_FIXES.md #158). Defaults to the same
 # shared mkdd-data volume both containers already mount.
 STATUS_FILE="${MKDD_HEALTH_STATUS_FILE:-$DEPLOY_DIR/mkdd-data/health-status.json}"
+# BUGS_AND_FIXES.md #159: bounded JSONL log of check TRANSITIONS
+# (healthy->failing or failing->healthy), not every check on every run.
+HISTORY_FILE="${MKDD_HEALTH_HISTORY_FILE:-$DEPLOY_DIR/mkdd-data/health-history.jsonl}"
 
 FAILURES=()
 PASS_COUNT=0
@@ -59,20 +62,23 @@ record() {
 }
 
 log_pass() {
-  echo "  ✅ $1"
+  # log_pass <check_id> <message>
+  echo "  ✅ $2"
   PASS_COUNT=$((PASS_COUNT + 1))
-  record "$1" "true" "$1"
+  record "$1" "true" "$2"
 }
 
 log_fail() {
-  echo "  ❌ $1"
-  FAILURES+=("$1")
-  record "$1" "false" "$1"
+  # log_fail <check_id> <message>
+  echo "  ❌ $2"
+  FAILURES+=("$2")
+  record "$1" "false" "$2"
 }
 
 log_skip() {
-  echo "  ⏭️  $1"
-  record "$1" "null" "$1"
+  # log_skip <check_id> <message>
+  echo "  ⏭️  $2"
+  record "$1" "null" "$2"
 }
 
 # ---------------------------------------------------------------------------
@@ -86,9 +92,9 @@ check_containers() {
   for container in "$MKDD_UI_CONTAINER" "$AGENT_CANVAS_CONTAINER"; do
     status=$(docker inspect -f '{{.State.Status}}' "$container" 2>/dev/null)
     if [ "$status" = "running" ]; then
-      log_pass "Container $container is running"
+      log_pass "container_$container" "Container $container is running"
     else
-      log_fail "Container $container is NOT running (status: ${status:-not found})"
+      log_fail "container_$container" "Container $container is NOT running (status: ${status:-not found})"
     fi
   done
 }
@@ -100,9 +106,9 @@ check_containers() {
 # ---------------------------------------------------------------------------
 check_mkdd_health() {
   if curl -fsS -m 10 "http://localhost:${MKDD_UI_PORT}/api/health" >/dev/null 2>&1; then
-    log_pass "MKDD backend /api/health responds"
+    log_pass "mkdd_health" "MKDD backend /api/health responds"
   else
-    log_fail "MKDD backend /api/health did NOT respond within 10s"
+    log_fail "mkdd_health" "MKDD backend /api/health did NOT respond within 10s"
   fi
 }
 
@@ -111,9 +117,9 @@ check_mkdd_health() {
 # ---------------------------------------------------------------------------
 check_agent_canvas_ready() {
   if curl -fsS -m 10 "http://localhost:${AGENT_CANVAS_PORT}/ready" >/dev/null 2>&1; then
-    log_pass "Agent Canvas /ready responds"
+    log_pass "agent_canvas_ready" "Agent Canvas /ready responds"
   else
-    log_fail "Agent Canvas /ready did NOT respond within 10s"
+    log_fail "agent_canvas_ready" "Agent Canvas /ready did NOT respond within 10s"
   fi
 }
 
@@ -132,9 +138,9 @@ check_git_ownership() {
      git config --global --get-all safe.directory 2>/dev/null | grep -qx '\*' && echo OK || echo MISSING" \
     2>/dev/null)
   if [ "$output" = "OK" ]; then
-    log_pass "Git safe.directory exception is present in agent-canvas"
+    log_pass "git_ownership" "Git safe.directory exception is present in agent-canvas"
   else
-    log_fail "Git safe.directory exception is MISSING in agent-canvas (new conversations will fail with 'dubious ownership')"
+    log_fail "git_ownership" "Git safe.directory exception is MISSING in agent-canvas (new conversations will fail with 'dubious ownership')"
   fi
 }
 
@@ -149,9 +155,9 @@ check_git_ownership() {
 check_auto_deploy_timer() {
   next=$(systemctl show "$AUTO_DEPLOY_TIMER" -p NextElapseUSecRealtime --value 2>/dev/null)
   if [ -n "$next" ] && [ "$next" != "0" ]; then
-    log_pass "$AUTO_DEPLOY_TIMER has a real scheduled next run"
+    log_pass "auto_deploy_timer" "$AUTO_DEPLOY_TIMER has a real scheduled next run"
   else
-    log_fail "$AUTO_DEPLOY_TIMER has NO scheduled next run (needs: systemctl start ${AUTO_DEPLOY_TIMER%.timer}.service to re-anchor)"
+    log_fail "auto_deploy_timer" "$AUTO_DEPLOY_TIMER has NO scheduled next run (needs: systemctl start ${AUTO_DEPLOY_TIMER%.timer}.service to re-anchor)"
   fi
 }
 
@@ -166,11 +172,11 @@ check_auto_deploy_timer() {
 # ---------------------------------------------------------------------------
 check_deep_conversation_lookup() {
   if [ -z "$HEALTH_CHECK_PROJECT" ] || [ -z "$HEALTH_CHECK_EMPLOYEE_ID" ] || [ -z "$HEALTH_CHECK_EMPLOYEE_NAME" ]; then
-    log_skip "Deep conversation lookup skipped (MKDD_HEALTH_CHECK_PROJECT/EMPLOYEE_ID/EMPLOYEE_NAME not set)"
+    log_skip "deep_lookup" "Deep conversation lookup skipped (MKDD_HEALTH_CHECK_PROJECT/EMPLOYEE_ID/EMPLOYEE_NAME not set)"
     return
   fi
   if [ ! -f "$INTERNAL_KEY_FILE" ]; then
-    log_skip "Deep conversation lookup skipped (internal service key not found yet at $INTERNAL_KEY_FILE)"
+    log_skip "deep_lookup" "Deep conversation lookup skipped (internal service key not found yet at $INTERNAL_KEY_FILE)"
     return
   fi
   service_key=$(cat "$INTERNAL_KEY_FILE")
@@ -181,9 +187,9 @@ check_deep_conversation_lookup() {
   response=$(curl -fsS -m 12 -H "X-Internal-Service-Key: $service_key" \
     "http://localhost:${MKDD_UI_PORT}/api/internal/health-deep?${qs}" 2>/dev/null)
   if echo "$response" | grep -q '"ok":true'; then
-    log_pass "Deep conversation lookup succeeded ($response)"
+    log_pass "deep_lookup" "Deep conversation lookup succeeded ($response)"
   else
-    log_fail "Deep conversation lookup FAILED (response: ${response:-no response within 12s})"
+    log_fail "deep_lookup" "Deep conversation lookup FAILED (response: ${response:-no response within 12s})"
   fi
 }
 
@@ -206,11 +212,23 @@ echo "---------------------------------------------------------------------"
 # python3's json.dumps (never a hand-assembled JSON string), which safely
 # handles the Arabic text in check messages - directly avoiding a repeat
 # of this same script's earlier UTF-8 delimiter corruption bug.
+#
+# Also detects TRANSITIONS against the previous run (BUGS_AND_FIXES.md
+# #159) - a check going from healthy to failing, or failing to healthy
+# again - and appends them to a bounded history log. Logging every check
+# on every 5-minute run would be excessive and mostly redundant "still
+# healthy" noise; transitions are the actually useful incident signal
+# for a history view.
 # ---------------------------------------------------------------------------
 write_status_file() {
   mkdir -p "$(dirname "$STATUS_FILE")" 2>/dev/null || true
+  mkdir -p "$(dirname "$HISTORY_FILE")" 2>/dev/null || true
   printf '%s\n' "${RESULTS[@]}" | python3 -c '
 import json, sys, datetime
+
+status_file = sys.argv[1]
+history_file = sys.argv[2]
+max_history_entries = 500
 
 checks = []
 for line in sys.stdin:
@@ -225,18 +243,57 @@ for line in sys.stdin:
     checks.append({"name": name, "ok": ok, "message": message})
 
 overall_ok = all(c["ok"] is not False for c in checks)
-status = {
-    "checkedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-    "ok": overall_ok,
-    "checks": checks,
-}
+now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+# Read the PREVIOUS status (before overwriting it) to detect transitions.
+previous_by_name = {}
+try:
+    with open(status_file, "r", encoding="utf-8") as f:
+        previous = json.load(f)
+    for c in previous.get("checks", []):
+        previous_by_name[c["name"]] = c.get("ok")
+except (OSError, json.JSONDecodeError):
+    pass  # no previous status yet (first run) - nothing to compare against
+
+new_history_entries = []
+for c in checks:
+    old_ok = previous_by_name.get(c["name"])
+    new_ok = c["ok"]
+    # Only log true<->false transitions - a check appearing/disappearing
+    # (e.g. the optional deep-lookup check being configured or not) or a
+    # skip state is not itself an incident.
+    if old_ok is None or new_ok is None or old_ok == new_ok:
+        continue
+    new_history_entries.append({
+        "at": now,
+        "name": c["name"],
+        "transition": "recovered" if new_ok else "became_unhealthy",
+        "message": c["message"],
+    })
+
+status = {"checkedAt": now, "ok": overall_ok, "checks": checks}
 
 try:
-    with open(sys.argv[1], "w", encoding="utf-8") as f:
+    with open(status_file, "w", encoding="utf-8") as f:
         json.dump(status, f, ensure_ascii=False, indent=2)
 except OSError as e:
     print(f"Failed to write status file: {e}", file=sys.stderr)
-' "$STATUS_FILE" 2>&1 || echo "Warning: failed to write $STATUS_FILE" >&2
+
+if new_history_entries:
+    existing_lines = []
+    try:
+        with open(history_file, "r", encoding="utf-8") as f:
+            existing_lines = [line.rstrip("\n") for line in f if line.strip()]
+    except OSError:
+        pass
+    new_lines = [json.dumps(e, ensure_ascii=False) for e in new_history_entries]
+    combined = (existing_lines + new_lines)[-max_history_entries:]
+    try:
+        with open(history_file, "w", encoding="utf-8") as f:
+            f.write("\n".join(combined) + "\n")
+    except OSError as e:
+        print(f"Failed to write history file: {e}", file=sys.stderr)
+' "$STATUS_FILE" "$HISTORY_FILE" 2>&1 || echo "Warning: failed to write status/history files" >&2
 }
 
 write_status_file

@@ -477,6 +477,20 @@ export async function fetchSystemHealth(): Promise<SystemHealthStatus> {
   return r.json();
 }
 
+export type SystemHealthHistoryEvent = {
+  at: string;
+  name: string;
+  transition: "became_unhealthy" | "recovered";
+  message: string;
+};
+
+export async function fetchSystemHealthHistory(): Promise<{
+  events: SystemHealthHistoryEvent[];
+}> {
+  const r = await fetch("/api/system-health-history");
+  return r.json();
+}
+
 /**
  * Authentication (BUGS_AND_FIXES.md #127). All these calls include
  * credentials (the session cookie) automatically since they're same-

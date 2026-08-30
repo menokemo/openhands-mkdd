@@ -137,3 +137,51 @@ export async function handleSystemHealth(req, res) {
   }
   return true;
 }
+
+const HEALTH_HISTORY_FILE =
+  process.env.MKDD_HEALTH_HISTORY_FILE ?? "/mkdd-data/health-history.jsonl";
+
+/**
+ * GET /api/system-health-history — reads the bounded JSONL log of
+ * check TRANSITIONS (healthy->failing or failing->healthy) that
+ * deploy/health-check.sh appends to (BUGS_AND_FIXES.md #159), for the
+ * "History" tab on the System Health screen. Deliberately transitions
+ * only, not every check on every 5-minute run - the owner asked for
+ * both a live status view AND a history of actual incidents, and a
+ * log of "still healthy" entries every 5 minutes would bury the
+ * useful signal.
+ *
+ * Same normal owner-session authentication as /api/system-health -
+ * called directly from the browser.
+ */
+export async function handleSystemHealthHistory(req, res) {
+  if (!(req.method === "GET" && req.url === "/api/system-health-history")) {
+    return false;
+  }
+
+  try {
+    const raw = fs.readFileSync(HEALTH_HISTORY_FILE, "utf-8");
+    const events = raw
+      .split("\n")
+      .filter((line) => line.trim())
+      .map((line) => {
+        try {
+          return JSON.parse(line);
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean)
+      .reverse(); // most recent first, matching every other list in this app
+
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ events }));
+  } catch {
+    // No history file yet - no transitions have happened since the
+    // monitoring system was set up, which is a genuinely good state,
+    // not an error.
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ events: [] }));
+  }
+  return true;
+}

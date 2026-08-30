@@ -22,6 +22,7 @@ import {
   handleInternalAlert,
   handleInternalHealthDeep,
   handleSystemHealth,
+  handleSystemHealthHistory,
 } from "./routes/internal-health.mjs";
 import { handleProjectTotalCost } from "./routes/project-cost.mjs";
 import { startLivePortProxies } from "./live-port-proxy.mjs";
@@ -105,6 +106,7 @@ const ROUTES = [
   handleInternalAlert,
   handleInternalHealthDeep,
   handleSystemHealth,
+  handleSystemHealthHistory,
   handleStaticFiles,
 ];
 

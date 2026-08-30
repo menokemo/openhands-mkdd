@@ -3674,3 +3674,45 @@ header button,
   color: var(--mkdd-text-muted);
   flex-shrink: 0;
 }
+
+.system-health-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--mkdd-border-subtle);
+  margin-bottom: 12px;
+}
+
+.system-health-tab {
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mkdd-text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.system-health-tab-active {
+  color: var(--mkdd-accent, var(--mkdd-success));
+  border-bottom-color: var(--mkdd-accent, var(--mkdd-success));
+}
+
+.system-health-history-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--mkdd-border-subtle);
+}
+
+.system-health-history-row:last-child {
+  border-bottom: none;
+}
+
+.system-health-history-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
