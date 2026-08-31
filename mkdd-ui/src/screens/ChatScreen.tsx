@@ -36,6 +36,7 @@ type Props = {
   hasOlderMessages: boolean;
   loadingOlder: boolean;
   isOpeningConversation: boolean;
+  openError: string | null;
   loadOlderMessages: () => Promise<void>;
 };
 
@@ -65,6 +66,7 @@ export default function ChatScreen({
   hasOlderMessages,
   loadingOlder,
   isOpeningConversation,
+  openError,
   loadOlderMessages,
 }: Props) {
   const employeeName =
@@ -323,6 +325,16 @@ export default function ChatScreen({
                   : "First load for this employee can take a bit longer"}
               </div>
             )}
+          </div>
+        )}
+        {openError && messages.length === 0 && (
+          <div className="chat-loading-initial chat-open-error">
+            <div>
+              {language === "ar"
+                ? "حصل خطأ أثناء فتح المحادثة"
+                : "An error occurred while opening the conversation"}
+            </div>
+            <pre className="error-boundary-detail">{openError}</pre>
           </div>
         )}
         {loadingOlder && (

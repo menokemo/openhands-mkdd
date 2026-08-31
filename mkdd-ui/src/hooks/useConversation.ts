@@ -71,6 +71,7 @@ function buildChatWebSocketUrl(
 export function useConversation({ project, employee }: Params) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isOpeningConversation, setIsOpeningConversation] = useState(false);
+  const [openError, setOpenError] = useState<string | null>(null);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
   const [workPlan, setWorkPlan] = useState<WorkPlan | null>(null);
   const [cost, setCost] = useState<ConversationCost | null>(null);
@@ -130,6 +131,7 @@ export function useConversation({ project, employee }: Params) {
     if (!project || !employee) return;
 
     setIsOpeningConversation(true);
+    setOpenError(null);
     let cancelled = false;
 
     fetchChatOpen(project.path, employee.id, employee.name)
@@ -146,9 +148,21 @@ export function useConversation({ project, employee }: Params) {
         setHasOlderMessages(data.hasMore ?? false);
         setOldestPageId(data.nextPageId ?? null);
       })
-      .catch(() => {
-        // Keep the last known-good conversation state visible.
-        if (!cancelled) setIsOpeningConversation(false);
+      .catch((error: unknown) => {
+        // BUGS_AND_FIXES.md #179: this used to be completely silent -
+        // no console trace, no visible symptom - so a real network/parse
+        // failure here left the screen simply blank with zero clue why,
+        // and (unlike a rendering exception) never reached the new
+        // ErrorBoundary either, since a rejected Promise in async code
+        // isn't a React rendering-phase throw. Now logs AND surfaces the
+        // real error message so it's actually diagnosable.
+        // eslint-disable-next-line no-console -- deliberate: the only
+        // trace of an otherwise fully silent failure.
+        console.error("fetchChatOpen failed:", error);
+        if (!cancelled) {
+          setIsOpeningConversation(false);
+          setOpenError(error instanceof Error ? error.message : String(error));
+        }
       });
 
     return () => {
@@ -409,5 +423,6 @@ export function useConversation({ project, employee }: Params) {
     loadingOlder,
     loadOlderMessages,
     isOpeningConversation,
+    openError,
   };
 }

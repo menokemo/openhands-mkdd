@@ -72,6 +72,7 @@ export default function App({ currentUser, onAvatarChange }: Props) {
     loadingOlder,
     loadOlderMessages,
     isOpeningConversation,
+    openError,
   } = useConversation({
     project: selectedProject,
     employee: selectedEmployee,
@@ -183,6 +184,7 @@ export default function App({ currentUser, onAvatarChange }: Props) {
         loadingOlder={loadingOlder}
         loadOlderMessages={loadOlderMessages}
         isOpeningConversation={isOpeningConversation}
+        openError={openError}
       />
     );
   } else if (selectedProject) {
