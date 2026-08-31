@@ -337,6 +337,27 @@ export default function ChatScreen({
             <pre className="error-boundary-detail">{openError}</pre>
           </div>
         )}
+        {!isOpeningConversation &&
+          !openError &&
+          messages.length === 0 &&
+          activity.length > 0 && (
+            <div className="chat-loading-initial chat-working-no-messages">
+              <div>
+                {executionStatus === "running"
+                  ? language === "ar"
+                    ? "الموظف شغال حاليًا - لسه مبعتش أي رسالة نصية"
+                    : "The employee is currently working - no text message sent yet"
+                  : language === "ar"
+                    ? "مفيش رسائل نصية حديثة، بس فيه أوامر تنفيذية حقيقية اتنفَّذت"
+                    : "No recent text messages, but real executed actions exist"}
+              </div>
+              <div className="chat-loading-initial-hint">
+                {language === "ar"
+                  ? 'شوف تاب "النشاط" في بيانات الموظف لمتابعة الأوامر التنفيذية'
+                  : 'Check the "Activity" tab in Employee details to see the executed actions'}
+              </div>
+            </div>
+          )}
         {loadingOlder && (
           <div className="chat-loading-older">
             {language === "ar" ? "جاري تحميل رسائل أقدم…" : "Loading older messages…"}
