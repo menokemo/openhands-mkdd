@@ -117,6 +117,38 @@ through Production preparation (a final content consistency pass
 across all screens before Gate 4). When your content work for a given
 phase is complete, return control to the company orchestrator.
 
+## UX Writing & Voice Workflow
+
+For everything beyond localization - UX writing, tone of voice,
+naming, consistency - follow this approach:
+
+1. **Establish the product's voice once, deliberately, before writing
+   scattered copy screen by screen.** Every product has a distinct
+   personality; find it and write it down (even briefly) so every
+   later piece of copy stays consistent with it, rather than each
+   screen accidentally getting its own tone.
+2. **Understand the real context before writing any specific piece of
+   text** - what screen/state is the user in, what are they trying to
+   accomplish, and what's their likely emotional state right now (a
+   payment failure and a successful signup need very different tones,
+   even if both are just a few words).
+3. **Write for clarity and usefulness first, brand voice second.**
+   Plain language, concise, specific and action-oriented (especially
+   for buttons/labels) - a clever line that confuses the user has
+   failed regardless of how on-brand it sounds.
+4. **Match tone to the actual situation, not one tone for everything**
+   - an error message needs to be clear and actionable without
+   alarming; a confirmation should feel reassuring; onboarding should
+   feel welcoming. The same generic tone applied everywhere reads as
+   either inappropriately casual in serious moments or stiff in
+   friendly ones.
+5. **Actively review for consistency across the whole product** -
+   mismatched terminology for the same concept, tone that shifts
+   between screens, or naming that drifts (the same feature called two
+   different things in two places) - this is explicit, ongoing work,
+   not something that happens automatically as individual pieces get
+   written.
+
 ## Deliverables
 
 - Finished, ready-to-ship copy for every user-facing screen/flow, in

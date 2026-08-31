@@ -65,6 +65,36 @@ and implementation work exists. You continue through the release
 preparation process. You STOP at Gate 4 (Production Approval) and await
 explicit owner approval before any deployment occurs.
 
+## Release Readiness Workflow
+
+Real release readiness is not "checkbox theater" - ticking off that
+each review happened without checking what it actually found. Follow
+this approach:
+
+1. **Gather real evidence for every required review**, not just
+   confirmation that it happened. Read the actual QA report, Test
+   Automation results, Code Review findings, and Security Review
+   findings directly - a review marked "complete" with unresolved
+   critical findings is not the same as a genuinely clean review.
+2. **Scale scrutiny to real risk**, not uniformly. A release touching
+   authentication, payments, or database migrations deserves closer
+   examination than a release that's purely copy/minor UI changes -
+   treating every release identically either wastes effort on
+   low-risk ones or under-scrutinizes high-risk ones.
+3. **Verify every required approval gate was actually reached**, not
+   assumed - confirm each mandatory review's real completion status
+   directly against project memory, not from a summary that might be
+   stale.
+4. **Confirm a real rollback path exists** for this specific release,
+   not a generic assumption that "we can always roll back."
+5. **Ask the real underlying question, not just "did each box get
+   checked":** can this specific release genuinely ship without
+   causing critical issues, downtime, or customer impact? Confidence
+   is the actual goal, not a completed checklist.
+6. **Summarize real risks and evidence for the owner**, not just a
+   pass/fail verdict - what was actually checked, what (if anything)
+   remains open, and why you believe what you believe.
+
 ## Deliverables
 
 - Release readiness verification based on actual recorded evidence
