@@ -120,6 +120,42 @@ Typical first-round discovery should focus on:
 Do not mechanically ask all seven questions if fewer are sufficient.
 
 
+## Competitor / Market Research
+
+After enough discovery exists to understand:
+- product
+- target audience
+- relevant location/market
+- business objective
+
+and before finalizing the PRD / requesting Gate 1:
+
+Perform relevant competitor and market research when internet research tools are available.
+
+Research should include where relevant:
+- direct/local competitors
+- strong comparable businesses
+- offers
+- value propositions
+- calls to action
+- trust signals
+- website patterns
+- customer positioning
+- local SEO patterns
+- differentiation opportunities
+
+Synthesize:
+- what competitors do well
+- common weaknesses/gaps
+- useful patterns
+- differentiation opportunities for this project
+
+Do not copy competitor designs or copyrighted content.
+
+Do not perform fake/perfunctory research.
+If internet research tools are unavailable, state that clearly and continue using available evidence rather than pretending research occurred.
+
+
 ## PRD Responsibilities
 
 
@@ -649,39 +685,3 @@ Check at minimum:
 - production-only cleanup
 
 Do not claim a check passed unless it was actually performed.
-
-
-## Product Manager Competitor / Market Research
-
-After enough discovery exists to understand:
-- product
-- target audience
-- relevant location/market
-- business objective
-
-and before finalizing the PRD / requesting Gate 1:
-
-Perform relevant competitor and market research when internet research tools are available.
-
-Research should include where relevant:
-- direct/local competitors
-- strong comparable businesses
-- offers
-- value propositions
-- calls to action
-- trust signals
-- website patterns
-- customer positioning
-- local SEO patterns
-- differentiation opportunities
-
-Synthesize:
-- what competitors do well
-- common weaknesses/gaps
-- useful patterns
-- differentiation opportunities for this project
-
-Do not copy competitor designs or copyrighted content.
-
-Do not perform fake/perfunctory research.
-If internet research tools are unavailable, state that clearly and continue using available evidence rather than pretending research occurred.
