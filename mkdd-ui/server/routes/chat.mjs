@@ -416,28 +416,77 @@ export async function handleChatNew(req, res) {
  * the UI expects to render top-to-bottom), plus whether older events
  * exist and the page_id needed to fetch them (see fetchOlderEvents).
  */
-async function fetchRecentEvents(conversationId, limit) {
-  const eventQs = new URLSearchParams({
-    limit: String(limit),
-    sort_order: "TIMESTAMP_DESC",
-  });
+// BUGS_AND_FIXES.md #183: the real conversation this was diagnosed
+// against averaged roughly one message per ~14 raw events (mostly
+// Action/Observation noise between messages) - fetching only the
+// first RAW page (previously 50 raw events) could easily surface zero
+// or one real message even when many more exist just slightly further
+// back. TARGET_MESSAGE_COUNT is the number of real messages the
+// initial load tries to guarantee are visible (matching what a real
+// messaging app shows on open); MAX_RAW_PAGES bounds the worst case
+// (a conversation with almost no messages at all) so this can never
+// hang or fetch unboundedly - matches the real maximum conversation
+// size observed in this project (15 pages / 1499 events) with margin.
+const TARGET_MESSAGE_COUNT = 20;
+const MAX_RAW_PAGES = 20;
 
-  const eventsResponse = await openhands(
-    `/api/conversations/${conversationId}/events/search?${eventQs}`,
+async function fetchRecentEvents(conversationId) {
+  let pageId = null;
+  let pagesFetched = 0;
+  let hasMore = false;
+  let nextPageId = null;
+  const rawItemsNewestFirst = [];
+  let realMessageCount = 0;
+
+  do {
+    const eventQs = new URLSearchParams({ limit: "100", sort_order: "TIMESTAMP_DESC" });
+    if (pageId) eventQs.set("page_id", pageId);
+
+    // eslint-disable-next-line no-await-in-loop -- sequential
+    // pagination by design, bounded by MAX_RAW_PAGES below.
+    const eventsResponse = await openhands(
+      `/api/conversations/${conversationId}/events/search?${eventQs}`,
+    );
+    pagesFetched++;
+
+    if (!eventsResponse.ok) {
+      // BUGS_AND_FIXES.md #177: a mid-pagination failure keeps
+      // whatever was already fetched, rather than discarding it.
+      hasMore = false;
+      nextPageId = null;
+      break;
+    }
+
+    // eslint-disable-next-line no-await-in-loop -- see above.
+    const pageData = await eventsResponse.json();
+    const pageItems = pageData.items ?? [];
+    rawItemsNewestFirst.push(...pageItems);
+
+    for (const rawItem of pageItems) {
+      const isMessage =
+        rawItem.kind === "MessageEvent" ||
+        (rawItem.kind === "ActionEvent" &&
+          rawItem.tool_name === "finish" &&
+          typeof rawItem.action?.message === "string");
+      if (isMessage) realMessageCount++;
+    }
+
+    pageId = pageData.next_page_id ?? null;
+    hasMore = Boolean(pageId);
+    nextPageId = pageId;
+  } while (
+    pageId &&
+    realMessageCount < TARGET_MESSAGE_COUNT &&
+    pagesFetched < MAX_RAW_PAGES
   );
 
-  if (!eventsResponse.ok) {
-    return { status: eventsResponse.status, items: [], hasMore: false, nextPageId: null };
-  }
-
-  const pageData = await eventsResponse.json();
-  const items = (pageData.items ?? []).slice().reverse(); // newest-first -> oldest-first
+  const items = rawItemsNewestFirst.slice().reverse(); // newest-first -> oldest-first
 
   return {
-    status: eventsResponse.status,
+    status: 200,
     items: items.map(normalizeEvent).filter(Boolean),
-    hasMore: Boolean(pageData.next_page_id),
-    nextPageId: pageData.next_page_id ?? null,
+    hasMore,
+    nextPageId,
   };
 }
 
@@ -587,10 +636,7 @@ export async function handleChatOpen(req, res) {
   }
 
   const conversation = normalizeConversation(found);
-  const { status, items, hasMore, nextPageId } = await fetchRecentEvents(
-    conversation.id,
-    RECENT_EVENTS_PAGE_SIZE,
-  );
+  const { status, items, hasMore, nextPageId } = await fetchRecentEvents(conversation.id);
 
   res.writeHead(status, { "content-type": "application/json" });
   res.end(
@@ -678,10 +724,7 @@ export async function handleChatRecentEvents(req, res) {
     return true;
   }
 
-  const { status, items, hasMore, nextPageId } = await fetchRecentEvents(
-    conversationId,
-    RECENT_EVENTS_PAGE_SIZE,
-  );
+  const { status, items, hasMore, nextPageId } = await fetchRecentEvents(conversationId);
 
   res.writeHead(status, { "content-type": "application/json" });
   res.end(
