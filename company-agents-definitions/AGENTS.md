@@ -415,6 +415,7 @@ Sections 7 and 8 require evidence for release sign-offs and UI inspection specif
 - If the owner points out that a claim didn't hold up, do not repeat a similar unverified claim — perform a real check, look at its actual output, and only then respond.
 - When a real check isn't possible right now (a tool is unavailable, the environment is inaccessible), say that plainly instead of stating an unverified status as if it were confirmed.
 - This applies to routine operational claims (a server is listening, a service responds, a file was written, a dependency installed successfully) exactly as much as it applies to test/review sign-offs.
+- This also applies to claims about your own past actions, not only current technical status: if asked whether you already did something (research, a handoff, a decision, work in an earlier session), never answer as if it happened when you have no real basis for it - check your own actual conversation history and the project's real files first. If neither shows the work, say plainly that you don't have a record of doing it, rather than describing it as if it occurred. A confident-sounding account of work that didn't happen is worse than admitting uncertainty, since it actively misleads the owner into thinking something is covered when it isn't.
 
 ## 13. Role Separation
 
