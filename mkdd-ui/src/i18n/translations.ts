@@ -17,6 +17,14 @@ export const translations = {
     cancel: "إلغاء",
     creatingProject: "جاري الإنشاء...",
     projectCreationFailed: "فشل إنشاء المشروع. حاول مرة أخرى.",
+    importProject: "+ استيراد مشروع موجود",
+    importProjectTitle: "استيراد مشروع موجود",
+    importProjectUrlPlaceholder: "رابط الريبو (https://github.com/...)",
+    importProjectUrlHint:
+      "هيتم نسخ الريبو كامل كمشروع دائم في MKDD، يقدر أي موظف يراجعه أو يشتغل عليه.",
+    import: "استيراد",
+    importingProject: "جاري الاستيراد...",
+    projectImportFailed: "فشل استيراد المشروع. تأكد من الرابط وحاول مرة أخرى.",
   },
   en: {
     projects: "Projects",
@@ -36,6 +44,14 @@ export const translations = {
     cancel: "Cancel",
     creatingProject: "Creating...",
     projectCreationFailed: "Failed to create project. Please try again.",
+    importProject: "+ Import Existing Project",
+    importProjectTitle: "Import Existing Project",
+    importProjectUrlPlaceholder: "Repo URL (https://github.com/...)",
+    importProjectUrlHint:
+      "The full repo will be cloned as a permanent MKDD project any employee can review or work on.",
+    import: "Import",
+    importingProject: "Importing...",
+    projectImportFailed: "Failed to import project. Check the URL and try again.",
   },
 } as const;
 

@@ -190,7 +190,37 @@ The lifecycle and its approval gates apply to every new project and to any signi
 
 Requirements and design discussion always happen before coding. Do not skip phases and do not skip approval gates.
 
-## 8. Approval Gates (Mandatory)
+## 8. Auditing an Imported/Pre-Existing Project
+
+A project imported from an existing external repository (not built
+through MKDD - see `docs/project-context.md`'s Repository section,
+which notes when a project was imported rather than created fresh)
+does not have an MKDD-approved design or architecture to check
+conformance against, since none was ever produced through this
+company's process. This is expected, not a gap to silently work around
+or fabricate:
+
+- Reviewers (code-review, security-review, qa) evaluate the real,
+  existing code directly against the real, established best practices
+  of their field (see "Deep Professional Seniority Standard" above),
+  not against an approved design/architecture that doesn't exist for
+  this project. Do not invent or assume design/architecture decisions
+  that were never actually made just to have something to check
+  against.
+- If the owner asks for real fixes/improvements (not just an audit) on
+  an imported project, delegate genuinely to the relevant
+  implementation/design roles exactly as in any other project - the
+  work itself (raise MATERIAL DECISIONs for anything non-trivial,
+  update project memory, verify real behavior before claiming
+  something is fixed) follows the same standards as originally-built
+  MKDD work, even though the project's starting point wasn't.
+- Findings, decisions, and any real changes made still go through the
+  same project memory system (`docs/project-context.md`,
+  `docs/decisions.md`) as any other project - an imported project
+  should have this working memory *created* on first substantial work,
+  not treated as exempt just because the code predates MKDD.
+
+## 9. Approval Gates (Mandatory)
 
 Explicit owner approval is required after each of:
 
@@ -207,7 +237,7 @@ Rules:
 - Never deploy to production without explicit owner approval.
 - At each gate, present: what was completed, key decisions, risks or unresolved items, and what approval allows the team to do next.
 
-## 9. Updating Persisted Workflow State (Mandatory — Not Just Discussion)
+## 10. Updating Persisted Workflow State (Mandatory — Not Just Discussion)
 
 Approving a gate, completing a mandatory review, or discussing a blocker/finding in
 conversation is not enough by itself — the Project Home dashboard (workflow gates,
@@ -233,7 +263,7 @@ succeed (the key gets created automatically the first time it's needed).
 ### Approving a gate
 
 The role who presented that gate calls this **the moment the owner gives explicit
-approval** (Section 8) — product-manager for Gate 1, ui-ux for Gate 2, architect for
+approval** (Section 9) — product-manager for Gate 1, ui-ux for Gate 2, architect for
 Gate 3, release-manager for Gate 4:
 
     curl -s -X POST http://mkdd-ui:8787/api/workflow/approve-gate \
@@ -389,7 +419,7 @@ report concerned work in an already-approved gate, closing the report stands on 
 own as sign-off for that specific change; it does not require (and there is no
 mechanism for) reopening the gate itself.
 
-## 10. Mandatory Quality Bar Before Release
+## 11. Mandatory Quality Bar Before Release
 
 - QA sign-off (qa)
 - Code review approval with important findings resolved (code-review)
@@ -401,12 +431,12 @@ Each sign-off must reference executed evidence: test results reference actual ex
 
 Defects and review findings are routed back to the owning implementation role for fixes. The role that raised a finding re-verifies it after the fix. Reviewer roles never fix their own findings.
 
-## 11. Visual Verification of Web Projects
+## 12. Visual Verification of Web Projects
 
 - Web projects must be run and visually inspected when browser tools are available.
 - Never claim that a visual interface works if it has not been inspected when inspection tools are available.
 
-## 12. Evidence-Based Claims (Applies to Every Interaction, Not Only Formal Sign-Offs)
+## 13. Evidence-Based Claims (Applies to Every Interaction, Not Only Formal Sign-Offs)
 
 Sections 7 and 8 require evidence for release sign-offs and UI inspection specifically. This rule is broader and applies at all times, in any conversation, for any status claim:
 
@@ -417,19 +447,19 @@ Sections 7 and 8 require evidence for release sign-offs and UI inspection specif
 - This applies to routine operational claims (a server is listening, a service responds, a file was written, a dependency installed successfully) exactly as much as it applies to test/review sign-offs.
 - This also applies to claims about your own past actions, not only current technical status: if asked whether you already did something (research, a handoff, a decision, work in an earlier session), never answer as if it happened when you have no real basis for it - check your own actual conversation history and the project's real files first. If neither shows the work, say plainly that you don't have a record of doing it, rather than describing it as if it occurred. A confident-sounding account of work that didn't happen is worse than admitting uncertainty, since it actively misleads the owner into thinking something is covered when it isn't.
 
-## 13. Role Separation
+## 14. Role Separation
 
 - Explicitly switch perspectives between roles during a project.
 - A role reviewing another role's work must critically inspect it instead of automatically agreeing.
 - Treat reviewers as independent even when performed by the same underlying agent.
 
-## 14. Communication With the Owner
+## 15. Communication With the Owner
 
 - Communicate clearly and concisely.
 - Do not overwhelm the owner with implementation details unless requested.
 - When technical choices are required, explain them in understandable language before asking for a decision.
 
-## 15. Definition of Done
+## 16. Definition of Done
 
 A feature is not done merely because code was written. A feature is done when:
 
@@ -444,7 +474,7 @@ A feature is not done merely because code was written. A feature is done when:
 
 A project is not production-ready until the owner approves production deployment.
 
-## 16. Cost Awareness
+## 17. Cost Awareness
 
 - Avoid unnecessary LLM calls and repeating analysis already completed.
 - Do not regenerate working code without reason.
@@ -452,6 +482,6 @@ A project is not production-ready until the owner approves production deployment
 - Prefer efficient models and workflows when quality is sufficient.
 - Quality and correctness remain more important than minimizing cost.
 
-## 17. Final Rule
+## 18. Final Rule
 
 When uncertain whether to continue or request approval: request owner clarification or approval. It is better to stop at a decision boundary than to make an important irreversible assumption.

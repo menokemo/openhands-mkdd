@@ -32,15 +32,24 @@ type Props = {
     cancel: string;
     creatingProject: string;
     projectCreationFailed: string;
+    importProject: string;
+    importProjectTitle: string;
+    importProjectUrlPlaceholder: string;
+    importProjectUrlHint: string;
+    import: string;
+    importingProject: string;
+    projectImportFailed: string;
   };
   onOpenProject: (project: Workspace) => void;
   onCreateProject: (name: string, color: string) => Promise<void>;
+  onImportProject: (name: string, url: string, color: string) => Promise<void>;
 };
 
 /**
- * Body content for the Projects screen (list + "new project" flow).
- * The header lives in AppHeader (rendered once by App.tsx, identical on
- * every screen) - this component only owns what's specific to this page.
+ * Body content for the Projects screen (list + "new project"/"import
+ * project" flows). The header lives in AppHeader (rendered once by
+ * App.tsx, identical on every screen) - this component only owns what's
+ * specific to this page.
  */
 export default function ProjectsScreen({
   projects,
@@ -50,32 +59,43 @@ export default function ProjectsScreen({
   t,
   onOpenProject,
   onCreateProject,
+  onImportProject,
 }: Props) {
-  const [isCreating, setIsCreating] = useState(false);
+  // BUGS_AND_FIXES.md #194: "create" and "import" share the same modal
+  // shape (name + color, submit/cancel) apart from the extra URL field,
+  // so one mode flag drives both instead of duplicating the whole modal.
+  const [modalMode, setModalMode] = useState<"create" | "import" | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectColor, setNewProjectColor] = useState(PROJECT_COLORS[0]);
+  const [importUrl, setImportUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const closeModal = () => {
-    setIsCreating(false);
+    setModalMode(null);
     setNewProjectName("");
     setNewProjectColor(PROJECT_COLORS[0]);
+    setImportUrl("");
     setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProjectName.trim() || submitting) return;
+    if (modalMode === "import" && !importUrl.trim()) return;
 
     setSubmitting(true);
     setError(null);
 
     try {
-      await onCreateProject(newProjectName.trim(), newProjectColor);
+      if (modalMode === "import") {
+        await onImportProject(newProjectName.trim(), importUrl.trim(), newProjectColor);
+      } else {
+        await onCreateProject(newProjectName.trim(), newProjectColor);
+      }
       closeModal();
     } catch {
-      setError(t.projectCreationFailed);
+      setError(modalMode === "import" ? t.projectImportFailed : t.projectCreationFailed);
     } finally {
       setSubmitting(false);
     }
@@ -164,19 +184,25 @@ export default function ProjectsScreen({
       </section>
 
       <div className="new-project-bar">
-        <button className="new-project-button" onClick={() => setIsCreating(true)}>
+        <button className="new-project-button" onClick={() => setModalMode("create")}>
           {t.newProject}
+        </button>
+        <button
+          className="new-project-button new-project-button-secondary"
+          onClick={() => setModalMode("import")}
+        >
+          {t.importProject}
         </button>
       </div>
 
-      {isCreating && (
+      {modalMode && (
         <div className="modal-backdrop" onClick={closeModal}>
           <form
             className="modal"
             onClick={(e) => e.stopPropagation()}
             onSubmit={handleSubmit}
           >
-            <h2>{t.newProjectTitle}</h2>
+            <h2>{modalMode === "import" ? t.importProjectTitle : t.newProjectTitle}</h2>
 
             <input
               type="text"
@@ -187,6 +213,20 @@ export default function ProjectsScreen({
               disabled={submitting}
             />
             <p className="modal-hint">{t.newProjectNameHint}</p>
+
+            {modalMode === "import" && (
+              <>
+                <input
+                  type="text"
+                  value={importUrl}
+                  onChange={(e) => setImportUrl(e.target.value)}
+                  placeholder={t.importProjectUrlPlaceholder}
+                  disabled={submitting}
+                  dir="ltr"
+                />
+                <p className="modal-hint">{t.importProjectUrlHint}</p>
+              </>
+            )}
 
             <p className="modal-color-label">{t.newProjectColorLabel}</p>
             <div className="color-swatch-row">
@@ -209,8 +249,21 @@ export default function ProjectsScreen({
               <button type="button" onClick={closeModal} disabled={submitting}>
                 {t.cancel}
               </button>
-              <button type="submit" disabled={submitting || !newProjectName.trim()}>
-                {submitting ? t.creatingProject : t.create}
+              <button
+                type="submit"
+                disabled={
+                  submitting ||
+                  !newProjectName.trim() ||
+                  (modalMode === "import" && !importUrl.trim())
+                }
+              >
+                {modalMode === "import"
+                  ? submitting
+                    ? t.importingProject
+                    : t.import
+                  : submitting
+                    ? t.creatingProject
+                    : t.create}
               </button>
             </div>
           </form>

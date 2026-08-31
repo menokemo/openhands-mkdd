@@ -1792,6 +1792,7 @@ header button,
   bottom: 0;
   display: flex;
   justify-content: center;
+  gap: 10px;
   padding: 14px 18px calc(14px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, rgba(7, 10, 17, 0) 0%, var(--mkdd-page) 38%);
   z-index: 30;
@@ -1808,6 +1809,13 @@ header button,
   font-size: 15px;
   font-weight: 700;
   box-shadow: 0 10px 26px rgba(92, 75, 238, 0.35);
+}
+
+.new-project-button-secondary {
+  background: var(--mkdd-surface-2, rgba(255, 255, 255, 0.06));
+  color: var(--mkdd-text-secondary, var(--mkdd-text-primary));
+  box-shadow: none;
+  border: 1px solid var(--mkdd-border-subtle);
 }
 
 .new-project-button:active {

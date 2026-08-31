@@ -5,6 +5,7 @@ import {
   fetchEmployees,
   fetchWorkflowSummaries,
   createProject,
+  importProject,
   uploadEmployeeAvatar,
   type WorkflowSummary,
 } from "./api/client";
@@ -144,6 +145,11 @@ export default function App({ currentUser, onAvatarChange }: Props) {
     setProjects((prev) => [...prev, project]);
   };
 
+  const handleImportProject = async (name: string, url: string, color: string) => {
+    const project = await importProject(name, url, color);
+    setProjects((prev) => [...prev, project]);
+  };
+
   const handleUploadAvatar = async (employeeSlug: string, imageDataUrl: string) => {
     const avatarUrl = await uploadEmployeeAvatar(employeeSlug, imageDataUrl);
     setEmployees((prev) =>
@@ -212,6 +218,7 @@ export default function App({ currentUser, onAvatarChange }: Props) {
         t={t}
         onOpenProject={openProject}
         onCreateProject={handleCreateProject}
+        onImportProject={handleImportProject}
       />
     );
   }

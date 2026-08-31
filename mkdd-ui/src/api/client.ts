@@ -122,6 +122,26 @@ export async function createProject(name: string, color?: string): Promise<Works
   return data.project;
 }
 
+/**
+ * Imports an existing external Git repository as a permanent MKDD
+ * project (BUGS_AND_FIXES.md #194) - for auditing/maintaining a
+ * pre-existing project that wasn't built through MKDD.
+ */
+export async function importProject(
+  name: string,
+  url: string,
+  color?: string,
+): Promise<Workspace> {
+  const r = await fetch("/api/projects/import", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name, url, color }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error ?? "project_import_failed");
+  return data.project;
+}
+
 export async function fetchEmployees(): Promise<AgentProfile[]> {
   const r = await fetch("/api/employees");
   const data = await r.json();
