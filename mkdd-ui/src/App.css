@@ -3850,3 +3850,42 @@ header button,
   font-family: inherit;
   font-weight: 500;
 }
+
+.error-boundary-screen {
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--mkdd-bg, #0d0f14);
+  color: var(--mkdd-text, #e6e8ec);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.error-boundary-screen h2 {
+  color: var(--mkdd-danger, #f5618b);
+  margin: 0;
+}
+
+.error-boundary-detail {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--mkdd-border-subtle);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  direction: ltr;
+  text-align: left;
+}
+
+.error-boundary-screen button {
+  align-self: flex-start;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: var(--mkdd-accent);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}

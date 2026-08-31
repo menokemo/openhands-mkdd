@@ -18,6 +18,7 @@ import type { CurrentUser } from "./components/AuthGate";
 import ProjectListModal from "./components/ProjectListModal";
 import EmployeeListModal from "./components/EmployeeListModal";
 import EmployeeProfileModal from "./components/EmployeeProfileModal";
+import ErrorBoundary from "./components/ErrorBoundary";
 import "./App.css";
 import { useLanguage } from "./i18n/useLanguage";
 import { useTheme } from "./hooks/useTheme";
@@ -216,78 +217,80 @@ export default function App({ currentUser, onAvatarChange }: Props) {
   const isChatScreen = Boolean(selectedProject && selectedEmployee);
 
   return (
-    <>
-      {!isChatScreen && (
-        <AppHeader
+    <ErrorBoundary language={language}>
+      <>
+        {!isChatScreen && (
+          <AppHeader
+            language={language}
+            languageLabel={t.language}
+            setLanguage={setLanguage}
+            theme={theme}
+            setTheme={setTheme}
+            onOpenSidebar={() => {
+              refreshWorkflowSummaries();
+              setSidebarOpen(true);
+            }}
+          />
+        )}
+
+        {selectedProject && !isChatScreen && (
+          <BreadcrumbBar
+            projectName={selectedProject.name}
+            employeeName={currentEmployeeLabel}
+            backLabel={t.back}
+            onBack={selectedEmployee ? closeEmployee : closeProject}
+          />
+        )}
+
+        {screen}
+
+        <Sidebar
+          open={sidebarOpen}
           language={language}
-          languageLabel={t.language}
-          setLanguage={setLanguage}
-          theme={theme}
-          setTheme={setTheme}
-          onOpenSidebar={() => {
-            refreshWorkflowSummaries();
-            setSidebarOpen(true);
-          }}
+          onClose={() => setSidebarOpen(false)}
+          onSelect={setActiveSidebarMenu}
+          currentUser={currentUser}
+          onAvatarChange={onAvatarChange}
         />
-      )}
 
-      {selectedProject && !isChatScreen && (
-        <BreadcrumbBar
-          projectName={selectedProject.name}
-          employeeName={currentEmployeeLabel}
-          backLabel={t.back}
-          onBack={selectedEmployee ? closeEmployee : closeProject}
-        />
-      )}
+        {(activeSidebarMenu === "active" ||
+          activeSidebarMenu === "nearCompletion" ||
+          activeSidebarMenu === "completed") && (
+          <ProjectListModal
+            title={
+              {
+                active: language === "ar" ? "المشاريع الحالية" : "Active Projects",
+                nearCompletion: language === "ar" ? "قربت تخلص" : "Near Completion",
+                completed: language === "ar" ? "خلصت" : "Completed",
+              }[activeSidebarMenu]
+            }
+            projects={
+              groupProjectsByGateStatus(projects, workflowSummaries)[activeSidebarMenu]
+            }
+            language={language}
+            onOpenProject={openProject}
+            onClose={() => setActiveSidebarMenu(null)}
+          />
+        )}
 
-      {screen}
+        {activeSidebarMenu === "employees" && (
+          <EmployeeListModal
+            employees={employees}
+            language={language}
+            onOpenEmployeeProfile={setProfileEmployee}
+            onClose={() => setActiveSidebarMenu(null)}
+          />
+        )}
 
-      <Sidebar
-        open={sidebarOpen}
-        language={language}
-        onClose={() => setSidebarOpen(false)}
-        onSelect={setActiveSidebarMenu}
-        currentUser={currentUser}
-        onAvatarChange={onAvatarChange}
-      />
-
-      {(activeSidebarMenu === "active" ||
-        activeSidebarMenu === "nearCompletion" ||
-        activeSidebarMenu === "completed") && (
-        <ProjectListModal
-          title={
-            {
-              active: language === "ar" ? "المشاريع الحالية" : "Active Projects",
-              nearCompletion: language === "ar" ? "قربت تخلص" : "Near Completion",
-              completed: language === "ar" ? "خلصت" : "Completed",
-            }[activeSidebarMenu]
-          }
-          projects={
-            groupProjectsByGateStatus(projects, workflowSummaries)[activeSidebarMenu]
-          }
-          language={language}
-          onOpenProject={openProject}
-          onClose={() => setActiveSidebarMenu(null)}
-        />
-      )}
-
-      {activeSidebarMenu === "employees" && (
-        <EmployeeListModal
-          employees={employees}
-          language={language}
-          onOpenEmployeeProfile={setProfileEmployee}
-          onClose={() => setActiveSidebarMenu(null)}
-        />
-      )}
-
-      {profileEmployee && (
-        <EmployeeProfileModal
-          employee={profileEmployee}
-          language={language}
-          onClose={() => setProfileEmployee(null)}
-          onUploadAvatar={handleUploadAvatar}
-        />
-      )}
-    </>
+        {profileEmployee && (
+          <EmployeeProfileModal
+            employee={profileEmployee}
+            language={language}
+            onClose={() => setProfileEmployee(null)}
+            onUploadAvatar={handleUploadAvatar}
+          />
+        )}
+      </>
+    </ErrorBoundary>
   );
 }
