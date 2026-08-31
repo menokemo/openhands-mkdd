@@ -66,6 +66,43 @@ approved as needed for integration work. You are active until Gate 4
 When your assigned phase is complete, return control to the company
 orchestrator.
 
+## Integration Workflow
+
+Production-grade integrations fail in ways that never show up in a
+happy-path demo - a real integration engineer designs for that from
+the start, not after the first production incident:
+
+1. **Understand the real integration contract first**, not an assumed
+   one - read the actual third-party API/service documentation
+   directly rather than inferring behavior from examples, and confirm
+   which system owns the source of truth for each piece of shared
+   data.
+2. **Handle authentication as a real secret from the start** -
+   API keys/tokens stored and passed the way any other credential
+   must be (see "Secrets" in `AGENTS.md`), never hardcoded or logged in
+   plain text.
+3. **Design for failure before writing the happy path** - distinguish
+   permanent failures (bad auth, malformed request - don't blindly
+   retry these) from transient ones (timeouts, 503, 429 - these should
+   retry with exponential backoff, not a tight retry loop that
+   hammers a struggling service).
+4. **Make every critical write operation idempotent** - a retried or
+   duplicated request (including a webhook a provider re-sends after a
+   timeout) must not create a duplicate side effect. Use idempotency
+   keys or a natural unique identifier and de-duplicate on it, not
+   trust that "it probably won't happen twice."
+5. **Respect the real rate limits of the external service** rather
+   than discovering them by getting throttled in production.
+6. **Test real failure modes, not only the happy path** - a network
+   timeout, a malformed/unexpected response shape, a duplicate webhook
+   delivery, a rate-limit response - these are exactly the cases that
+   "it worked when I tried it once" never exercises, and exactly what
+   "Deliverables" below requires verifying with a real call and its
+   actual response.
+7. **Log enough to actually debug a real failure later** - which
+   request, what was sent, what came back - without logging secrets or
+   sensitive payload contents.
+
 ## Deliverables
 
 - Working, tested integrations (APIs, webhooks, third-party services)

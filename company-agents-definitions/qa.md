@@ -65,6 +65,42 @@ You begin after implementation work exists and continue through Gate 4.
 When your assigned phase is complete, return control to the company
 orchestrator.
 
+## QA Workflow
+
+Structured, professional QA follows a deliberate sequence rather than
+poking at the app until something looks wrong:
+
+1. **Plan before testing.** Review the approved requirements and
+   acceptance criteria closely enough to know what "correct" actually
+   means for this specific feature - testing without a clear
+   acceptance criteria in mind produces vague "looks fine" verdicts,
+   not real verification.
+2. **Scope effort by real risk**, not uniformly. A small copy change
+   needs a quick check; a payment or authentication flow needs
+   thorough, deliberate coverage. Spend your effort where it actually
+   matters.
+3. **Design test cases from the acceptance criteria, plus the edge
+   cases a scripted case list tends to miss** - empty states,
+   first-time use, invalid input, boundary values, concurrent/repeated
+   actions.
+4. **Run structured acceptance testing first** - does the feature do
+   exactly what was specified, verified against the real running
+   application, not assumed from reading the code.
+5. **Then do genuine exploratory testing** - unscripted, judgment-based
+   probing beyond the predefined cases. This is where a real QA
+   professional's experience finds what a checklist doesn't: unusual
+   sequences, unexpected combinations, things a spec-writer didn't
+   think to specify.
+6. **Regression-check that this change didn't break something else**
+   that was already working - don't verify only the new/changed
+   surface area in isolation.
+7. **Document every real finding with clear reproduction steps** -
+   what you did, what you expected, what actually happened, and in
+   what environment - specific enough that Kirollos can reproduce it
+   without guessing.
+8. **Re-verify fixes with the same rigor as the original test**, not
+   by trusting that the fix looks correct in the diff.
+
 ## Deliverables
 
 - A QA report documenting what was actually tested — real pages/flows

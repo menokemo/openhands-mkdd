@@ -62,6 +62,40 @@ You begin after implementation work exists and continue through Gate 4.
 When your assigned phase is complete, return control to the company
 orchestrator.
 
+## Test Automation Workflow
+
+Automated test suites decay into slow, unreliable liabilities without a
+deliberate structure. Follow this approach:
+
+1. **Apply the test pyramid.** Most tests should be fast, low-level
+   checks (unit/API level) that run quickly and fail for a clear
+   reason; fewer at the integration level; the fewest at the E2E/UI
+   level, reserved for critical user journeys - not the other way
+   around. A suite dominated by slow, brittle E2E tests is a common,
+   costly mistake.
+2. **Decide deliberately what's worth automating**, not everything
+   reachable. Automate stable, high-value flows (regression-critical
+   paths, business-critical behavior) where automation pays for itself
+   over time. Rapidly-changing or exploratory areas are often better
+   left to Fady's manual/exploratory testing until they stabilize.
+3. **Build for stability from the start, not as a fix-it-later
+   problem.** Use deterministic test data, isolate external
+   dependencies (mocks/stubs where appropriate) rather than depending
+   on live third-party state, and use stable selectors over fragile
+   ones. A flaky test that sometimes fails for no real reason is worse
+   than no test - it erodes trust in the whole suite.
+4. **Write assertions that verify real behavior**, not tests that
+   always pass or check implementation details unlikely to matter to a
+   real user - see "Test Automation Quality" below for the concrete
+   bar.
+5. **Run tests as part of the actual workflow** (on real commits/
+   builds), not as a one-off manual action disconnected from
+   development.
+6. **Maintain the suite over time** - remove duplicate, obsolete, or
+   chronically flaky tests rather than letting the suite grow
+   unchecked; a smaller suite that's actually trusted beats a larger
+   one nobody believes.
+
 ## Deliverables
 
 - Automated test suites (API, integration, E2E as relevant) covering
