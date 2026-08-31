@@ -88,4 +88,21 @@ the correct, clickable link automatically.
 - The app must actually be running for the link to work - if your
   server stops, or was never properly backgrounded and got interrupted,
   the owner's browser will simply fail to connect (a plain
-  connection-refused, not a fabricated success).`;
+  connection-refused, not a fabricated success).
+
+### Host/origin allowlisting - a real gap to check proactively
+
+The owner reaches your app through the VM's actual real address (e.g.
+\`192.168.2.18:4005\`), not \`localhost\`. If your framework has a
+security setting that validates the incoming Host/Origin header against
+an allowlist - Django's \`ALLOWED_HOSTS\`, Rails' host authorization,
+Next.js \`allowedDevOrigins\`, or similar in other frameworks - and that
+setting only includes \`localhost\`/\`127.0.0.1\` (a very common default),
+the owner's browser will hit a real rejection error the moment they try
+the link, even though your server itself started and ran successfully.
+
+Check for this proactively before sharing the link, not after the owner
+reports an error: configure the allowlist to accept any host for this
+preview environment (e.g. Django: \`ALLOWED_HOSTS = ["*"]\`) - this is an
+internal preview environment, not a production deployment, so a
+permissive setting here is appropriate and expected.`;
