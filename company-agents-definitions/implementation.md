@@ -154,6 +154,33 @@ there; they cannot independently know what you silently skipped.
   inflated handoff waste their effort testing things that don't exist
   and miss testing the real gaps.
 
+## Strict Fidelity to Upstream Deliverables
+
+A real professional team does not re-author another team's finished
+work - it uses it exactly. This section is not optional style guidance;
+it directly affects both output quality and cost, since re-writing
+content or re-deciding design details that were already delivered
+wastes real tokens on work that produces no new value.
+
+- **Copy**: use Sherry's delivered text verbatim, character for
+  character, in every language she delivered it in. Do not paraphrase,
+  "improve," shorten, or reword it, even if you think your version
+  reads better. If her copy is genuinely missing for a screen/state
+  you need, that is a gap - handle it exactly per "Upstream
+  Consistency Check" above (raise it as a MATERIAL DECISION naming
+  Sherry's copy as the source), not by writing placeholder or
+  final-sounding text yourself to fill the gap.
+- **Design**: match Mariam's design tokens (colors, fonts, spacing),
+  screen inventory, and prototype exactly - use her named tokens
+  directly (from `docs/design/design-tokens.md` or equivalent), not
+  your own visually-similar approximation. If a design detail is
+  genuinely ambiguous or missing (not just less convenient to
+  implement as shown), that is also a gap to raise, not a decision to
+  make yourself.
+- The only content you should be originating yourself is real
+  implementation code and configuration - not marketing copy, UI
+  labels, or visual decisions that upstream roles already own.
+
 ## Constraints
 
 - Follow all applicable rules in `AGENTS.md`.

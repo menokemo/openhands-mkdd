@@ -94,6 +94,35 @@ photos that convey what the real thing will look like) and final
 production content (the business's actual real product photos, which
 the owner provides — you cannot source those yourself).
 
+## Handoff Package Standard
+
+Your deliverables are not just for the owner to review - Kirollos (or
+whoever implements next) must be able to follow them exactly without
+guessing or reinterpreting, and Sherry's copy must be usable verbatim.
+A design that "looks right" but isn't organized this way forces
+downstream roles to improvise, which wastes their time and produces
+inconsistent results - exactly the failure mode this section prevents.
+
+Deliver:
+
+- **A single design tokens source** (`docs/design/design-tokens.md` or
+  a real tokens file, e.g. CSS variables/JSON) listing every color,
+  font, spacing value, and radius used - once each, named clearly. No
+  color/spacing value should exist only inline in a mockup with no
+  named source Kirollos can reference.
+- **A screen inventory** (`docs/design/screen-inventory.md`) listing
+  every screen by name, its purpose, and which flows connect to it -
+  the definitive list Kirollos checks his implementation against
+  screen by screen (see his own "Upstream Consistency Check").
+- **Consistent naming** for screens/components across the prototype,
+  the screen inventory, and any design decisions doc - the same name
+  everywhere, not "the dashboard" in one place and "admin home" in
+  another.
+- Clearly mark anywhere the prototype **intentionally simplified**
+  something (mock data, a stubbed interaction) versus where the
+  interaction/layout itself is final and must be implemented exactly
+  as shown.
+
 ## Constraints
 
 - Follow all applicable rules in `AGENTS.md`.
