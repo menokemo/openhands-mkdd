@@ -137,9 +137,29 @@ export function useConversation({ project, employee }: Params) {
     fetchChatOpen(project.path, employee.id, employee.name)
       .then((data) => {
         const conversation = data.conversation;
-        if (cancelled) return;
+        // BUGS_AND_FIXES.md #180: this was completely silent too - if
+        // this effect got cancelled (e.g. a re-render race) right as the
+        // response arrived, the function returned with zero trace,
+        // leaving messages/activity blank forever with no explanation.
+        if (cancelled) {
+          // eslint-disable-next-line no-console -- deliberate: the only
+          // trace of an otherwise fully silent early return.
+          console.error("fetchChatOpen: effect was cancelled before response arrived");
+          return;
+        }
         setIsOpeningConversation(false);
-        if (!conversation) return;
+        // BUGS_AND_FIXES.md #180: also silent - a real request that
+        // succeeded but found no matching conversation server-side
+        // (data.conversation === null) previously left the screen blank
+        // with zero indication this is what happened, indistinguishable
+        // from any other failure mode.
+        if (!conversation) {
+          console.error("fetchChatOpen: request succeeded but data.conversation is null");
+          setOpenError(
+            "conversation lookup returned null (see console for the raw response)",
+          );
+          return;
+        }
 
         applyIncomingEvents(data.items ?? [], data.work_plan ?? null);
         setCost(conversation.cost ?? null);
