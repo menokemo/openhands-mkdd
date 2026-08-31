@@ -356,7 +356,7 @@ async function checkOneProfile(name, expiryWarningHours) {
  * message built from the classification alone, which is always real
  * structured data from OpenHands itself either way - never fabricated.
  */
-function buildHumanReadableErrorMessage(event) {
+export function buildHumanReadableErrorMessage(event) {
   const kind = event.classification?.kind;
   const detail = event.detail ?? "";
 

@@ -3,6 +3,7 @@ import { sendMessageToConversationId } from "./chat.mjs";
 import { sendPushToAll } from "../lib/push-notifications.mjs";
 import { withAutoResumeMarker } from "../lib/auto-resume-marker.mjs";
 import { appendAutoResumeLogEntry, getAutoResumeLog } from "../lib/auto-resume-log.mjs";
+import { buildHumanReadableErrorMessage } from "./internal-health.mjs";
 
 const RESUME_MESSAGE =
   "الحد وصل لوقت إعادة التشغيل ورجع يشتغل تاني. كمل من حيث ما وقفت - راجع docs/project-context.md لآخر نقطة تحقق موثَّقة لو محتاج.";
@@ -182,4 +183,82 @@ export async function handleEmployeeAutoResumeLog(req, res) {
   res.writeHead(200, { "content-type": "application/json" });
   res.end(JSON.stringify({ entries }));
   return true;
+}
+
+/**
+ * GET /api/internal/stopped-employees — scans every conversation for
+ * any currently stopped by a real rate/usage limit (BUGS_AND_FIXES.md
+ * #196), regardless of whether resetsAt has passed yet - unlike
+ * checkIfEligibleForResume above (which only returns true once it's
+ * time to actually resume), this is for DISPLAY on the System Health
+ * screen so the owner can see every currently-stopped employee, not
+ * just the one manually-configured deep_lookup employee.
+ *
+ * Built after the owner noticed a real, live gap: Mariam's
+ * conversation was genuinely stopped by a rate limit, but the System
+ * Health screen showed "all healthy" - because the existing
+ * deep_lookup check only ever monitors one manually-configured
+ * employee (Kirollos), never all employees.
+ */
+export async function handleStoppedEmployees(req, res) {
+  if (!(req.method === "GET" && req.url === "/api/internal/stopped-employees")) {
+    return false;
+  }
+
+  try {
+    const stopped = await findAllCurrentlyStoppedEmployees();
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ stopped }));
+  } catch (error) {
+    res.writeHead(502, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({
+        stopped: [],
+        error: error instanceof Error ? error.message : "unknown_error",
+      }),
+    );
+  }
+  return true;
+}
+
+async function findAllCurrentlyStoppedEmployees() {
+  const conversations = await fetchAllConversations();
+  const stopped = [];
+
+  for (const conversation of conversations) {
+    // eslint-disable-next-line no-await-in-loop -- sequential by
+    // design, same scaling note as resumeAllEligibleConversations.
+    const info = await checkIfCurrentlyStoppedByRateLimit(conversation);
+    if (!info) continue;
+
+    stopped.push({
+      conversationId: conversation.id,
+      employeeName: conversation.tags?.mkddemployee ?? "?",
+      project: conversation.tags?.mkddproject ?? "?",
+      resetsAt: info.resetsAt,
+      humanMessage: buildHumanReadableErrorMessage(info.event).text,
+    });
+  }
+
+  return stopped;
+}
+
+async function checkIfCurrentlyStoppedByRateLimit(conversation) {
+  try {
+    const eventsRes = await openhands(
+      `/api/conversations/${conversation.id}/events/search?limit=1&sort_order=TIMESTAMP_DESC`,
+    );
+    const eventsData = await eventsRes.json();
+    const lastEvent = eventsData.items?.[0];
+
+    if (lastEvent?.kind !== "ConversationErrorEvent") return null;
+    if (lastEvent.classification?.kind !== "rate_limit") return null;
+
+    const resetsAt = extractResetsAt(lastEvent);
+    if (resetsAt === null) return null;
+
+    return { resetsAt, event: lastEvent };
+  } catch {
+    return null;
+  }
 }

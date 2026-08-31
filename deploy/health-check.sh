@@ -345,6 +345,53 @@ check_deep_conversation_lookup
 check_llm_health
 
 # ---------------------------------------------------------------------------
+# BUGS_AND_FIXES.md #196: the deep_lookup check above only ever monitors
+# ONE manually-configured employee - discovered live that this left a
+# real gap, since a DIFFERENT employee (Mariam) genuinely stopped from a
+# usage limit while System Health showed "all healthy", because she
+# wasn't the one configured employee. This check scans ALL conversations
+# (same underlying scan as the auto-resume action below) and reports
+# ANY employee currently stopped by a real rate/usage limit, one check
+# per employee found - same dynamic pattern as check_llm_health's
+# per-profile checks.
+# ---------------------------------------------------------------------------
+check_stopped_employees() {
+  if [ ! -f "$INTERNAL_KEY_FILE" ]; then
+    return
+  fi
+  service_key=$(cat "$INTERNAL_KEY_FILE")
+  response=$(curl -fsS -m 60 -H "X-Internal-Service-Key: $service_key" \
+    "http://localhost:${MKDD_UI_PORT}/api/internal/stopped-employees" 2>/dev/null)
+
+  if [ -z "$response" ]; then
+    return
+  fi
+
+  summary=$(echo "$response" | python3 -c '
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except json.JSONDecodeError:
+    sys.exit(0)
+for s in data.get("stopped", []):
+    conv_id = s.get("conversationId", "?")
+    message = s.get("humanMessage", "")
+    resets_at = s.get("resetsAt")
+    meta = json.dumps({"resetsAt": resets_at}) if resets_at else ""
+    print(conv_id + "\t" + message + "\t" + meta)
+' 2>/dev/null)
+
+  [ -z "$summary" ] && return
+
+  while IFS=$'\t' read -r conv_id message meta; do
+    [ -z "$conv_id" ] && continue
+    log_fail "stopped_employee_$conv_id" "$message" "$meta"
+  done <<< "$summary"
+}
+
+check_stopped_employees
+
+# ---------------------------------------------------------------------------
 # Auto-resume any conversation that stopped from a real rate/usage limit
 # whose reset time has genuinely passed (BUGS_AND_FIXES.md #175). This is
 # an ACTION, not a pass/fail check - so it's not recorded as one of the
