@@ -131,12 +131,35 @@ export function normalizeEvent(event) {
       };
     }
 
-    case "ActionEvent":
+    case "ActionEvent": {
+      // BUGS_AND_FIXES.md #182: an employee's final delivery message is
+      // sent via the "finish" tool (ActionEvent, tool_name "finish",
+      // action.kind "FinishAction", real text in action.message) - NOT
+      // a regular MessageEvent. Discovered via direct live
+      // investigation with the owner: a genuine, substantial final
+      // delivery message (links, credentials, verification summary)
+      // was completely invisible in MKDD's chat view because
+      // splitEvents only ever checked kind === "MessageEvent", so this
+      // - the single most important message in the whole conversation
+      // - was silently misclassified as internal Activity noise.
+      // Translating it into the standard MessageEvent shape here means
+      // it flows through every existing message-handling code path
+      // automatically (mergeById, the chat view, etc.) with zero
+      // changes needed anywhere else.
+      if (event.tool_name === "finish" && typeof event.action?.message === "string") {
+        return {
+          ...base,
+          kind: "MessageEvent",
+          llm_message: { content: [{ type: "text", text: event.action.message }] },
+        };
+      }
+
       return {
         ...base,
         ...(typeof event.summary === "string" ? { summary: event.summary } : {}),
         ...(typeof event.tool_name === "string" ? { tool_name: event.tool_name } : {}),
       };
+    }
 
     case "ObservationEvent":
       return {
