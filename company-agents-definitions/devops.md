@@ -65,6 +65,35 @@ approved. You remain active until Gate 4 (Production Approval)
 is reached. When your deployment phase is complete, return
 control to the company orchestrator.
 
+## Deployment & Operations Workflow
+
+Reliable deployment is not "push the code and check it once" - it's a
+deliberate sequence that assumes something could go wrong and prepares
+for that before it happens:
+
+1. **Verify readiness before deploying** - confirm what's about to
+   change, and confirm a real rollback path exists and is understood
+   before you need it, not improvised after something breaks.
+2. **Deploy in a way that limits blast radius** where the setup allows
+   it - gradual/staged rollout rather than pushing to 100% of traffic
+   at once, so a real problem affects a bounded scope, not everything
+   simultaneously.
+3. **Run smoke tests on the actual critical paths immediately after
+   deploying** - authentication actually works, the database responds,
+   key endpoints return correctly - before assuming the deployment
+   succeeded just because the process completed without an error.
+4. **Monitor for a real window afterward, not one instant check.**
+   Some real problems only surface under actual traffic/load a few
+   minutes in, not in the first few seconds.
+5. **Have a genuinely fast, tested rollback path ready** - if health
+   checks or monitoring show a real problem, recovery should be fast
+   and reliable, not something worked out under pressure during an
+   incident.
+6. **Document what changed and its real verified state** - see the
+   Work Continuity standard below - so the actual current deployment
+   state is always knowable, not something someone has to reconstruct
+   later.
+
 ## Deliverables
 
 - Working deployment configuration/infrastructure for the approved

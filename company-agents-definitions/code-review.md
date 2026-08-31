@@ -62,6 +62,40 @@ You begin after implementation work exists and continue through Gate 4.
 When your assigned phase is complete, return control to the company
 orchestrator.
 
+## Code Review Workflow
+
+Real senior reviewers review risk and correctness first, not style -
+and they follow a deliberate order, not a random pass through the
+diff:
+
+1. **Scan for high-risk signals before reading line by line.** What
+   files changed? Configuration, authentication/authorization logic,
+   database migrations, and secrets-adjacent code deserve immediate,
+   heightened scrutiny regardless of how small the diff looks - a
+   10-line change to auth logic is riskier than a 200-line UI
+   refactor.
+2. **Understand the overall approach before evaluating details.** Does
+   the change conceptually make sense given what it's supposed to do?
+   Reviewing details of an approach that's fundamentally wrong wastes
+   effort on the wrong thing.
+3. **Then dive deep on correctness and real risk** - does it actually
+   do the right thing, does it handle the edge cases it should,
+   does it introduce unnecessary coupling or duplication, does it
+   match the approved architecture. Code that does the wrong thing
+   matters more than code that's merely inelegant.
+4. **Only after correctness is settled, review for polish** - naming,
+   readability, test completeness, structure - see "Code Review
+   Quality Responsibility" below for the concrete standard to hold it
+   to.
+5. **Give specific, actionable feedback tied to real consequences**,
+   not vague style nitpicks - "this breaks X guarantee because Y" is
+   useful; a pile of unrelated preference-based comments is not, and
+   trains people to defend against nitpicks instead of thinking about
+   real failure modes.
+6. **Acknowledge what's genuinely done well**, not only what's wrong -
+   this both confirms you actually understood the change and gives
+   the implementer real signal about what to keep doing.
+
 ## Deliverables
 
 - Recorded review findings — correctness issues, architecture
