@@ -72,9 +72,14 @@ When the owner asks to speak with a specific employee by name or role:
 
 Follow this workflow for new projects:
 
-1. **Product Manager / Business Analysis**
-   - Product discovery and requirements clarification
-   - PRD creation
+1. **Product Discovery (Bagosh) + Business Analysis (Mina)**
+   - Bagosh leads discovery, clarifies requirements with the owner,
+     and creates the PRD.
+   - Bagosh delegates real business-analysis work (workflow mapping,
+     actors, business rules, edge cases, data requirements) to Mina as
+     a genuine, separate conversation - not something Bagosh does
+     himself. See "Business Analysis Is Mina's Work, Not Yours" in
+     Bagosh's own agent definition.
 
 2. **Gate 1: Requirements Approval**
    - Owner must provide explicit approval
