@@ -481,6 +481,26 @@ async function fetchOlderEvents(conversationId, pageId, limit) {
  * hundreds of KB, and the team-status strip only ever needed the small
  * derived work_plan from it, not the raw events themselves).
  */
+/**
+ * Fetches every page of events for a conversation, de-duplicates by id,
+ * sorts by timestamp, and normalizes each event - shared by
+ * handleChatEvents (full event list for the chat screen) and
+ * handleChatWorkPlan (BUGS_AND_FIXES.md #66: work plan only, without
+ * the full event payload - a conversation's full event history can be
+ * hundreds of KB, and the team-status strip only ever needed the small
+ * derived work_plan from it, not the raw events themselves).
+ *
+ * BUGS_AND_FIXES.md #177: a long-running conversation's full history
+ * can require many sequential pages (confirmed live: 15 pages, 1499
+ * events, for a real conversation) - if any single page in the middle
+ * of that loop failed for any transient reason, the old "all or
+ * nothing" logic discarded everything already successfully fetched,
+ * making the chat and activity feed appear completely empty even
+ * though most of the real history had loaded fine. Now returns
+ * whatever was successfully accumulated so far when a page fails,
+ * instead of throwing it all away - a partial, real result is always
+ * better than an empty one.
+ */
 async function fetchAllNormalizedEvents(conversationId) {
   let eventsPageId = null;
   let eventsStatus = 200;
@@ -490,15 +510,22 @@ async function fetchAllNormalizedEvents(conversationId) {
     const eventQs = new URLSearchParams({ limit: "100" });
     if (eventsPageId) eventQs.set("page_id", eventsPageId);
 
-    const eventsResponse = await openhands(
-      `/api/conversations/${conversationId}/events/search?${eventQs}`,
-    );
+    let eventsResponse;
+    let pageData;
+    try {
+      eventsResponse = await openhands(
+        `/api/conversations/${conversationId}/events/search?${eventQs}`,
+      );
+      eventsStatus = eventsResponse.status;
+      pageData = eventsResponse.ok ? await eventsResponse.json() : null;
+    } catch {
+      pageData = null;
+    }
 
-    eventsStatus = eventsResponse.status;
-    const pageData = await eventsResponse.json();
-
-    if (!eventsResponse.ok) {
-      return { status: eventsStatus, items: [] };
+    if (!pageData) {
+      // A mid-pagination failure - stop here, but keep whatever pages
+      // already succeeded rather than discarding everything.
+      break;
     }
 
     allEventItems.push(...(pageData.items ?? []));
@@ -517,7 +544,7 @@ async function fetchAllNormalizedEvents(conversationId) {
   });
 
   return {
-    status: eventsStatus,
+    status: allEventItems.length > 0 ? 200 : eventsStatus,
     items: sorted.map(normalizeEvent).filter(Boolean),
   };
 }
