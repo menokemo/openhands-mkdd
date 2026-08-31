@@ -9,6 +9,7 @@ import {
 import { readJsonBody } from "../lib/read-json-body.mjs";
 import { sendPushToAll } from "../lib/push-notifications.mjs";
 import { deliverMessageToEmployee } from "./chat.mjs";
+import { withReportMarker } from "../lib/report-message-marker.mjs";
 import { readEmployeeDisplayInfo } from "../lib/employee-display-info.mjs";
 
 /**
@@ -464,7 +465,7 @@ export async function handleReports(req, res) {
         project,
         employeeId: toEmployeeId,
         employeeName: toName,
-        message: reportMessage,
+        message: withReportMarker(reportMessage),
       }).catch((deliveryError) => {
         console.error("Failed to auto-deliver report to employee:", deliveryError);
       });

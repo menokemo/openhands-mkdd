@@ -47,6 +47,9 @@ export type ChatMessage = ConversationEventBase & {
   llm_message: {
     content: MessageContentItem[];
   };
+  /** BUGS_AND_FIXES.md #197: a delivered inter-employee report - render
+   * as a compact badge that opens a popup, not a normal chat bubble. */
+  isReportDelivery?: boolean;
 };
 
 export type ActionActivityEvent = ConversationEventBase & {

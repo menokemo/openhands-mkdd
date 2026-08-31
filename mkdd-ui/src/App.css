@@ -1737,6 +1737,29 @@ header button,
   gap: 8px;
 }
 
+/* BUGS_AND_FIXES.md #197: a delivered inter-employee report renders as
+   this compact badge instead of a normal chat bubble. */
+.report-delivery-badge {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px auto;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--mkdd-border-subtle);
+  background: var(--mkdd-surface-2, rgba(255, 255, 255, 0.06));
+  color: var(--mkdd-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.report-popup {
+  max-width: 520px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
 .modal-actions button[type="submit"] {
   background: var(--mkdd-accent);
   border-color: var(--mkdd-accent);

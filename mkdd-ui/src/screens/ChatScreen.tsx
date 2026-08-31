@@ -82,6 +82,10 @@ export default function ChatScreen({
   const [pendingImages, setPendingImages] = useState<string[]>([]);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [openingTakingLong, setOpeningTakingLong] = useState(false);
+  // BUGS_AND_FIXES.md #197: a report-delivery message renders as a
+  // compact badge (see the messages.map below) - this tracks which
+  // report's full text is currently shown in the popup, if any.
+  const [openReportText, setOpenReportText] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpeningConversation) {
@@ -370,6 +374,23 @@ export default function ChatScreen({
             )
             .map((item) => item.text)
             .join("\n");
+
+          // BUGS_AND_FIXES.md #197: a delivered inter-employee report -
+          // compact badge, not a full bubble; tapping it opens the real
+          // content in a popup instead.
+          if (event.isReportDelivery) {
+            return (
+              <button
+                key={event.id}
+                type="button"
+                className="report-delivery-badge"
+                onClick={() => setOpenReportText(textParts)}
+              >
+                {language === "ar" ? "📋 تقرير من موظف" : "📋 Report from an employee"}
+              </button>
+            );
+          }
+
           const imageUrls = event.llm_message.content
             .filter(
               (item): item is { type: "image"; image_urls: string[] } =>
@@ -583,6 +604,22 @@ export default function ChatScreen({
           </button>
         </div>
       </form>
+
+      {openReportText && (
+        <div className="modal-backdrop" onClick={() => setOpenReportText(null)}>
+          <div className="modal report-popup" onClick={(e) => e.stopPropagation()}>
+            <h2>{language === "ar" ? "التقرير" : "Report"}</h2>
+            <div className="message-markdown">
+              <ReactMarkdown>{openReportText}</ReactMarkdown>
+            </div>
+            <div className="modal-actions">
+              <button type="button" onClick={() => setOpenReportText(null)}>
+                {language === "ar" ? "إغلاق" : "Close"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

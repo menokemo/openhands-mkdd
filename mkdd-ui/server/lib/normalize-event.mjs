@@ -14,6 +14,7 @@
 
 import { stripTimeContext } from "./time-context.mjs";
 import { isAutoResumeMessage } from "./auto-resume-marker.mjs";
+import { isReportMessage, stripReportMarker } from "./report-message-marker.mjs";
 
 /**
  * Normalizes message content into the array-of-TextContent shape that
@@ -125,9 +126,31 @@ export function normalizeEvent(event) {
             )
           : content;
 
+      // BUGS_AND_FIXES.md #197: a report-delivery message stays real
+      // content (unlike the auto-resume marker above, which hides its
+      // message entirely) - the owner wants to see report content on
+      // demand, just not as a normal-looking chat bubble cluttering the
+      // conversation. Tag it here (after the time-context marker is
+      // already stripped) so the frontend can render it as a compact
+      // badge that opens a popup with the real text, instead of a full
+      // bubble.
+      const firstCleanedText =
+        base.source === "user" && cleaned[0]?.type === "text" ? cleaned[0].text : null;
+      const isReportDelivery = Boolean(
+        firstCleanedText && isReportMessage(firstCleanedText),
+      );
+      const finalContent = isReportDelivery
+        ? cleaned.map((item, i) =>
+            i === 0 && item.type === "text"
+              ? { ...item, text: stripReportMarker(item.text) }
+              : item,
+          )
+        : cleaned;
+
       return {
         ...base,
-        llm_message: { content: cleaned },
+        llm_message: { content: finalContent },
+        ...(isReportDelivery ? { isReportDelivery: true } : {}),
       };
     }
 
