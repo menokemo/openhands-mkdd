@@ -57,6 +57,62 @@
   --mkdd-accent-glow: color-mix(in srgb, var(--mkdd-accent) 22%, transparent);
 }
 
+/* BUGS_AND_FIXES.md #198: two additional themes, modeled on the real
+   official dark-mode color systems of WhatsApp and Telegram
+   respectively - built on the exact same token structure as the two
+   themes above, so every existing component using these tokens
+   automatically works correctly under either theme with zero
+   component-level changes needed. */
+[data-theme="whatsapp"] {
+  --mkdd-canvas: #0b141a;
+  --mkdd-page: #111b21;
+  --mkdd-surface: #202c33;
+  --mkdd-surface-raised: #2a3942;
+  --mkdd-surface-hover: #2a3942;
+  --mkdd-border-subtle: #222d34;
+  --mkdd-border-strong: #364147;
+  --mkdd-text-primary: #e9edef;
+  --mkdd-text-secondary: #8696a0;
+  --mkdd-text-muted: #667781;
+  --mkdd-text-disabled: #4a5157;
+  --mkdd-accent: #00a884;
+  --mkdd-accent-deep: #008069;
+  --mkdd-accent-soft: #06cf9c;
+  --mkdd-info: #53bdeb;
+  --mkdd-success: #00a884;
+  --mkdd-warning: #ffd279;
+  --mkdd-danger: #f15c6d;
+  --mkdd-page-translucent: color-mix(in srgb, var(--mkdd-page) 94%, transparent);
+  --mkdd-success-tint: color-mix(in srgb, var(--mkdd-success) 16%, var(--mkdd-surface));
+  --mkdd-danger-tint: color-mix(in srgb, var(--mkdd-danger) 16%, var(--mkdd-surface));
+  --mkdd-accent-glow: color-mix(in srgb, var(--mkdd-accent) 22%, transparent);
+}
+
+[data-theme="telegram"] {
+  --mkdd-canvas: #17212b;
+  --mkdd-page: #0e1621;
+  --mkdd-surface: #17212b;
+  --mkdd-surface-raised: #1f2c38;
+  --mkdd-surface-hover: #232e3c;
+  --mkdd-border-subtle: #253340;
+  --mkdd-border-strong: #2b3947;
+  --mkdd-text-primary: #ffffff;
+  --mkdd-text-secondary: #aab8c2;
+  --mkdd-text-muted: #6d7883;
+  --mkdd-text-disabled: #4a555f;
+  --mkdd-accent: #2aabee;
+  --mkdd-accent-deep: #229ed9;
+  --mkdd-accent-soft: #64bee8;
+  --mkdd-info: #2aabee;
+  --mkdd-success: #4fae4e;
+  --mkdd-warning: #f5b335;
+  --mkdd-danger: #ec3942;
+  --mkdd-page-translucent: color-mix(in srgb, var(--mkdd-page) 94%, transparent);
+  --mkdd-success-tint: color-mix(in srgb, var(--mkdd-success) 16%, var(--mkdd-surface));
+  --mkdd-danger-tint: color-mix(in srgb, var(--mkdd-danger) 16%, var(--mkdd-surface));
+  --mkdd-accent-glow: color-mix(in srgb, var(--mkdd-accent) 22%, transparent);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -1780,6 +1836,23 @@ header button,
   text-align: end;
 }
 
+.message-copy-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--mkdd-text-muted);
+  font-size: 11px;
+}
+
+.message-copy-button:active {
+  background: var(--mkdd-surface-hover);
+}
+
 /* =========================
    MKDD Brand Header (Projects screen)
    ========================= */
@@ -2516,6 +2589,60 @@ header button,
   color: var(--mkdd-accent);
 }
 
+/* BUGS_AND_FIXES.md #198: theme selector (4 themes now, replacing the
+   old simple dark/light toggle). */
+.theme-selector {
+  position: relative;
+}
+
+.theme-selector-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+
+.theme-selector-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  min-width: 170px;
+  padding: 6px;
+  border: 1px solid var(--mkdd-border-subtle);
+  border-radius: 14px;
+  background: var(--mkdd-surface);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+
+.theme-selector-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--mkdd-text-primary);
+  font-size: 14px;
+  text-align: start;
+}
+
+.theme-selector-option:active {
+  background: var(--mkdd-surface-hover);
+}
+
+.theme-selector-option span {
+  flex: 1;
+}
+
+.theme-selector-check {
+  color: var(--mkdd-accent);
+  font-size: 12px;
+}
+
 /* =========================
    Chat message images (attachments)
    ========================= */
@@ -3091,7 +3218,9 @@ header button,
    the chat area up to --mkdd-surface-hover (a real, clearly lighter
    step) restores the intended separation from both the bars above/
    below AND the message bubbles inside it. */
-[data-theme="dark"] .chat-screen > .chat {
+[data-theme="dark"] .chat-screen > .chat,
+[data-theme="whatsapp"] .chat-screen > .chat,
+[data-theme="telegram"] .chat-screen > .chat {
   background: var(--mkdd-surface-hover);
 }
 
@@ -3100,8 +3229,13 @@ header button,
    message" bubble background someone reads text against repeatedly.
    Muted by blending with the page tone, same color-mix() technique
    already used elsewhere in this file for tints - keeps it clearly
-   recognizable as "your message" while being easier on the eyes. */
-[data-theme="dark"] .project-view .chat article.me {
+   recognizable as "your message" while being easier on the eyes.
+   Applies to every dark-background theme (dark, whatsapp, telegram),
+   not just the original "dark" theme - all three have the same
+   readability problem with a fully-saturated accent as a large fill. */
+[data-theme="dark"] .project-view .chat article.me,
+[data-theme="whatsapp"] .project-view .chat article.me,
+[data-theme="telegram"] .project-view .chat article.me {
   background: color-mix(in srgb, var(--mkdd-accent) 55%, var(--mkdd-page));
   border-color: color-mix(in srgb, var(--mkdd-accent) 55%, var(--mkdd-page));
 }

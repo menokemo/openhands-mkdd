@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { FaPaperclip, FaFileArrowUp, FaXmark } from "react-icons/fa6";
+import { FaPaperclip, FaFileArrowUp, FaXmark, FaCopy, FaCheck } from "react-icons/fa6";
 import type {
   ActivityEvent,
   AgentProfile,
@@ -86,6 +86,9 @@ export default function ChatScreen({
   // compact badge (see the messages.map below) - this tracks which
   // report's full text is currently shown in the popup, if any.
   const [openReportText, setOpenReportText] = useState<string | null>(null);
+  // BUGS_AND_FIXES.md #198: tracks which message was just copied, to
+  // show brief "Copied" feedback before reverting to the copy icon.
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpeningConversation) {
@@ -493,6 +496,29 @@ export default function ChatScreen({
               })}
 
               {time && <time className="message-time">{time}</time>}
+
+              {textParts && (
+                <button
+                  type="button"
+                  className="message-copy-button"
+                  aria-label={language === "ar" ? "نسخ الرسالة" : "Copy message"}
+                  onClick={() => {
+                    navigator.clipboard.writeText(textParts).then(() => {
+                      setCopiedMessageId(event.id);
+                      setTimeout(() => setCopiedMessageId(null), 1500);
+                    });
+                  }}
+                >
+                  {copiedMessageId === event.id ? (
+                    <>
+                      <FaCheck />
+                      {language === "ar" ? "اتنسخت" : "Copied"}
+                    </>
+                  ) : (
+                    <FaCopy />
+                  )}
+                </button>
+              )}
             </article>
           );
         })}

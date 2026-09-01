@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { FaBars, FaSun, FaMoon, FaBell, FaBellSlash } from "react-icons/fa6";
+import {
+  FaBars,
+  FaSun,
+  FaMoon,
+  FaBell,
+  FaBellSlash,
+  FaCheck,
+  FaWhatsapp,
+  FaTelegram,
+} from "react-icons/fa6";
 import type { Theme } from "../hooks/useTheme";
 import {
   isPushSupported,
@@ -39,6 +48,9 @@ export default function AppHeader({
   const [notificationsEnabled, setNotificationsEnabled] = useState(
     getNotificationPermission() === "granted",
   );
+  // BUGS_AND_FIXES.md #198: 4 themes now, so the old simple dark/light
+  // toggle became a small selector menu instead.
+  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
 
   async function handleEnableNotifications() {
     const success = await enablePushNotifications();
@@ -85,21 +97,66 @@ export default function AppHeader({
           </span>
         )}
 
-        <button
-          className="app-header-icon-button"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          aria-label={
-            theme === "dark"
-              ? language === "ar"
-                ? "الوضع الفاتح"
-                : "Light mode"
-              : language === "ar"
-                ? "الوضع الداكن"
-                : "Dark mode"
-          }
-        >
-          {theme === "dark" ? <FaSun /> : <FaMoon />}
-        </button>
+        <div className="theme-selector">
+          <button
+            className="app-header-icon-button"
+            onClick={() => setIsThemeMenuOpen((open) => !open)}
+            aria-label={language === "ar" ? "اختيار الثيم" : "Choose theme"}
+          >
+            {theme === "light" ? (
+              <FaSun />
+            ) : theme === "dark" ? (
+              <FaMoon />
+            ) : theme === "whatsapp" ? (
+              <FaWhatsapp />
+            ) : (
+              <FaTelegram />
+            )}
+          </button>
+
+          {isThemeMenuOpen && (
+            <>
+              <div
+                className="theme-selector-backdrop"
+                onClick={() => setIsThemeMenuOpen(false)}
+              />
+              <div className="theme-selector-menu">
+                {[
+                  { value: "dark" as const, icon: <FaMoon />, ar: "داكن", en: "Dark" },
+                  { value: "light" as const, icon: <FaSun />, ar: "فاتح", en: "Light" },
+                  {
+                    value: "whatsapp" as const,
+                    icon: <FaWhatsapp />,
+                    ar: "واتساب",
+                    en: "WhatsApp",
+                  },
+                  {
+                    value: "telegram" as const,
+                    icon: <FaTelegram />,
+                    ar: "تيليجرام",
+                    en: "Telegram",
+                  },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className="theme-selector-option"
+                    onClick={() => {
+                      setTheme(option.value);
+                      setIsThemeMenuOpen(false);
+                    }}
+                  >
+                    {option.icon}
+                    <span>{language === "ar" ? option.ar : option.en}</span>
+                    {theme === option.value && (
+                      <FaCheck className="theme-selector-check" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
         <button
           className="lang-toggle"

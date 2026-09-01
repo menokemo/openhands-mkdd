@@ -1,11 +1,24 @@
 import { useEffect, useState } from "react";
 
-export type Theme = "dark" | "light";
+export type Theme = "dark" | "light" | "whatsapp" | "telegram";
+
+const VALID_THEMES: Theme[] = ["dark", "light", "whatsapp", "telegram"];
+
+// BUGS_AND_FIXES.md #198: matches each theme's real page background
+// color (--mkdd-page in App.css) - kept in sync with those values so
+// the browser/PWA chrome color always genuinely matches what's on
+// screen, not just light-vs-dark.
+const THEME_COLORS: Record<Theme, string> = {
+  light: "#5b53d0",
+  dark: "#325be4",
+  whatsapp: "#111b21",
+  telegram: "#0e1621",
+};
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem("mkdd-theme");
-    return saved === "light" ? "light" : "dark";
+    return VALID_THEMES.includes(saved as Theme) ? (saved as Theme) : "dark";
   });
 
   useEffect(() => {
@@ -24,7 +37,7 @@ export function useTheme() {
     // needs the same update, or the status bar/PWA color would stay
     // stuck on whatever it was when the page first loaded.
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-    themeColorMeta?.setAttribute("content", theme === "light" ? "#5b53d0" : "#325be4");
+    themeColorMeta?.setAttribute("content", THEME_COLORS[theme]);
   }, [theme]);
 
   return { theme, setTheme };

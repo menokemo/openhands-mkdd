@@ -32,8 +32,9 @@
       // spec), so this must explicitly apply "dark" for the common case
       // too - not just handle a saved "light" preference.
       try {
+        var VALID_THEMES = ["dark", "light", "whatsapp", "telegram"];
         var savedTheme = localStorage.getItem("mkdd-theme");
-        var theme = savedTheme === "light" ? "light" : "dark";
+        var theme = VALID_THEMES.indexOf(savedTheme) !== -1 ? savedTheme : "dark";
         document.documentElement.setAttribute("data-theme", theme);
 
         // Keep the browser/PWA chrome color (status bar, and the PWA
@@ -44,12 +45,18 @@
         // edge specifically in PWA standalone mode (which uses this
         // differently from a normal browser tab) since the app
         // actually defaults to dark.
+        // BUGS_AND_FIXES.md #198: matches each theme's real --mkdd-page
+        // value in App.css - kept in sync with useTheme.ts's own
+        // THEME_COLORS map for the same reason.
+        var THEME_COLORS = {
+          light: "#5b53d0",
+          dark: "#325be4",
+          whatsapp: "#111b21",
+          telegram: "#0e1621",
+        };
         var themeColorMeta = document.querySelector('meta[name="theme-color"]');
         if (themeColorMeta) {
-          themeColorMeta.setAttribute(
-            "content",
-            theme === "light" ? "#5b53d0" : "#325be4",
-          );
+          themeColorMeta.setAttribute("content", THEME_COLORS[theme]);
         }
       } catch {}
     </script>
