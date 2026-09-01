@@ -1359,6 +1359,44 @@ header button,
   color: var(--mkdd-text-muted);
 }
 
+/* BUGS_AND_FIXES.md #202: the "Employee details" trigger button had no
+   glow/animation at all for active statuses (running, waiting), just a
+   static colored border - added a genuine pulsing glow, same visual
+   language as the running-employee card and current-gate glow above. */
+.employee-details-button.status-color-running {
+  animation: mkdd-employee-details-glow-success 1.8s ease-in-out infinite;
+}
+
+.employee-details-button.status-color-waiting {
+  animation: mkdd-employee-details-glow-warning 1.8s ease-in-out infinite;
+}
+
+@keyframes mkdd-employee-details-glow-success {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--mkdd-success) 30%, transparent);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--mkdd-success) 70%, transparent),
+      0 0 20px color-mix(in srgb, var(--mkdd-success) 55%, transparent);
+  }
+}
+
+@keyframes mkdd-employee-details-glow-warning {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--mkdd-warning) 30%, transparent);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--mkdd-warning) 70%, transparent),
+      0 0 20px color-mix(in srgb, var(--mkdd-warning) 55%, transparent);
+  }
+}
+
 .status-color-danger {
   border-color: var(--mkdd-danger);
   color: var(--mkdd-danger);
@@ -2575,14 +2613,14 @@ header button,
   0%,
   100% {
     box-shadow:
-      0 0 0 2px var(--mkdd-accent-glow),
-      0 0 10px var(--mkdd-accent-glow);
+      0 0 0 3px color-mix(in srgb, var(--mkdd-accent) 45%, transparent),
+      0 0 18px color-mix(in srgb, var(--mkdd-accent) 35%, transparent);
   }
 
   50% {
     box-shadow:
-      0 0 0 5px var(--mkdd-accent-glow),
-      0 0 22px var(--mkdd-accent-glow);
+      0 0 0 6px color-mix(in srgb, var(--mkdd-accent) 85%, transparent),
+      0 0 36px color-mix(in srgb, var(--mkdd-accent) 65%, transparent);
   }
 }
 
