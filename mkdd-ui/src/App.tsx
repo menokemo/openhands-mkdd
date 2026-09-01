@@ -236,12 +236,6 @@ export default function App({ currentUser, onAvatarChange }: Props) {
         {!isChatScreen && (
           <AppHeader
             language={language}
-            languageLabel={t.language}
-            setLanguage={setLanguage}
-            themeStyle={themeStyle}
-            setThemeStyle={setThemeStyle}
-            themeMode={themeMode}
-            setThemeMode={setThemeMode}
             onOpenSidebar={() => {
               refreshWorkflowSummaries();
               setSidebarOpen(true);
@@ -263,6 +257,12 @@ export default function App({ currentUser, onAvatarChange }: Props) {
         <Sidebar
           open={sidebarOpen}
           language={language}
+          languageLabel={t.language}
+          setLanguage={setLanguage}
+          themeStyle={themeStyle}
+          setThemeStyle={setThemeStyle}
+          themeMode={themeMode}
+          setThemeMode={setThemeMode}
           onClose={() => setSidebarOpen(false)}
           onSelect={setActiveSidebarMenu}
           currentUser={currentUser}
