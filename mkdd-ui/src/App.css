@@ -30,6 +30,13 @@
   --mkdd-success-tint: color-mix(in srgb, var(--mkdd-success) 16%, var(--mkdd-surface));
   --mkdd-danger-tint: color-mix(in srgb, var(--mkdd-danger) 16%, var(--mkdd-surface));
   --mkdd-accent-glow: color-mix(in srgb, var(--mkdd-accent) 18%, transparent);
+  /* BUGS_AND_FIXES.md #199: dedicated "sent message" bubble color and
+     shape, separate from --mkdd-accent (used for buttons/links) - real
+     messaging apps use a genuinely different color for the bubble than
+     for their brand/button accent, confirmed via direct research for
+     WhatsApp/Telegram below. */
+  --mkdd-bubble-me: var(--mkdd-accent);
+  --mkdd-bubble-radius: 16px;
 }
 
 [data-theme="dark"] {
@@ -55,6 +62,8 @@
   --mkdd-success-tint: color-mix(in srgb, var(--mkdd-success) 16%, var(--mkdd-surface));
   --mkdd-danger-tint: color-mix(in srgb, var(--mkdd-danger) 16%, var(--mkdd-surface));
   --mkdd-accent-glow: color-mix(in srgb, var(--mkdd-accent) 22%, transparent);
+  --mkdd-bubble-me: color-mix(in srgb, var(--mkdd-accent) 55%, var(--mkdd-page));
+  --mkdd-bubble-radius: 16px;
 }
 
 /* BUGS_AND_FIXES.md #198: two additional themes, modeled on the real
@@ -86,6 +95,12 @@
   --mkdd-success-tint: color-mix(in srgb, var(--mkdd-success) 16%, var(--mkdd-surface));
   --mkdd-danger-tint: color-mix(in srgb, var(--mkdd-danger) 16%, var(--mkdd-surface));
   --mkdd-accent-glow: color-mix(in srgb, var(--mkdd-accent) 22%, transparent);
+  /* BUGS_AND_FIXES.md #199: WhatsApp's real "sent" bubble color
+     (#005C4B, confirmed via direct research) is genuinely distinct
+     from its #00A884 brand/button accent - not a tint of it. Using the
+     real researched value here, not a color-mix approximation. */
+  --mkdd-bubble-me: #005c4b;
+  --mkdd-bubble-radius: 8px;
 }
 
 [data-theme="telegram"] {
@@ -111,6 +126,12 @@
   --mkdd-success-tint: color-mix(in srgb, var(--mkdd-success) 16%, var(--mkdd-surface));
   --mkdd-danger-tint: color-mix(in srgb, var(--mkdd-danger) 16%, var(--mkdd-surface));
   --mkdd-accent-glow: color-mix(in srgb, var(--mkdd-accent) 22%, transparent);
+  /* BUGS_AND_FIXES.md #199: Telegram's real "sent" bubble color
+     (#2B5278, a distinct dark blue from its own dark-theme system) is
+     genuinely distinct from its #2AABEE brand/button accent - not a
+     tint of it. Using the real researched value, not an approximation. */
+  --mkdd-bubble-me: #2b5278;
+  --mkdd-bubble-radius: 18px;
 }
 
 * {
@@ -675,7 +696,7 @@ header button,
   width: fit-content;
   max-width: 88%;
   padding: 11px 13px;
-  border-radius: 16px;
+  border-radius: var(--mkdd-bubble-radius, 16px);
   line-height: 1.65;
 }
 
@@ -689,8 +710,8 @@ header button,
 
 .project-view .chat article.me {
   align-self: flex-end;
-  background: var(--mkdd-accent);
-  border-color: var(--mkdd-accent);
+  background: var(--mkdd-bubble-me, var(--mkdd-accent));
+  border-color: var(--mkdd-bubble-me, var(--mkdd-accent));
   color: #fff;
 }
 
@@ -3224,21 +3245,11 @@ header button,
   background: var(--mkdd-surface-hover);
 }
 
-/* The raw --mkdd-accent (#325be4) is a fully saturated brand blue -
-   fine as a small accent, but uncomfortably intense as a large "sent
-   message" bubble background someone reads text against repeatedly.
-   Muted by blending with the page tone, same color-mix() technique
-   already used elsewhere in this file for tints - keeps it clearly
-   recognizable as "your message" while being easier on the eyes.
-   Applies to every dark-background theme (dark, whatsapp, telegram),
-   not just the original "dark" theme - all three have the same
-   readability problem with a fully-saturated accent as a large fill. */
-[data-theme="dark"] .project-view .chat article.me,
-[data-theme="whatsapp"] .project-view .chat article.me,
-[data-theme="telegram"] .project-view .chat article.me {
-  background: color-mix(in srgb, var(--mkdd-accent) 55%, var(--mkdd-page));
-  border-color: color-mix(in srgb, var(--mkdd-accent) 55%, var(--mkdd-page));
-}
+/* BUGS_AND_FIXES.md #199: previously this required a theme-specific
+   override here to mute the raw accent color as a large bubble
+   background - now each theme sets its own real, researched
+   --mkdd-bubble-me value directly (see the theme blocks above), so no
+   override is needed here anymore. */
 
 /* Light mode: the "me" bubble's text was reported as hard to read
    against its purple background - the ancestor rule sets color: #fff
