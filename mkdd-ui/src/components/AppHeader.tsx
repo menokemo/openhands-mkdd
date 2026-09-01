@@ -8,8 +8,9 @@ import {
   FaCheck,
   FaWhatsapp,
   FaTelegram,
+  FaPalette,
 } from "react-icons/fa6";
-import type { Theme } from "../hooks/useTheme";
+import type { ThemeStyle, ThemeMode } from "../hooks/useTheme";
 import {
   isPushSupported,
   getNotificationPermission,
@@ -20,8 +21,10 @@ type Props = {
   language: "ar" | "en";
   languageLabel: string;
   setLanguage: (language: "ar" | "en") => void;
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
+  themeStyle: ThemeStyle;
+  setThemeStyle: (style: ThemeStyle) => void;
+  themeMode: ThemeMode;
+  setThemeMode: (mode: ThemeMode) => void;
   onOpenSidebar: () => void;
 };
 
@@ -41,15 +44,18 @@ export default function AppHeader({
   language,
   languageLabel,
   setLanguage,
-  theme,
-  setTheme,
+  themeStyle,
+  setThemeStyle,
+  themeMode,
+  setThemeMode,
   onOpenSidebar,
 }: Props) {
   const [notificationsEnabled, setNotificationsEnabled] = useState(
     getNotificationPermission() === "granted",
   );
-  // BUGS_AND_FIXES.md #198: 4 themes now, so the old simple dark/light
-  // toggle became a small selector menu instead.
+  // BUGS_AND_FIXES.md #200: style (mkdd/whatsapp/telegram) has its own
+  // small selector menu; mode (dark/light) is a separate simple toggle
+  // that applies on top of whichever style is selected.
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
 
   async function handleEnableNotifications() {
@@ -101,16 +107,14 @@ export default function AppHeader({
           <button
             className="app-header-icon-button"
             onClick={() => setIsThemeMenuOpen((open) => !open)}
-            aria-label={language === "ar" ? "اختيار الثيم" : "Choose theme"}
+            aria-label={language === "ar" ? "اختيار الثيم" : "Choose style"}
           >
-            {theme === "light" ? (
-              <FaSun />
-            ) : theme === "dark" ? (
-              <FaMoon />
-            ) : theme === "whatsapp" ? (
+            {themeStyle === "whatsapp" ? (
               <FaWhatsapp />
-            ) : (
+            ) : themeStyle === "telegram" ? (
               <FaTelegram />
+            ) : (
+              <FaPalette />
             )}
           </button>
 
@@ -122,8 +126,7 @@ export default function AppHeader({
               />
               <div className="theme-selector-menu">
                 {[
-                  { value: "dark" as const, icon: <FaMoon />, ar: "داكن", en: "Dark" },
-                  { value: "light" as const, icon: <FaSun />, ar: "فاتح", en: "Light" },
+                  { value: "mkdd" as const, icon: <FaPalette />, ar: "MKDD", en: "MKDD" },
                   {
                     value: "whatsapp" as const,
                     icon: <FaWhatsapp />,
@@ -142,13 +145,13 @@ export default function AppHeader({
                     type="button"
                     className="theme-selector-option"
                     onClick={() => {
-                      setTheme(option.value);
+                      setThemeStyle(option.value);
                       setIsThemeMenuOpen(false);
                     }}
                   >
                     {option.icon}
                     <span>{language === "ar" ? option.ar : option.en}</span>
-                    {theme === option.value && (
+                    {themeStyle === option.value && (
                       <FaCheck className="theme-selector-check" />
                     )}
                   </button>
@@ -157,6 +160,22 @@ export default function AppHeader({
             </>
           )}
         </div>
+
+        <button
+          className="app-header-icon-button"
+          onClick={() => setThemeMode(themeMode === "dark" ? "light" : "dark")}
+          aria-label={
+            themeMode === "dark"
+              ? language === "ar"
+                ? "الوضع الفاتح"
+                : "Light mode"
+              : language === "ar"
+                ? "الوضع الداكن"
+                : "Dark mode"
+          }
+        >
+          {themeMode === "dark" ? <FaSun /> : <FaMoon />}
+        </button>
 
         <button
           className="lang-toggle"

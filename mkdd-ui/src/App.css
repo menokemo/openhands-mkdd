@@ -4,8 +4,14 @@
    components; every color must reference one of these tokens.)
    ========================= */
 
+/* BUGS_AND_FIXES.md #200: 3 styles (mkdd/whatsapp/telegram) x 2 modes
+   (dark/light) = 6 combinations, each independently selectable - a
+   style's look (whatsapp vs telegram vs mkdd) and its mode (dark vs
+   light) are two separate axes, not bundled into one flat theme list.
+   data-theme is always the combined "{style}-{mode}" value. */
+
 :root,
-[data-theme="light"] {
+[data-theme="mkdd-light"] {
   --mkdd-canvas: #fdfdfe;
   --mkdd-page: #f7f6f9;
   --mkdd-surface: #ffffff;
@@ -24,22 +30,16 @@
   --mkdd-success: #49a65a;
   --mkdd-warning: #fecc7c;
   --mkdd-danger: #f1474b;
-  /* Derived (computed from the official tokens above, not new hardcoded
-     colors) - the spec doesn't define translucent/tint variants. */
   --mkdd-page-translucent: color-mix(in srgb, var(--mkdd-page) 92%, transparent);
   --mkdd-success-tint: color-mix(in srgb, var(--mkdd-success) 16%, var(--mkdd-surface));
   --mkdd-danger-tint: color-mix(in srgb, var(--mkdd-danger) 16%, var(--mkdd-surface));
   --mkdd-accent-glow: color-mix(in srgb, var(--mkdd-accent) 18%, transparent);
-  /* BUGS_AND_FIXES.md #199: dedicated "sent message" bubble color and
-     shape, separate from --mkdd-accent (used for buttons/links) - real
-     messaging apps use a genuinely different color for the bubble than
-     for their brand/button accent, confirmed via direct research for
-     WhatsApp/Telegram below. */
   --mkdd-bubble-me: var(--mkdd-accent);
+  --mkdd-bubble-me-text: #fff;
   --mkdd-bubble-radius: 16px;
 }
 
-[data-theme="dark"] {
+[data-theme="mkdd-dark"] {
   --mkdd-canvas: #020305;
   --mkdd-page: #08111e;
   --mkdd-surface: #0c1623;
@@ -63,16 +63,18 @@
   --mkdd-danger-tint: color-mix(in srgb, var(--mkdd-danger) 16%, var(--mkdd-surface));
   --mkdd-accent-glow: color-mix(in srgb, var(--mkdd-accent) 22%, transparent);
   --mkdd-bubble-me: color-mix(in srgb, var(--mkdd-accent) 55%, var(--mkdd-page));
+  --mkdd-bubble-me-text: #fff;
   --mkdd-bubble-radius: 16px;
 }
 
-/* BUGS_AND_FIXES.md #198: two additional themes, modeled on the real
-   official dark-mode color systems of WhatsApp and Telegram
-   respectively - built on the exact same token structure as the two
-   themes above, so every existing component using these tokens
-   automatically works correctly under either theme with zero
-   component-level changes needed. */
-[data-theme="whatsapp"] {
+/* BUGS_AND_FIXES.md #198/#199/#200: WhatsApp/Telegram dark modes
+   modeled on each app's real official dark-mode color system,
+   including a dedicated "sent" bubble color genuinely distinct from
+   the brand/button accent (confirmed via direct research) - built on
+   the exact same token structure as the mkdd themes above, so every
+   existing component works correctly under any style with zero
+   component-level changes. */
+[data-theme="whatsapp-dark"] {
   --mkdd-canvas: #0b141a;
   --mkdd-page: #111b21;
   --mkdd-surface: #202c33;
@@ -95,15 +97,50 @@
   --mkdd-success-tint: color-mix(in srgb, var(--mkdd-success) 16%, var(--mkdd-surface));
   --mkdd-danger-tint: color-mix(in srgb, var(--mkdd-danger) 16%, var(--mkdd-surface));
   --mkdd-accent-glow: color-mix(in srgb, var(--mkdd-accent) 22%, transparent);
-  /* BUGS_AND_FIXES.md #199: WhatsApp's real "sent" bubble color
-     (#005C4B, confirmed via direct research) is genuinely distinct
-     from its #00A884 brand/button accent - not a tint of it. Using the
-     real researched value here, not a color-mix approximation. */
+  /* Confirmed via direct research: WhatsApp's real dark-mode "sent"
+     bubble is #005C4B, genuinely distinct from its #00A884 accent. */
   --mkdd-bubble-me: #005c4b;
+  --mkdd-bubble-me-text: #fff;
   --mkdd-bubble-radius: 8px;
 }
 
-[data-theme="telegram"] {
+/* BUGS_AND_FIXES.md #200: WhatsApp's real, iconic light mode - the
+   cream chat background (#ECE5DD) and pale green sent bubble
+   (#DCF8C6) are WhatsApp's single most recognizable visual signature,
+   confirmed via direct research - this is very likely closer to what
+   most people actually picture when they hear "WhatsApp colors" than
+   the dark-mode variant above. */
+[data-theme="whatsapp-light"] {
+  --mkdd-canvas: #f0f2f5;
+  --mkdd-page: #ece5dd;
+  --mkdd-surface: #ffffff;
+  --mkdd-surface-raised: #f0f2f5;
+  --mkdd-surface-hover: #f0f2f5;
+  --mkdd-border-subtle: #e9edef;
+  --mkdd-border-strong: #d1d7db;
+  --mkdd-text-primary: #111b21;
+  --mkdd-text-secondary: #667781;
+  --mkdd-text-muted: #8696a0;
+  --mkdd-text-disabled: #aebac1;
+  --mkdd-accent: #00a884;
+  --mkdd-accent-deep: #008069;
+  --mkdd-accent-soft: #25d366;
+  --mkdd-info: #34b7f1;
+  --mkdd-success: #00a884;
+  --mkdd-warning: #ffab00;
+  --mkdd-danger: #ea0038;
+  --mkdd-page-translucent: color-mix(in srgb, var(--mkdd-page) 92%, transparent);
+  --mkdd-success-tint: color-mix(in srgb, var(--mkdd-success) 16%, var(--mkdd-surface));
+  --mkdd-danger-tint: color-mix(in srgb, var(--mkdd-danger) 16%, var(--mkdd-surface));
+  --mkdd-accent-glow: color-mix(in srgb, var(--mkdd-accent) 18%, transparent);
+  --mkdd-bubble-me: #dcf8c6;
+  /* The pale green bubble is far too light for white text - unlike
+     every other theme, "sent" text here must be dark. */
+  --mkdd-bubble-me-text: #111b21;
+  --mkdd-bubble-radius: 8px;
+}
+
+[data-theme="telegram-dark"] {
   --mkdd-canvas: #17212b;
   --mkdd-page: #0e1621;
   --mkdd-surface: #17212b;
@@ -126,11 +163,45 @@
   --mkdd-success-tint: color-mix(in srgb, var(--mkdd-success) 16%, var(--mkdd-surface));
   --mkdd-danger-tint: color-mix(in srgb, var(--mkdd-danger) 16%, var(--mkdd-surface));
   --mkdd-accent-glow: color-mix(in srgb, var(--mkdd-accent) 22%, transparent);
-  /* BUGS_AND_FIXES.md #199: Telegram's real "sent" bubble color
-     (#2B5278, a distinct dark blue from its own dark-theme system) is
-     genuinely distinct from its #2AABEE brand/button accent - not a
-     tint of it. Using the real researched value, not an approximation. */
+  /* Confirmed via direct research: Telegram's real dark-mode "sent"
+     bubble is #2B5278, genuinely distinct from its #2AABEE accent. */
   --mkdd-bubble-me: #2b5278;
+  --mkdd-bubble-me-text: #fff;
+  --mkdd-bubble-radius: 18px;
+}
+
+/* BUGS_AND_FIXES.md #200: Telegram's light mode. Its real sent-bubble
+   hex in light mode was not confidently confirmed via research (unlike
+   every other theme value in this file), so rather than invent an
+   unverified specific hex, this derives a pale tint directly from the
+   real, confirmed accent color (#2AABEE) - genuinely light and
+   recognizably blue-toned like Telegram, without asserting a precise
+   value no source actually confirmed. */
+[data-theme="telegram-light"] {
+  --mkdd-canvas: #f4f4f5;
+  --mkdd-page: #ffffff;
+  --mkdd-surface: #ffffff;
+  --mkdd-surface-raised: #f4f4f5;
+  --mkdd-surface-hover: #f0f0f0;
+  --mkdd-border-subtle: #e4e4e5;
+  --mkdd-border-strong: #d1d1d2;
+  --mkdd-text-primary: #000000;
+  --mkdd-text-secondary: #707579;
+  --mkdd-text-muted: #a8a8a8;
+  --mkdd-text-disabled: #c4c4c4;
+  --mkdd-accent: #2aabee;
+  --mkdd-accent-deep: #229ed9;
+  --mkdd-accent-soft: #54c1f0;
+  --mkdd-info: #2aabee;
+  --mkdd-success: #4fae4e;
+  --mkdd-warning: #ffa500;
+  --mkdd-danger: #ec3942;
+  --mkdd-page-translucent: color-mix(in srgb, var(--mkdd-page) 92%, transparent);
+  --mkdd-success-tint: color-mix(in srgb, var(--mkdd-success) 16%, var(--mkdd-surface));
+  --mkdd-danger-tint: color-mix(in srgb, var(--mkdd-danger) 16%, var(--mkdd-surface));
+  --mkdd-accent-glow: color-mix(in srgb, var(--mkdd-accent) 18%, transparent);
+  --mkdd-bubble-me: color-mix(in srgb, var(--mkdd-accent) 20%, var(--mkdd-surface));
+  --mkdd-bubble-me-text: #000000;
   --mkdd-bubble-radius: 18px;
 }
 
@@ -712,11 +783,11 @@ header button,
   align-self: flex-end;
   background: var(--mkdd-bubble-me, var(--mkdd-accent));
   border-color: var(--mkdd-bubble-me, var(--mkdd-accent));
-  color: #fff;
+  color: var(--mkdd-bubble-me-text, #fff);
 }
 
 .project-view .chat article.me .message-time {
-  color: rgba(255, 255, 255, 0.75);
+  color: color-mix(in srgb, var(--mkdd-bubble-me-text, #fff) 75%, transparent);
 }
 
 .project-view .chat article b {
@@ -3239,9 +3310,9 @@ header button,
    the chat area up to --mkdd-surface-hover (a real, clearly lighter
    step) restores the intended separation from both the bars above/
    below AND the message bubbles inside it. */
-[data-theme="dark"] .chat-screen > .chat,
-[data-theme="whatsapp"] .chat-screen > .chat,
-[data-theme="telegram"] .chat-screen > .chat {
+[data-theme="mkdd-dark"] .chat-screen > .chat,
+[data-theme="whatsapp-dark"] .chat-screen > .chat,
+[data-theme="telegram-dark"] .chat-screen > .chat {
   background: var(--mkdd-surface-hover);
 }
 
@@ -3252,17 +3323,20 @@ header button,
    override is needed here anymore. */
 
 /* Light mode: the "me" bubble's text was reported as hard to read
-   against its purple background - the ancestor rule sets color: #fff
-   on .project-view .chat article.me itself, but markdown content
-   renders through several nested elements (.message-markdown > p,
-   ul, li, etc.) and something in that chain was evidently not
-   inheriting white reliably. Forcing white on every descendant text
-   node inside the "me" bubble removes any ambiguity about inheritance,
-   rather than relying on a single ancestor rule and hoping it cascades
-   correctly through markdown's element chain. */
+   against its purple background - the ancestor rule sets
+   color: var(--mkdd-bubble-me-text) on .project-view .chat article.me
+   itself, but markdown content renders through several nested elements
+   (.message-markdown > p, ul, li, etc.) and something in that chain was
+   evidently not inheriting reliably. Forcing the same theme-aware text
+   color on every descendant text node inside the "me" bubble removes
+   any ambiguity about inheritance, rather than relying on a single
+   ancestor rule and hoping it cascades correctly through markdown's
+   element chain. BUGS_AND_FIXES.md #200: must stay in sync with
+   --mkdd-bubble-me-text, not a hardcoded white - WhatsApp light mode's
+   pale green bubble needs dark text, unlike every other theme. */
 .project-view .chat article.me,
 .project-view .chat article.me * {
-  color: #fff;
+  color: var(--mkdd-bubble-me-text, #fff);
 }
 
 /* =========================

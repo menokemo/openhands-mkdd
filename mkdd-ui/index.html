@@ -28,14 +28,20 @@
   <body>
     <script>
       // Applied before React mounts, to avoid a flash of the wrong theme.
-      // The CSS's bare :root defaults to LIGHT (per the official token
-      // spec), so this must explicitly apply "dark" for the common case
-      // too - not just handle a saved "light" preference.
+      // The CSS's bare :root defaults to mkdd-light (per the official
+      // token spec), so this must explicitly apply "mkdd-dark" for the
+      // common case too - not just handle a saved light preference.
+      // BUGS_AND_FIXES.md #200: style (mkdd/whatsapp/telegram) and mode
+      // (dark/light) are two independent, separately-stored choices -
+      // matches useTheme.ts's own logic exactly.
       try {
-        var VALID_THEMES = ["dark", "light", "whatsapp", "telegram"];
-        var savedTheme = localStorage.getItem("mkdd-theme");
-        var theme = VALID_THEMES.indexOf(savedTheme) !== -1 ? savedTheme : "dark";
-        document.documentElement.setAttribute("data-theme", theme);
+        var VALID_STYLES = ["mkdd", "whatsapp", "telegram"];
+        var VALID_MODES = ["dark", "light"];
+        var savedStyle = localStorage.getItem("mkdd-theme-style");
+        var savedMode = localStorage.getItem("mkdd-theme-mode");
+        var style = VALID_STYLES.indexOf(savedStyle) !== -1 ? savedStyle : "mkdd";
+        var mode = VALID_MODES.indexOf(savedMode) !== -1 ? savedMode : "dark";
+        document.documentElement.setAttribute("data-theme", style + "-" + mode);
 
         // Keep the browser/PWA chrome color (status bar, and the PWA
         // splash-screen-adjacent theme_color) in sync with the actual
@@ -45,18 +51,17 @@
         // edge specifically in PWA standalone mode (which uses this
         // differently from a normal browser tab) since the app
         // actually defaults to dark.
-        // BUGS_AND_FIXES.md #198: matches each theme's real --mkdd-page
-        // value in App.css - kept in sync with useTheme.ts's own
-        // THEME_COLORS map for the same reason.
+        // BUGS_AND_FIXES.md #198/#200: matches each style+mode's real
+        // --mkdd-page value in App.css - kept in sync with useTheme.ts's
+        // own THEME_COLORS map for the same reason.
         var THEME_COLORS = {
-          light: "#5b53d0",
-          dark: "#325be4",
-          whatsapp: "#111b21",
-          telegram: "#0e1621",
+          mkdd: { dark: "#325be4", light: "#5b53d0" },
+          whatsapp: { dark: "#111b21", light: "#ece5dd" },
+          telegram: { dark: "#0e1621", light: "#ffffff" },
         };
         var themeColorMeta = document.querySelector('meta[name="theme-color"]');
         if (themeColorMeta) {
-          themeColorMeta.setAttribute("content", THEME_COLORS[theme]);
+          themeColorMeta.setAttribute("content", THEME_COLORS[style][mode]);
         }
       } catch {}
     </script>

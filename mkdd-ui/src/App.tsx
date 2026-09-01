@@ -37,7 +37,12 @@ type Props = {
 
 export default function App({ currentUser, onAvatarChange }: Props) {
   const { language, setLanguage, t } = useLanguage();
-  const { theme, setTheme } = useTheme();
+  const {
+    style: themeStyle,
+    setStyle: setThemeStyle,
+    mode: themeMode,
+    setMode: setThemeMode,
+  } = useTheme();
   const [projects, setProjects] = useState<Workspace[]>([]);
   const [employees, setEmployees] = useState<AgentProfile[]>([]);
   const [workflowSummaries, setWorkflowSummaries] = useState<
@@ -233,8 +238,10 @@ export default function App({ currentUser, onAvatarChange }: Props) {
             language={language}
             languageLabel={t.language}
             setLanguage={setLanguage}
-            theme={theme}
-            setTheme={setTheme}
+            themeStyle={themeStyle}
+            setThemeStyle={setThemeStyle}
+            themeMode={themeMode}
+            setThemeMode={setThemeMode}
             onOpenSidebar={() => {
               refreshWorkflowSummaries();
               setSidebarOpen(true);
