@@ -367,13 +367,30 @@ check_stopped_employees() {
     return
   fi
 
-  summary=$(echo "$response" | python3 -c '
-import json, sys
+  # BUGS_AND_FIXES.md #205: exclude the deep_lookup-configured
+  # project+employee (if any) - deep_lookup already reports that exact
+  # employee's rate-limit errors on its own, plus catches a case this
+  # check can't (a hanging conversation with no error at all, via its
+  # 12-second timeout). Without this exclusion, that one employee would
+  # show up twice - once from each check - whenever they happen to be
+  # the one currently stopped.
+  summary=$(echo "$response" | HEALTH_CHECK_PROJECT="$HEALTH_CHECK_PROJECT" \
+    HEALTH_CHECK_EMPLOYEE_ID="$HEALTH_CHECK_EMPLOYEE_ID" python3 -c '
+import json, os, sys
 try:
     data = json.load(sys.stdin)
 except json.JSONDecodeError:
     sys.exit(0)
+deep_lookup_project = os.environ.get("HEALTH_CHECK_PROJECT", "")
+deep_lookup_employee_id = os.environ.get("HEALTH_CHECK_EMPLOYEE_ID", "")
 for s in data.get("stopped", []):
+    if (
+        deep_lookup_project
+        and deep_lookup_employee_id
+        and s.get("project") == deep_lookup_project
+        and s.get("employeeId") == deep_lookup_employee_id
+    ):
+        continue
     conv_id = s.get("conversationId", "?")
     message = s.get("humanMessage", "")
     resets_at = s.get("resetsAt")

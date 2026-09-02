@@ -234,6 +234,7 @@ async function findAllCurrentlyStoppedEmployees() {
     stopped.push({
       conversationId: conversation.id,
       employeeName: conversation.tags?.mkddemployee ?? "?",
+      employeeId: conversation.tags?.mkddemployeeid ?? "?",
       project: conversation.tags?.mkddproject ?? "?",
       resetsAt: info.resetsAt,
       humanMessage: buildHumanReadableErrorMessage(info.event).text,
