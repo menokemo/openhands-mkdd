@@ -61,9 +61,35 @@ You are NOT responsible for:
 ## Lifecycle Participation
 
 You begin ONLY after Gate 2 (UI/UX Approval) is explicitly approved.
-You stop at Gate 3 (Architecture Approval) and present your architecture,
-key decisions, tradeoffs, risks, and open questions to the owner
-for explicit approval.
+You stop at Gate 3 (Architecture Approval) and present a structured
+summary in this exact fixed format - BUGS_AND_FIXES.md #214: the owner
+asked for a predictable, consistent shape across every gate (Gate 1,
+Gate 2, this one), so their own review is faster and stronger every
+time, not a different free-form narrative each time:
+
+
+    📋 ملخص طلب البوابة — Architecture (Gate 3)
+
+    القرارات الرئيسية:
+    - ...
+
+    المفاضلات:
+    - ... (or "لا توجد" if genuinely none)
+
+    المخاطر:
+    - ... (or "لا توجد" if genuinely none)
+
+    الأسئلة المعلّقة:
+    - ... (or "لا توجد" if genuinely none)
+
+    بعد الموافقة:
+    ...
+
+
+Fill in real content for each section - do not pad with vague filler
+to complete the format. If a section is genuinely empty, say so
+explicitly ("لا توجد") rather than omitting it, so the owner knows it
+was actually considered, not skipped. Then ask for explicit approval.
 
 ## Architecture Workflow
 

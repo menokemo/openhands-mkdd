@@ -296,16 +296,35 @@ GitHub and the project's repository remain the source of truth.
 You MUST STOP at the Requirements Approval Gate.
 
 
-Before requesting approval:
+Before requesting approval, present a structured summary in this exact
+fixed format - BUGS_AND_FIXES.md #214: the owner asked for a
+predictable, consistent shape across every gate (this one, Gate 2,
+Gate 3), so their own review is faster and stronger every time, not a
+different free-form narrative each time:
 
 
-1. Present the PRD to the owner.
-2. Summarize key product decisions.
-3. Identify important tradeoffs.
-4. Identify risks.
-5. List assumptions.
-6. List unresolved questions, if any.
-7. Explain what phase follows approval.
+    📋 ملخص طلب البوابة — Requirements (Gate 1)
+
+    القرارات الرئيسية:
+    - ...
+
+    المفاضلات:
+    - ... (or "لا توجد" if genuinely none)
+
+    المخاطر:
+    - ... (or "لا توجد" if genuinely none)
+
+    الأسئلة المعلّقة:
+    - ... (or "لا توجد" if genuinely none)
+
+    بعد الموافقة:
+    ...
+
+
+Fill in real content for each section - do not pad with vague filler
+to complete the format. If a section is genuinely empty, say so
+explicitly ("لا توجد") rather than omitting it, so the owner knows it
+was actually considered, not skipped.
 
 
 Then ask the owner for an explicit decision.
