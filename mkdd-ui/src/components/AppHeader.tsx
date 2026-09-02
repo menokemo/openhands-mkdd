@@ -24,18 +24,17 @@ type Props = {
  * for every control to move into the sidebar instead, with the logo and
  * company name enlarged to fill the resulting space. See Sidebar.tsx's
  * "Quick settings" section for where those controls now live.
+ *
+ * BUGS_AND_FIXES.md #207: the logo and menu button positions are always
+ * fixed - logo on the left, menu button on the right - regardless of
+ * language/RTL direction, per explicit request. The header enforces its
+ * own LTR layout direction in App.css (independent of the rest of the
+ * page's RTL/LTR, which still follows the selected language normally)
+ * so this never flips with Arabic.
  */
 export default function AppHeader({ language, onOpenSidebar }: Props) {
   return (
     <header className="app-header">
-      <button
-        className="app-header-menu"
-        onClick={onOpenSidebar}
-        aria-label={language === "ar" ? "القائمة" : "Menu"}
-      >
-        <FaBars />
-      </button>
-
       <div className="app-header-brand">
         <img src="/api/branding/logo" alt="MKDD" />
         <div>
@@ -43,6 +42,14 @@ export default function AppHeader({ language, onOpenSidebar }: Props) {
           <span className="app-header-subtitle">Design &amp; Development</span>
         </div>
       </div>
+
+      <button
+        className="app-header-menu"
+        onClick={onOpenSidebar}
+        aria-label={language === "ar" ? "القائمة" : "Menu"}
+      >
+        <FaBars />
+      </button>
     </header>
   );
 }

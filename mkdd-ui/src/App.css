@@ -2229,13 +2229,19 @@ header button,
   margin: 0 auto;
   z-index: 40;
   display: grid;
-  grid-template-columns: 42px 1fr;
+  grid-template-columns: 1fr 42px;
   align-items: center;
   gap: 10px;
   padding: 14px 18px;
   background: var(--mkdd-page-translucent);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--mkdd-border-subtle);
+  /* BUGS_AND_FIXES.md #207: the header's own layout direction is always
+     LTR, independent of the page's RTL/LTR (which still follows the
+     selected language everywhere else) - keeps the logo fixed on the
+     left and the menu button fixed on the right regardless of language,
+     per explicit request. */
+  direction: ltr;
 }
 
 .app-header-menu {
@@ -2263,15 +2269,15 @@ header button,
 .app-header-brand {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 12px;
   min-width: 0;
 }
 
 .app-header-brand img {
-  width: 48px;
-  height: 48px;
-  border-radius: 13px;
+  width: 56px;
+  height: 56px;
+  border-radius: 15px;
   object-fit: cover;
   border: 1px solid rgba(117, 101, 255, 0.35);
 }
@@ -2279,7 +2285,7 @@ header button,
 .app-header-brand > div {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   line-height: 1.15;
 }
 
