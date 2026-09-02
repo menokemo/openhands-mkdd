@@ -277,6 +277,18 @@ findings exist, or (for `production`) if any mandatory review below isn't comple
 Do not work around a rejection by skipping this step; resolve the real blocker/
 finding/review first.
 
+### Evidence is mandatory for completing/resolving anything below
+
+Marking a review complete, a blocker resolved, or a finding fixed/verified all
+require a real `evidence` field (a plain string, minimum ~50 characters) describing
+what you actually did/checked - the API rejects the request with `evidence_required`
+otherwise. A generic phrase like "done" or "tested it" will not pass the length
+check on its own, but length alone doesn't make evidence real - write what you
+genuinely did, not padding to clear a character count. This exists precisely so a
+status can never flip to "complete"/"resolved"/"fixed"/"verified" with zero record
+of what was actually done - see Section 13's "declaring work done" requirement,
+which this technically enforces rather than only asking you to self-police.
+
 ### Completing a mandatory review
 
 QA, Test Automation, Code Review, and Security Review each record their own result
@@ -285,7 +297,7 @@ the moment their review actually passes — never in advance of doing it:
     curl -s -X POST http://mkdd-ui:8787/api/workflow/reviews \
       -H "Content-Type: application/json" \
       -H "X-Internal-Service-Key: $(cat /projects/.mkdd-internal/service-key.txt)" \
-      -d '{"project":"/projects/acme-app","action":"complete","reviewRole":"qa","reviewedBy":"Fady"}'
+      -d '{"project":"/projects/acme-app","action":"complete","reviewRole":"qa","reviewedBy":"Fady","evidence":"Manually tested login, checkout, and profile-edit flows across all 4 screens - 12 test cases run, all passed, no bugs found"}'
 
 `reviewRole` is one of `qa`, `test_automation`, `code_review`, `security_review`.
 Use `"action":"reopen"` if a completed review needs to be reopened (e.g. new changes
@@ -305,7 +317,7 @@ Whoever resolves it marks it resolved:
     curl -s -X POST http://mkdd-ui:8787/api/workflow/blockers \
       -H "Content-Type: application/json" \
       -H "X-Internal-Service-Key: $(cat /projects/.mkdd-internal/service-key.txt)" \
-      -d '{"project":"/projects/acme-app","action":"resolve","blockerId":"<id from the add response>","resolvedBy":"Kirollos"}'
+      -d '{"project":"/projects/acme-app","action":"resolve","blockerId":"<id from the add response>","resolvedBy":"Kirollos","evidence":"Owner provided the real production DB credentials via secure channel; added them to the deployment secret store and confirmed the app connects successfully"}'
 
 ### Recording a review finding
 
@@ -322,14 +334,14 @@ The implementer (never the same person as `reviewer`) marks it fixed once resolv
     curl -s -X POST http://mkdd-ui:8787/api/workflow/findings \
       -H "Content-Type: application/json" \
       -H "X-Internal-Service-Key: $(cat /projects/.mkdd-internal/service-key.txt)" \
-      -d '{"project":"/projects/acme-app","action":"mark-fixed","findingId":"<id>","fixedBy":"Kirollos"}'
+      -d '{"project":"/projects/acme-app","action":"mark-fixed","findingId":"<id>","fixedBy":"Kirollos","evidence":"Replaced raw SQL string concatenation with parameterized queries in search.mjs; verified the injection payload from the finding no longer executes"}'
 
 The SAME reviewer who created the finding (never anyone else) verifies the fix:
 
     curl -s -X POST http://mkdd-ui:8787/api/workflow/findings \
       -H "Content-Type: application/json" \
       -H "X-Internal-Service-Key: $(cat /projects/.mkdd-internal/service-key.txt)" \
-      -d '{"project":"/projects/acme-app","action":"verify","findingId":"<id>","verifiedBy":"Mikhail"}'
+      -d '{"project":"/projects/acme-app","action":"verify","findingId":"<id>","verifiedBy":"Mikhail","evidence":"Re-attempted the original injection payload against search.mjs - confirmed it is now safely parameterized and rejected"}'
 
 The API itself rejects a mismatched `fixedBy`/`verifiedBy` — this enforces Section
 7's "reviewer roles never fix their own findings" rule structurally, not just as a

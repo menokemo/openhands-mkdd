@@ -16,6 +16,10 @@ function emptyReviews() {
         status: "pending",
         reviewedBy: null,
         completedAt: null,
+        // BUGS_AND_FIXES.md #212: real supporting evidence for the
+        // completion claim, not just a status flag - see
+        // routes/workflow.mjs's MIN_EVIDENCE_LENGTH enforcement.
+        evidence: null,
       },
     ]),
   );

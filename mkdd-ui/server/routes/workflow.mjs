@@ -12,6 +12,21 @@ import { deliverMessageToEmployee } from "./chat.mjs";
 import { withReportMarker } from "../lib/report-message-marker.mjs";
 import { readEmployeeDisplayInfo } from "../lib/employee-display-info.mjs";
 
+// BUGS_AND_FIXES.md #212: a real technical barrier against unsupported
+// completion claims - discovered live that marking a review complete, a
+// blocker resolved, or a finding fixed/verified required no supporting
+// evidence at all, just a name. Any of these could previously be marked
+// done in one call with zero documentation of what was actually
+// checked/done. A short, non-empty minimum forces at least a real
+// description, not a rubber stamp like "done" or "ok".
+const MIN_EVIDENCE_LENGTH = 50;
+
+function requireEvidence(evidence) {
+  if (typeof evidence !== "string" || evidence.trim().length < MIN_EVIDENCE_LENGTH) {
+    throw new Error("evidence_required");
+  }
+}
+
 /**
  * GET /api/workflow/summary — returns gate status for every project that
  * has any persisted workflow state, for the sidebar's project grouping
@@ -120,7 +135,7 @@ export async function handleBlockers(req, res) {
     return false;
   }
 
-  const { project, action, blockerId, title, createdBy, resolvedBy } =
+  const { project, action, blockerId, title, createdBy, resolvedBy, evidence } =
     await readJsonBody(req);
 
   if (!project || !action) {
@@ -143,6 +158,9 @@ export async function handleBlockers(req, res) {
         createdAt: new Date().toISOString(),
         resolvedBy: null,
         resolvedAt: null,
+        // BUGS_AND_FIXES.md #212: real supporting evidence for how it
+        // was actually resolved, set on resolve below.
+        evidence: null,
       });
 
       return state;
@@ -163,9 +181,11 @@ export async function handleBlockers(req, res) {
         throw new Error("blocker_already_resolved");
       }
 
+      requireEvidence(evidence);
       blocker.status = "resolved";
       blocker.resolvedBy = resolvedBy.trim();
       blocker.resolvedAt = new Date().toISOString();
+      blocker.evidence = evidence.trim();
 
       return state;
     }
@@ -183,7 +203,7 @@ export async function handleReviews(req, res) {
     return false;
   }
 
-  const { project, action, reviewRole, reviewedBy } = await readJsonBody(req);
+  const { project, action, reviewRole, reviewedBy, evidence } = await readJsonBody(req);
 
   if (!project || !action || !reviewRole || !reviewedBy) {
     res.writeHead(400, { "content-type": "application/json" });
@@ -201,9 +221,11 @@ export async function handleReviews(req, res) {
     const review = state.reviews[reviewRole];
 
     if (action === "complete") {
+      requireEvidence(evidence);
       review.status = "complete";
       review.reviewedBy = reviewedBy;
       review.completedAt = new Date().toISOString();
+      review.evidence = evidence.trim();
       return state;
     }
 
@@ -211,6 +233,7 @@ export async function handleReviews(req, res) {
       review.status = "pending";
       review.reviewedBy = null;
       review.completedAt = null;
+      review.evidence = null;
       return state;
     }
 
@@ -227,7 +250,7 @@ export async function handleFindings(req, res) {
     return false;
   }
 
-  const { project, action, findingId, title, reviewer, fixedBy, verifiedBy } =
+  const { project, action, findingId, title, reviewer, fixedBy, verifiedBy, evidence } =
     await readJsonBody(req);
 
   if (!project || !action) {
@@ -252,6 +275,11 @@ export async function handleFindings(req, res) {
         fixedAt: null,
         verifiedBy: null,
         verifiedAt: null,
+        // BUGS_AND_FIXES.md #212: real supporting evidence for each
+        // distinct claim - what was actually done to fix it, and
+        // separately what the independent verifier actually checked.
+        fixEvidence: null,
+        verifyEvidence: null,
       });
 
       return state;
@@ -276,9 +304,11 @@ export async function handleFindings(req, res) {
         throw new Error("finding_not_open");
       }
 
+      requireEvidence(evidence);
       finding.status = "fixed_pending_verification";
       finding.fixedBy = fixedBy.trim();
       finding.fixedAt = new Date().toISOString();
+      finding.fixEvidence = evidence.trim();
 
       return state;
     }
@@ -296,9 +326,11 @@ export async function handleFindings(req, res) {
         throw new Error("finding_not_ready_for_verification");
       }
 
+      requireEvidence(evidence);
       finding.status = "verified";
       finding.verifiedBy = verifiedBy.trim();
       finding.verifiedAt = new Date().toISOString();
+      finding.verifyEvidence = evidence.trim();
 
       return state;
     }
@@ -486,6 +518,7 @@ export const WORKFLOW_ERROR_CODES = new Set([
   "open_blockers_exist",
   "unverified_findings_exist",
   "mandatory_reviews_incomplete",
+  "evidence_required",
   "title_createdBy_required",
   "blockerId_resolvedBy_required",
   "blocker_not_found",
