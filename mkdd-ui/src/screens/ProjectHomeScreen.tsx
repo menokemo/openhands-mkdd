@@ -108,6 +108,14 @@ export default function ProjectHomeScreen({
   const [projectFiles, setProjectFiles] = useState<ProjectFile[]>([]);
   const [filesLoading, setFilesLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  // BUGS_AND_FIXES.md #213: shows the real evidence text behind any
+  // completed review/resolved blocker/fixed-and-verified finding - the
+  // owner previously had no way to see this at all in the UI, even
+  // though #212 made it mandatory to record.
+  const [openEvidence, setOpenEvidence] = useState<{
+    title: string;
+    entries: Array<{ label: string; text: string }>;
+  } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -174,8 +182,12 @@ export default function ProjectHomeScreen({
   const idleCount = employees.length - workingCount - waitingCount;
 
   const openBlockers = workflow?.blockers.filter((item) => item.status === "open") ?? [];
+  const resolvedBlockers =
+    workflow?.blockers.filter((item) => item.status === "resolved") ?? [];
   const openFindings =
     workflow?.findings.filter((item) => item.status !== "verified") ?? [];
+  const verifiedFindings =
+    workflow?.findings.filter((item) => item.status === "verified") ?? [];
 
   return (
     <main className="app project-home">
@@ -315,9 +327,8 @@ export default function ProjectHomeScreen({
               const review = workflow?.reviews[reviewRole];
               const ReviewIcon = REVIEW_ICONS[reviewRole];
               const isComplete = review?.status === "complete";
-
-              return (
-                <li key={reviewRole} className={isComplete ? "review-complete" : ""}>
+              const content = (
+                <>
                   <ReviewIcon />
                   <span>{getReviewLabel(reviewRole, language)}</span>
                   <em>
@@ -326,6 +337,38 @@ export default function ProjectHomeScreen({
                       ? "…"
                       : getReviewStatusLabel(review?.status, language)}
                   </em>
+                </>
+              );
+
+              if (isComplete && review?.evidence) {
+                return (
+                  <li key={reviewRole} className="review-complete">
+                    <button
+                      type="button"
+                      className="dashboard-evidence-trigger"
+                      onClick={() =>
+                        setOpenEvidence({
+                          title: getReviewLabel(reviewRole, language),
+                          entries: [
+                            {
+                              label:
+                                (language === "ar" ? "راجعها: " : "Reviewed by: ") +
+                                (review.reviewedBy ?? "?"),
+                              text: review.evidence ?? "",
+                            },
+                          ],
+                        })
+                      }
+                    >
+                      {content}
+                    </button>
+                  </li>
+                );
+              }
+
+              return (
+                <li key={reviewRole} className={isComplete ? "review-complete" : ""}>
+                  {content}
                 </li>
               );
             })}
@@ -354,6 +397,25 @@ export default function ProjectHomeScreen({
                 </li>
               ))}
             </ul>
+          )}
+          {resolvedBlockers.length > 0 && (
+            <button
+              type="button"
+              className="dashboard-view-resolved"
+              onClick={() =>
+                setOpenEvidence({
+                  title: language === "ar" ? "عوائق تم حلها" : "Resolved blockers",
+                  entries: resolvedBlockers.map((blocker) => ({
+                    label: `${blocker.title} — ${blocker.resolvedBy ?? "?"}`,
+                    text: blocker.evidence ?? "",
+                  })),
+                })
+              }
+            >
+              {language === "ar"
+                ? `شوف ${resolvedBlockers.length} عائق تم حله`
+                : `View ${resolvedBlockers.length} resolved`}
+            </button>
           )}
         </article>
 
@@ -384,6 +446,32 @@ export default function ProjectHomeScreen({
                 </li>
               ))}
             </ul>
+          )}
+          {verifiedFindings.length > 0 && (
+            <button
+              type="button"
+              className="dashboard-view-resolved"
+              onClick={() =>
+                setOpenEvidence({
+                  title:
+                    language === "ar" ? "ملاحظات تم التحقق منها" : "Verified findings",
+                  entries: verifiedFindings.flatMap((finding) => [
+                    {
+                      label: `${finding.title} — ${language === "ar" ? "الإصلاح" : "Fix"} (${finding.fixedBy ?? "?"})`,
+                      text: finding.fixEvidence ?? "",
+                    },
+                    {
+                      label: `${finding.title} — ${language === "ar" ? "التحقق" : "Verification"} (${finding.verifiedBy ?? "?"})`,
+                      text: finding.verifyEvidence ?? "",
+                    },
+                  ]),
+                })
+              }
+            >
+              {language === "ar"
+                ? `شوف ${verifiedFindings.length} ملاحظة تم حلها`
+                : `View ${verifiedFindings.length} resolved`}
+            </button>
           )}
         </article>
       </section>
@@ -478,6 +566,27 @@ export default function ProjectHomeScreen({
             })}
         </ul>
       </section>
+
+      {openEvidence && (
+        <div className="modal-backdrop" onClick={() => setOpenEvidence(null)}>
+          <div className="modal report-popup" onClick={(e) => e.stopPropagation()}>
+            <h2>{openEvidence.title}</h2>
+            {openEvidence.entries.map((entry, i) => (
+              <div key={i} className="evidence-entry">
+                <strong>{entry.label}</strong>
+                <p>
+                  {entry.text || (language === "ar" ? "(لا يوجد دليل)" : "(no evidence)")}
+                </p>
+              </div>
+            ))}
+            <div className="modal-actions">
+              <button type="button" onClick={() => setOpenEvidence(null)}>
+                {language === "ar" ? "إغلاق" : "Close"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

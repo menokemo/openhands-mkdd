@@ -383,6 +383,7 @@ export type WorkflowState = {
     createdAt: string;
     resolvedBy?: string;
     resolvedAt?: string;
+    evidence?: string | null;
   }>;
   findings: Array<{
     id: string;
@@ -394,6 +395,8 @@ export type WorkflowState = {
     fixedAt?: string;
     verifiedBy?: string;
     verifiedAt?: string;
+    fixEvidence?: string | null;
+    verifyEvidence?: string | null;
   }>;
   reports: Array<{
     id: string;
@@ -414,6 +417,7 @@ export type WorkflowState = {
       status: "pending" | "complete";
       reviewedBy: string | null;
       completedAt: string | null;
+      evidence?: string | null;
     }
   >;
   updatedAt: string;

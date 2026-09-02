@@ -3318,6 +3318,78 @@ header button,
   color: var(--mkdd-success);
 }
 
+/* BUGS_AND_FIXES.md #213: clickable review row showing real evidence -
+   inherits the exact same visual layout as the plain li above it, just
+   as an actual clickable button. */
+.dashboard-evidence-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.dashboard-evidence-trigger > svg:first-child {
+  flex: 0 0 auto;
+  font-size: 15px;
+  color: var(--mkdd-accent-soft);
+}
+
+.dashboard-evidence-trigger span {
+  flex: 1 1 auto;
+  color: var(--mkdd-text-secondary);
+}
+
+.dashboard-evidence-trigger em {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--mkdd-success);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.dashboard-view-resolved {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--mkdd-border-subtle);
+  border-radius: 10px;
+  background: var(--mkdd-surface-hover);
+  color: var(--mkdd-text-secondary);
+  font-size: 12px;
+  width: 100%;
+}
+
+.evidence-entry {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--mkdd-border-subtle);
+}
+
+.evidence-entry:last-child {
+  border-bottom: none;
+}
+
+.evidence-entry strong {
+  display: block;
+  font-size: 12px;
+  color: var(--mkdd-text-secondary);
+  margin-bottom: 4px;
+}
+
+.evidence-entry p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--mkdd-text-primary);
+  line-height: 1.5;
+}
+
 /* Blockers / Findings item lists */
 
 .dashboard-item-list {
