@@ -25,10 +25,13 @@ type Props = {
  * company name enlarged to fill the resulting space. See Sidebar.tsx's
  * "Quick settings" section for where those controls now live.
  *
- * BUGS_AND_FIXES.md #209: #207 briefly forced a fixed logo-left/menu-
- * right layout regardless of language - reverted per explicit follow-up
- * request. The header naturally follows the page's RTL/LTR direction
- * again, same as the rest of the app.
+ * BUGS_AND_FIXES.md #210: three genuinely separate elements in a single
+ * row - sidebar button, company name, then logo, in that fixed DOM
+ * order - with no forced direction (per #209's revert), so this row
+ * naturally flips with the page's RTL/LTR: in Arabic, right to left
+ * reads button -> name -> logo; in English, left to right reads
+ * button -> name -> logo (the mirror image), per explicit request.
+ * The name always ends up visually between the button and the logo.
  */
 export default function AppHeader({ language, onOpenSidebar }: Props) {
   return (
@@ -41,13 +44,12 @@ export default function AppHeader({ language, onOpenSidebar }: Props) {
         <FaBars />
       </button>
 
-      <div className="app-header-brand">
-        <img src="/api/branding/logo" alt="MKDD" />
-        <div>
-          <span className="app-header-title">MKDD</span>
-          <span className="app-header-subtitle">Design &amp; Development</span>
-        </div>
+      <div className="app-header-name">
+        <span className="app-header-title">MKDD</span>
+        <span className="app-header-subtitle">Design &amp; Development</span>
       </div>
+
+      <img className="app-header-logo" src="/api/branding/logo" alt="MKDD" />
     </header>
   );
 }
