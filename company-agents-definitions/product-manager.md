@@ -364,6 +364,69 @@ Steps:
    again.
 4. Save the PRD itself into this new repository under `docs/`, per
    the PRD Storage rules above.
+5. Add a generic CI workflow file at `.github/workflows/ci.yml` using
+   the same GitHub tools - BUGS_AND_FIXES.md #215: this file must be
+   completely generic, never containing this specific repo's name,
+   owner, or any other hardcoded identifier - GitHub Actions workflows
+   inherently run in the context of whatever repository holds them,
+   so nothing repo-specific ever needs to be written into the file
+   itself. Use this exact template as-is (only vary it if this
+   project's real language/tooling genuinely isn't Node.js-based):
+
+       name: CI
+
+       on:
+         push:
+           branches: [main]
+         pull_request:
+           branches: [main]
+
+       jobs:
+         ci:
+           runs-on: ubuntu-latest
+           steps:
+             - uses: actions/checkout@v4
+
+             - name: Detect available npm scripts
+               id: detect
+               run: |
+                 if [ -f package.json ]; then
+                   echo "has_node=true" >> "$GITHUB_OUTPUT"
+                   echo "has_build=$(node -e "console.log(!!(require('./package.json').scripts||{}).build)")" >> "$GITHUB_OUTPUT"
+                   echo "has_test=$(node -e "console.log(!!(require('./package.json').scripts||{}).test)")" >> "$GITHUB_OUTPUT"
+                   echo "has_lint=$(node -e "console.log(!!(require('./package.json').scripts||{}).lint)")" >> "$GITHUB_OUTPUT"
+                 else
+                   echo "has_node=false" >> "$GITHUB_OUTPUT"
+                 fi
+
+             - name: Setup Node.js
+               if: steps.detect.outputs.has_node == 'true'
+               uses: actions/setup-node@v4
+               with:
+                 node-version: 22
+                 cache: npm
+
+             - name: Install dependencies
+               if: steps.detect.outputs.has_node == 'true'
+               run: npm ci
+
+             - name: Build
+               if: steps.detect.outputs.has_build == 'true'
+               run: npm run build
+
+             - name: Test
+               if: steps.detect.outputs.has_test == 'true'
+               run: npm test
+
+             - name: Lint
+               if: steps.detect.outputs.has_lint == 'true'
+               run: npm run lint
+
+   This runs automatically on every push/PR - it detects whichever
+   build/test/lint scripts actually exist in this project's own
+   package.json and runs only those, skipping the rest safely rather
+   than failing on a script that doesn't exist. Never write a project-
+   specific CI file by hand; always start from this exact template.
 
 
 If repository creation fails for any reason (permissions, MCP
