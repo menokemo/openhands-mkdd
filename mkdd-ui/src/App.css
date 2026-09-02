@@ -1669,7 +1669,7 @@ header button,
 }
 
 .project-home {
-  padding-top: 100px;
+  padding-top: 92px;
 }
 
 .project-home .project-heading {
@@ -2232,7 +2232,7 @@ header button,
   grid-template-columns: 1fr 42px;
   align-items: center;
   gap: 10px;
-  padding: 14px 18px;
+  padding: 10px 18px;
   background: var(--mkdd-page-translucent);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--mkdd-border-subtle);
@@ -2314,11 +2314,11 @@ header button,
    robust than a CSS :has() sibling trick, which doesn't reliably match
    this app's actual DOM order (breadcrumb precedes .app, not follows it). */
 .app {
-  padding-top: 140px;
+  padding-top: 132px;
 }
 
 .projects-screen {
-  padding-top: 96px;
+  padding-top: 88px;
 }
 
 .chat-screen {
@@ -2331,7 +2331,13 @@ header button,
 
 .breadcrumb-bar {
   position: fixed;
-  top: 62px;
+  /* BUGS_AND_FIXES.md #208: matches the header's real current height
+     (10px padding + 56px logo + 10px padding + 1px border = 77px) -
+     this had gone stale through several earlier logo/padding size
+     increases without ever being recalculated, causing the breadcrumb
+     to overlap the header. Recompute this value again if the header's
+     padding or logo size change further. */
+  top: 77px;
   left: 0;
   right: 0;
   max-width: 820px;
