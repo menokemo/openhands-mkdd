@@ -13,8 +13,10 @@ type Props = {
  * in a separate BreadcrumbBar rendered below this, NOT inside the header
  * itself, so the header truly never changes shape or content.
  *
- * "MKDD" always renders in English regardless of the app language, per
- * the same requirement - only the tagline follows the selected language.
+ * "MKDD" and its tagline both always render in English regardless of
+ * the app language, per explicit request - matches how a real brand
+ * name/tagline doesn't get translated per-user, unlike the rest of the
+ * app's UI text which does follow the selected language.
  *
  * BUGS_AND_FIXES.md #203: intentionally minimal now - the owner felt the
  * header had become cluttered (notifications, theme style, theme mode,
@@ -38,9 +40,7 @@ export default function AppHeader({ language, onOpenSidebar }: Props) {
         <img src="/api/branding/logo" alt="MKDD" />
         <div>
           <span className="app-header-title">MKDD</span>
-          <span className="app-header-subtitle">
-            {language === "ar" ? "تصميم وتطوير" : "Design & Development"}
-          </span>
+          <span className="app-header-subtitle">Design &amp; Development</span>
         </div>
       </div>
     </header>
