@@ -557,6 +557,32 @@ header button,
   z-index: 20;
 }
 
+/* BUGS_AND_FIXES.md #220: WhatsApp/Telegram-style "jump to latest
+   message" floating button, shown once the owner scrolls away from
+   the bottom. */
+.chat-scroll-to-bottom {
+  position: fixed;
+  inset-inline-end: calc(50% - 410px + 16px);
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--mkdd-border-subtle);
+  background: var(--mkdd-surface);
+  color: var(--mkdd-text-primary);
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  z-index: 25;
+}
+
+@media (max-width: 852px) {
+  .chat-scroll-to-bottom {
+    inset-inline-end: 16px;
+  }
+}
+
 .composer-row {
   display: flex;
   align-items: flex-end;
@@ -943,6 +969,7 @@ header button,
   display: flex;
   flex-direction: column;
   justify-content: center;
+  gap: 2px;
 }
 
 .chat-employee-info strong {
@@ -950,6 +977,25 @@ header button,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* BUGS_AND_FIXES.md #220: role shown compactly under the name, Telegram-
+   style (like a status line), instead of a separate badge row above
+   the whole header. */
+.chat-employee-role {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--mkdd-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-employee-role svg {
+  font-size: 11px;
+  flex: 0 0 auto;
 }
 
 /* =========================
@@ -1095,28 +1141,8 @@ header button,
 
 .chat-screen-person {
   flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--mkdd-border-subtle);
-}
-
-.chat-role-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 16px;
-  border-radius: 999px;
-  background: var(--mkdd-accent);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.chat-role-badge svg {
-  font-size: 13px;
 }
 
 .chat-screen-person-row {

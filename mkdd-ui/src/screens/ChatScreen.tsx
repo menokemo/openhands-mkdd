@@ -1,6 +1,13 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { FaPaperclip, FaFileArrowUp, FaXmark, FaCopy, FaCheck } from "react-icons/fa6";
+import {
+  FaPaperclip,
+  FaFileArrowUp,
+  FaXmark,
+  FaCopy,
+  FaCheck,
+  FaChevronDown,
+} from "react-icons/fa6";
 import type {
   ActivityEvent,
   AgentProfile,
@@ -113,6 +120,11 @@ export default function ChatScreen({
   // BUGS_AND_FIXES.md #198: tracks which message was just copied, to
   // show brief "Copied" feedback before reverting to the copy icon.
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  // BUGS_AND_FIXES.md #220: tracks whether the owner is currently near
+  // the bottom of the chat - drives both the "jump to latest" button
+  // (WhatsApp/Telegram-style) and whether new messages should
+  // auto-scroll into view at all.
+  const [isNearBottom, setIsNearBottom] = useState(true);
 
   useEffect(() => {
     if (!isOpeningConversation) {
@@ -195,8 +207,16 @@ export default function ChatScreen({
       return;
     }
 
-    messagesEndRef.current?.scrollIntoView({ block: "end" });
-  }, [messages.length]);
+    // BUGS_AND_FIXES.md #220: only jump to the latest message when the
+    // owner is already near the bottom - if they've scrolled up to read
+    // older history, a new incoming message must not yank them back
+    // down. isNearBottom is force-set to true right before sending a
+    // message (see the composer's onSubmit below), so the owner's own
+    // sent messages still always scroll into view.
+    if (isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ block: "end" });
+    }
+  }, [messages.length, isNearBottom]);
 
   /**
    * Triggered when the owner scrolls near the top of the chat
@@ -206,7 +226,17 @@ export default function ChatScreen({
    */
   function handleScroll() {
     const container = chatContainerRef.current;
-    if (!container || !hasOlderMessages || loadingOlder) return;
+    if (!container) return;
+
+    // BUGS_AND_FIXES.md #220: "near bottom" tolerance of 80px - close
+    // enough that new messages arriving still feel continuous, not so
+    // tight that a slightly-off scroll position wrongly shows the
+    // jump-to-latest button when the owner is effectively already there.
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    setIsNearBottom(distanceFromBottom < 80);
+
+    if (!hasOlderMessages || loadingOlder) return;
 
     if (container.scrollTop < 60) {
       scrollHeightBeforeLoadRef.current = container.scrollHeight;
@@ -272,14 +302,6 @@ export default function ChatScreen({
   return (
     <main className="app project-view chat-screen">
       <div className="chat-screen-person">
-        <div className="chat-role-badge">
-          {(() => {
-            const RoleIcon = ROLE_ICONS[employee.id];
-            return RoleIcon ? <RoleIcon /> : null;
-          })()}
-          {employee.role}
-        </div>
-
         <div className="chat-screen-person-row">
           <button
             type="button"
@@ -300,6 +322,13 @@ export default function ChatScreen({
 
           <div className="chat-employee-info">
             <strong>{employeeName}</strong>
+            <span className="chat-employee-role">
+              {(() => {
+                const RoleIcon = ROLE_ICONS[employee.id];
+                return RoleIcon ? <RoleIcon /> : null;
+              })()}
+              {employee.role}
+            </span>
           </div>
 
           <button
@@ -601,6 +630,20 @@ export default function ChatScreen({
         <div ref={messagesEndRef} />
       </section>
 
+      {!isNearBottom && (
+        <button
+          type="button"
+          className="chat-scroll-to-bottom"
+          onClick={() => {
+            setIsNearBottom(true);
+            messagesEndRef.current?.scrollIntoView({ block: "end" });
+          }}
+          aria-label={language === "ar" ? "الرجوع لآخر رسالة" : "Jump to latest"}
+        >
+          <FaChevronDown />
+        </button>
+      )}
+
       <form
         ref={composerRef}
         className="composer"
@@ -608,6 +651,7 @@ export default function ChatScreen({
           event.preventDefault();
           const images = pendingImages;
           setPendingImages([]);
+          setIsNearBottom(true);
           await sendMessage(images.length > 0 ? images : undefined);
         }}
       >
