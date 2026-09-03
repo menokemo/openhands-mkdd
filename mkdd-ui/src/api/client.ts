@@ -5,6 +5,7 @@ import type {
   ChatOpenResponse,
   RecentEventsResponse,
   OlderEventsResponse,
+  OlderConversationResponse,
   SendMessageResponse,
   WorkflowGateName,
   WorkPlan,
@@ -275,6 +276,29 @@ export async function fetchOlderEvents(
     pageId,
   });
   const r = await fetch(`/api/chat/events/older?${qs}`);
+
+  return r.json();
+}
+
+/**
+ * BUGS_AND_FIXES.md #218: when the current conversation's own history
+ * is exhausted (fetchOlderEvents returned hasMore: false), this finds
+ * and loads the conversation that came before it (from a "start new
+ * conversation" break), if any.
+ */
+export async function fetchOlderConversation(
+  conversationId: string,
+  project: string,
+  employeeId: string,
+  employeeName: string,
+): Promise<OlderConversationResponse> {
+  const qs = new URLSearchParams({
+    conversation: conversationId,
+    project,
+    employeeId,
+    employeeName,
+  });
+  const r = await fetch(`/api/chat/older-conversation?${qs}`);
 
   return r.json();
 }

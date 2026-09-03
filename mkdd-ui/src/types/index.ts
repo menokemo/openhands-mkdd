@@ -50,6 +50,11 @@ export type ChatMessage = ConversationEventBase & {
   /** BUGS_AND_FIXES.md #197: a delivered inter-employee report - render
    * as a compact badge that opens a popup, not a normal chat bubble. */
   isReportDelivery?: boolean;
+  /** BUGS_AND_FIXES.md #218: which real OpenHands conversation this
+   * message came from - used to render a "new conversation started"
+   * divider whenever this changes between consecutive messages, when
+   * scrolling back through pre-"start new conversation" history. */
+  conversationId?: string;
 };
 
 export type ActionActivityEvent = ConversationEventBase & {
@@ -187,6 +192,15 @@ export type OlderEventsResponse = {
   items: ConversationEvent[];
   hasMore: boolean;
   nextPageId: string | null;
+};
+
+/** BUGS_AND_FIXES.md #218: response from GET /api/chat/older-conversation. */
+export type OlderConversationResponse = {
+  olderConversationId: string | null;
+  startedAt?: string | null;
+  items?: ConversationEvent[];
+  hasMore?: boolean;
+  nextPageId?: string | null;
 };
 
 export type SendMessageResponse = {

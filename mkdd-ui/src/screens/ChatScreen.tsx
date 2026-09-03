@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { FaPaperclip, FaFileArrowUp, FaXmark, FaCopy, FaCheck } from "react-icons/fa6";
 import type {
@@ -39,6 +39,30 @@ type Props = {
   openError: string | null;
   loadOlderMessages: () => Promise<void>;
 };
+
+// BUGS_AND_FIXES.md #218: Telegram-style date divider label - "today"/
+// "yesterday" for the two most recent days, a full weekday+date
+// otherwise. numberingSystem: "latn" explicitly forced - ar-EG alone
+// produces Arabic-Indic numerals (confirmed live in #172/#206, the
+// exact same locale quirk), so this avoids reintroducing it here.
+function formatDateDivider(isoTimestamp: string, language: "ar" | "en"): string {
+  const date = new Date(isoTimestamp);
+  const now = new Date();
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const dayDiff = Math.round(
+    (startOfDay(now).getTime() - startOfDay(date).getTime()) / 86400000,
+  );
+
+  if (dayDiff === 0) return language === "ar" ? "اليوم" : "Today";
+  if (dayDiff === 1) return language === "ar" ? "أمس" : "Yesterday";
+
+  return new Intl.DateTimeFormat(language === "ar" ? "ar-EG" : "en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    numberingSystem: "latn",
+  }).format(date);
+}
 
 /**
  * Body content for the chat screen. The global header and back
@@ -370,7 +394,50 @@ export default function ChatScreen({
             {language === "ar" ? "جاري تحميل رسائل أقدم…" : "Loading older messages…"}
           </div>
         )}
-        {messages.map((event) => {
+        {messages.map((event, index) => {
+          const previousEvent = index > 0 ? messages[index - 1] : null;
+
+          // BUGS_AND_FIXES.md #218: Telegram-style date divider,
+          // whenever the calendar day changes between consecutive
+          // messages.
+          const showDateDivider =
+            event.timestamp &&
+            (!previousEvent?.timestamp ||
+              new Date(event.timestamp).toDateString() !==
+                new Date(previousEvent.timestamp).toDateString());
+
+          // BUGS_AND_FIXES.md #218: "new conversation started" divider,
+          // whenever the underlying real conversation changes between
+          // consecutive messages (crossing a "start new conversation"
+          // break while scrolling back through history). Only shown
+          // once both messages actually have a known conversationId -
+          // live messages during the active session share the same one
+          // and never trigger this.
+          const showConversationDivider =
+            index > 0 &&
+            event.conversationId &&
+            previousEvent?.conversationId &&
+            event.conversationId !== previousEvent.conversationId;
+
+          const dividers = (
+            <>
+              {showConversationDivider && (
+                <div className="chat-conversation-divider">
+                  <span>
+                    {language === "ar"
+                      ? "بداية محادثة جديدة"
+                      : "New conversation started"}
+                  </span>
+                </div>
+              )}
+              {showDateDivider && event.timestamp && (
+                <div className="chat-date-divider">
+                  <span>{formatDateDivider(event.timestamp, language)}</span>
+                </div>
+              )}
+            </>
+          );
+
           const textParts = event.llm_message.content
             .filter(
               (item): item is { type: "text"; text: string } => item.type === "text",
@@ -383,14 +450,16 @@ export default function ChatScreen({
           // content in a popup instead.
           if (event.isReportDelivery) {
             return (
-              <button
-                key={event.id}
-                type="button"
-                className="report-delivery-badge"
-                onClick={() => setOpenReportText(textParts)}
-              >
-                {language === "ar" ? "📋 تقرير من موظف" : "📋 Report from an employee"}
-              </button>
+              <Fragment key={event.id}>
+                {dividers}
+                <button
+                  type="button"
+                  className="report-delivery-badge"
+                  onClick={() => setOpenReportText(textParts)}
+                >
+                  {language === "ar" ? "📋 تقرير من موظف" : "📋 Report from an employee"}
+                </button>
+              </Fragment>
             );
           }
 
@@ -404,122 +473,128 @@ export default function ChatScreen({
           const isUser = event.source === "user";
 
           return (
-            <article key={event.id} className={isUser ? "me" : "agent-message"}>
-              {!isUser && (
-                <div className="agent-message-header">
-                  <div className="agent-message-avatar">
-                    {employee.avatarUrl ? (
-                      <img src={employee.avatarUrl} alt={employeeName ?? employee.name} />
-                    ) : (
-                      (employeeName?.slice(0, 1) ?? "?")
-                    )}
+            <Fragment key={event.id}>
+              {dividers}
+              <article className={isUser ? "me" : "agent-message"}>
+                {!isUser && (
+                  <div className="agent-message-header">
+                    <div className="agent-message-avatar">
+                      {employee.avatarUrl ? (
+                        <img
+                          src={employee.avatarUrl}
+                          alt={employeeName ?? employee.name}
+                        />
+                      ) : (
+                        (employeeName?.slice(0, 1) ?? "?")
+                      )}
+                    </div>
+                    <b>{employeeName}</b>
                   </div>
-                  <b>{employeeName}</b>
-                </div>
-              )}
+                )}
 
-              {imageUrls.length > 0 && (
-                <div className="message-images">
-                  {imageUrls.map((src, i) => (
-                    <img key={i} src={src} alt="" className="message-image" />
-                  ))}
-                </div>
-              )}
+                {imageUrls.length > 0 && (
+                  <div className="message-images">
+                    {imageUrls.map((src, i) => (
+                      <img key={i} src={src} alt="" className="message-image" />
+                    ))}
+                  </div>
+                )}
 
-              {textParts && (
-                <div className="message-markdown">
-                  <ReactMarkdown>{textParts}</ReactMarkdown>
-                </div>
-              )}
+                {textParts && (
+                  <div className="message-markdown">
+                    <ReactMarkdown>{textParts}</ReactMarkdown>
+                  </div>
+                )}
 
-              {detectPreviewLinks(textParts).map((link) => {
-                if (link.kind !== "live-port") {
+                {detectPreviewLinks(textParts).map((link) => {
+                  if (link.kind !== "live-port") {
+                    return (
+                      <a
+                        key={link.url}
+                        className="preview-link-card"
+                        href={link.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <iframe
+                          src={link.url}
+                          title={link.filePath}
+                          className="preview-link-frame"
+                          sandbox=""
+                        />
+                        <span className="preview-link-label">{link.filePath}</span>
+                      </a>
+                    );
+                  }
+
+                  // Live-app links (BUGS_AND_FIXES.md #125) only stay valid
+                  // while the underlying live server process is still
+                  // running - unlike a static preview link (a real file on
+                  // disk), which stays valid indefinitely. That process
+                  // typically only runs for the duration of an active work
+                  // session, so a message old enough that the session very
+                  // likely ended gets a visible "may be expired" warning
+                  // instead of implying it's definitely still live.
+                  const ONE_HOUR_MS = 60 * 60 * 1000;
+                  const messageAgeMs = event.timestamp
+                    ? Date.now() - new Date(event.timestamp).getTime()
+                    : 0;
+                  const mayBeExpired = messageAgeMs > ONE_HOUR_MS;
+
                   return (
                     <a
-                      key={link.url}
-                      className="preview-link-card"
-                      href={link.url}
+                      key={`live-port-${link.port}-${link.path}`}
+                      className={
+                        "live-app-card" +
+                        (mayBeExpired ? " live-app-card-maybe-expired" : "")
+                      }
+                      href={`${window.location.protocol}//${window.location.hostname}:${link.port}/${link.path}`}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      <iframe
-                        src={link.url}
-                        title={link.filePath}
-                        className="preview-link-frame"
-                        sandbox=""
-                      />
-                      <span className="preview-link-label">{link.filePath}</span>
+                      <span className="live-app-badge">
+                        {mayBeExpired
+                          ? language === "ar"
+                            ? "قد يكون منتهي"
+                            : "May be expired"
+                          : language === "ar"
+                            ? "شغال الآن"
+                            : "Live now"}
+                      </span>
+                      <span className="live-app-label">:{link.port}</span>
+                      <span className="live-app-open">
+                        {language === "ar" ? "افتح التطبيق ←" : "Open app →"}
+                      </span>
                     </a>
                   );
-                }
+                })}
 
-                // Live-app links (BUGS_AND_FIXES.md #125) only stay valid
-                // while the underlying live server process is still
-                // running - unlike a static preview link (a real file on
-                // disk), which stays valid indefinitely. That process
-                // typically only runs for the duration of an active work
-                // session, so a message old enough that the session very
-                // likely ended gets a visible "may be expired" warning
-                // instead of implying it's definitely still live.
-                const ONE_HOUR_MS = 60 * 60 * 1000;
-                const messageAgeMs = event.timestamp
-                  ? Date.now() - new Date(event.timestamp).getTime()
-                  : 0;
-                const mayBeExpired = messageAgeMs > ONE_HOUR_MS;
+                {time && <time className="message-time">{time}</time>}
 
-                return (
-                  <a
-                    key={`live-port-${link.port}-${link.path}`}
-                    className={
-                      "live-app-card" +
-                      (mayBeExpired ? " live-app-card-maybe-expired" : "")
-                    }
-                    href={`${window.location.protocol}//${window.location.hostname}:${link.port}/${link.path}`}
-                    target="_blank"
-                    rel="noreferrer"
+                {textParts && (
+                  <button
+                    type="button"
+                    className="message-copy-button"
+                    aria-label={language === "ar" ? "نسخ الرسالة" : "Copy message"}
+                    onClick={() => {
+                      navigator.clipboard.writeText(textParts).then(() => {
+                        setCopiedMessageId(event.id);
+                        setTimeout(() => setCopiedMessageId(null), 1500);
+                      });
+                    }}
                   >
-                    <span className="live-app-badge">
-                      {mayBeExpired
-                        ? language === "ar"
-                          ? "قد يكون منتهي"
-                          : "May be expired"
-                        : language === "ar"
-                          ? "شغال الآن"
-                          : "Live now"}
-                    </span>
-                    <span className="live-app-label">:{link.port}</span>
-                    <span className="live-app-open">
-                      {language === "ar" ? "افتح التطبيق ←" : "Open app →"}
-                    </span>
-                  </a>
-                );
-              })}
-
-              {time && <time className="message-time">{time}</time>}
-
-              {textParts && (
-                <button
-                  type="button"
-                  className="message-copy-button"
-                  aria-label={language === "ar" ? "نسخ الرسالة" : "Copy message"}
-                  onClick={() => {
-                    navigator.clipboard.writeText(textParts).then(() => {
-                      setCopiedMessageId(event.id);
-                      setTimeout(() => setCopiedMessageId(null), 1500);
-                    });
-                  }}
-                >
-                  {copiedMessageId === event.id ? (
-                    <>
-                      <FaCheck />
-                      {language === "ar" ? "اتنسخت" : "Copied"}
-                    </>
-                  ) : (
-                    <FaCopy />
-                  )}
-                </button>
-              )}
-            </article>
+                    {copiedMessageId === event.id ? (
+                      <>
+                        <FaCheck />
+                        {language === "ar" ? "اتنسخت" : "Copied"}
+                      </>
+                    ) : (
+                      <FaCopy />
+                    )}
+                  </button>
+                )}
+              </article>
+            </Fragment>
           );
         })}
 

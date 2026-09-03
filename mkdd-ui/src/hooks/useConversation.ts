@@ -14,6 +14,7 @@ import {
   fetchConversation,
   fetchChatOpen,
   fetchOlderEvents,
+  fetchOlderConversation,
   sendChatMessage,
   startNewConversation,
 } from "../api/client";
@@ -84,6 +85,16 @@ export function useConversation({ project, employee }: Params) {
   const [hasOlderMessages, setHasOlderMessages] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [oldestPageId, setOldestPageId] = useState<string | null>(null);
+  // BUGS_AND_FIXES.md #218: which conversation we're currently paginating
+  // backward through when loading older history - starts as the same as
+  // conversationId, but diverges once we cross into an older
+  // conversation from a "start new conversation" break. Kept separate
+  // from conversationId (which must stay the live/active conversation
+  // for sending messages and the WebSocket) so scrolling back through
+  // history never accidentally changes where new messages get sent.
+  const [oldestLoadedConversationId, setOldestLoadedConversationId] = useState<
+    string | null
+  >(null);
 
   // Reflects incoming events into state, dropping any optimistic
   // placeholder once a real (non-optimistic) message has actually arrived
@@ -91,14 +102,18 @@ export function useConversation({ project, employee }: Params) {
   function applyIncomingEvents(
     events: ConversationEvent[],
     newWorkPlan: WorkPlan | null | undefined,
+    sourceConversationId?: string,
   ) {
     const split = splitEvents(events);
     const hasRealMessage = split.messages.some(
       (m) => !m.id.startsWith(OPTIMISTIC_ID_PREFIX),
     );
+    const taggedMessages = sourceConversationId
+      ? split.messages.map((m) => ({ ...m, conversationId: sourceConversationId }))
+      : split.messages;
 
     setMessages((current) => {
-      const merged = mergeById(current, split.messages);
+      const merged = mergeById(current, taggedMessages);
       return hasRealMessage
         ? merged.filter((m) => !m.id.startsWith(OPTIMISTIC_ID_PREFIX))
         : merged;
@@ -127,6 +142,7 @@ export function useConversation({ project, employee }: Params) {
     setConversationId(null);
     setHasOlderMessages(false);
     setOldestPageId(null);
+    setOldestLoadedConversationId(null);
 
     if (!project || !employee) return;
 
@@ -161,10 +177,11 @@ export function useConversation({ project, employee }: Params) {
           return;
         }
 
-        applyIncomingEvents(data.items ?? [], data.work_plan ?? null);
+        applyIncomingEvents(data.items ?? [], data.work_plan ?? null, conversation.id);
         setCost(conversation.cost ?? null);
         setExecutionStatus(conversation.execution_status ?? null);
         setConversationId(conversation.id);
+        setOldestLoadedConversationId(conversation.id);
         setHasOlderMessages(data.hasMore ?? false);
         setOldestPageId(data.nextPageId ?? null);
       })
@@ -404,22 +421,55 @@ export function useConversation({ project, employee }: Params) {
    * applyIncomingEvents) sorts by timestamp, so older messages fetched
    * here naturally land above the existing ones regardless of fetch
    * order, no special merge logic needed here beyond the existing one.
+   *
+   * BUGS_AND_FIXES.md #218: once oldestPageId runs out within the
+   * conversation currently being paginated (oldestLoadedConversationId),
+   * this seamlessly crosses into the conversation that came before it
+   * (from a "start new conversation" break), if any exists - letting the
+   * owner keep scrolling back through the full real history across
+   * every past conversation, not just the current one.
    */
   async function loadOlderMessages() {
-    if (!project || !employee || !conversationId || !oldestPageId || loadingOlder) return;
+    if (!project || !employee || !oldestLoadedConversationId || loadingOlder) return;
+    if (!hasOlderMessages) return;
 
     setLoadingOlder(true);
     try {
-      const response = await fetchOlderEvents(
-        conversationId,
+      if (oldestPageId) {
+        // Still more pages within the conversation we're currently
+        // paginating backward through.
+        const response = await fetchOlderEvents(
+          oldestLoadedConversationId,
+          project.path,
+          employee.id,
+          employee.name,
+          oldestPageId,
+        );
+        applyIncomingEvents(response.items, undefined, oldestLoadedConversationId);
+        setOldestPageId(response.hasMore ? response.nextPageId : null);
+        // hasOlderMessages stays true either way here - if this
+        // conversation's own pages just ran out, the next call will
+        // discover whether an older conversation exists.
+        return;
+      }
+
+      // This conversation's own history is exhausted - look for the
+      // conversation that came before it.
+      const response = await fetchOlderConversation(
+        oldestLoadedConversationId,
         project.path,
         employee.id,
         employee.name,
-        oldestPageId,
       );
-      applyIncomingEvents(response.items, undefined);
-      setHasOlderMessages(response.hasMore);
-      setOldestPageId(response.nextPageId);
+
+      if (!response.olderConversationId) {
+        setHasOlderMessages(false);
+        return;
+      }
+
+      applyIncomingEvents(response.items ?? [], undefined, response.olderConversationId);
+      setOldestLoadedConversationId(response.olderConversationId);
+      setOldestPageId(response.hasMore ? (response.nextPageId ?? null) : null);
     } catch {
       // Leave hasOlderMessages/oldestPageId as-is so the owner can retry.
     } finally {

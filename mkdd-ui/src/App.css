@@ -3866,6 +3866,35 @@ header button,
   text-align: center;
 }
 
+/* BUGS_AND_FIXES.md #218: Telegram-style date divider and
+   "new conversation started" divider badges. */
+.chat-date-divider,
+.chat-conversation-divider {
+  display: flex;
+  justify-content: center;
+  margin: 14px 0;
+}
+
+.chat-date-divider span {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--mkdd-surface);
+  border: 1px solid var(--mkdd-border-subtle);
+  color: var(--mkdd-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.chat-conversation-divider span {
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mkdd-accent) 14%, var(--mkdd-surface));
+  border: 1px solid color-mix(in srgb, var(--mkdd-accent) 35%, transparent);
+  color: var(--mkdd-accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .chat-loading-initial {
   display: flex;
   flex-direction: column;
