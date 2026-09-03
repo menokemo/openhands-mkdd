@@ -409,6 +409,58 @@ for s in data.get("stopped", []):
 check_stopped_employees
 
 # ---------------------------------------------------------------------------
+# BUGS_AND_FIXES.md #216: per-project cost budget alerting - the owner
+# explicitly rejected a single global cost threshold ("كل مشروع علي حسب
+# حجمه وامكانياته" - every project genuinely differs in size), so this
+# only alerts for projects where the owner set a real budget themselves.
+# 80%+ is a warning; 100%+ (over budget) is a failure-level alert.
+# ---------------------------------------------------------------------------
+check_project_budgets() {
+  if [ ! -f "$INTERNAL_KEY_FILE" ]; then
+    return
+  fi
+  service_key=$(cat "$INTERNAL_KEY_FILE")
+  response=$(curl -fsS -m 60 -H "X-Internal-Service-Key: $service_key" \
+    "http://localhost:${MKDD_UI_PORT}/api/internal/budget-status" 2>/dev/null)
+
+  [ -z "$response" ] && return
+
+  summary=$(echo "$response" | python3 -c '
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except json.JSONDecodeError:
+    sys.exit(0)
+for p in data.get("projects", []):
+    project = p.get("project", "?")
+    budget = p.get("budget", 0)
+    cost = p.get("totalCost", 0)
+    if not budget:
+        continue
+    pct = (cost / budget) * 100
+    if pct < 80:
+        continue
+    level = "over" if pct >= 100 else "warning"
+    slug = project.rsplit("/", 1)[-1]
+    msg = f"مشروع {slug}: التكلفة ${cost:.2f} من ${budget:.2f} ({pct:.0f}%)"
+    print(slug + "\t" + level + "\t" + msg)
+' 2>/dev/null)
+
+  [ -z "$summary" ] && return
+
+  while IFS=$'\t' read -r slug level msg; do
+    [ -z "$slug" ] && continue
+    if [ "$level" = "over" ]; then
+      log_fail "budget_$slug" "$msg تجاوز الميزانية"
+    else
+      log_fail "budget_$slug" "$msg اقترب من الميزانية"
+    fi
+  done <<< "$summary"
+}
+
+check_project_budgets
+
+# ---------------------------------------------------------------------------
 # Auto-resume any conversation that stopped from a real rate/usage limit
 # whose reset time has genuinely passed (BUGS_AND_FIXES.md #175). This is
 # an ACTION, not a pass/fail check - so it's not recorded as one of the

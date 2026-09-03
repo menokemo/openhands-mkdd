@@ -31,7 +31,11 @@ import {
   handleEmployeeAutoResumeLog,
   handleStoppedEmployees,
 } from "./routes/auto-resume.mjs";
-import { handleProjectTotalCost } from "./routes/project-cost.mjs";
+import {
+  handleProjectTotalCost,
+  handleSetProjectBudget,
+  handleBudgetStatus,
+} from "./routes/project-cost.mjs";
 import { startLivePortProxies } from "./live-port-proxy.mjs";
 import { handleConversation } from "./routes/conversation.mjs";
 import {
@@ -99,6 +103,8 @@ const ROUTES = [
   handleProjectFiles,
   handleProjectLivePort,
   handleProjectTotalCost,
+  handleSetProjectBudget,
+  handleBudgetStatus,
   handleUploadAvatar,
   handleConversation,
   handleChatSend,

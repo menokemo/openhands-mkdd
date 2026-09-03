@@ -48,9 +48,55 @@ export function setProjectColor(projectPath, color) {
     store.projects = {};
   }
 
-  store.projects[projectPath] = { color };
+  store.projects[projectPath] = {
+    ...(store.projects[projectPath] ?? {}),
+    color,
+  };
   writeStore(store);
   return color;
+}
+
+/**
+ * Per-project owner-set budget in USD (BUGS_AND_FIXES.md #216) - the
+ * owner explicitly rejected one fixed number for every project ("كل
+ * مشروع علي حسب حجمه وامكانياته" - every project has its own real
+ * size), so this is optional and set per-project, never a global
+ * default that would misrepresent a small project as over budget or a
+ * large one as fine. null means "no budget set" - no alerting happens
+ * for that project at all, not a silent zero.
+ */
+export function getProjectBudget(projectPath) {
+  const store = readStore();
+  const value = store.projects?.[projectPath]?.budget;
+  return typeof value === "number" && value > 0 ? value : null;
+}
+
+export function setProjectBudget(projectPath, budget) {
+  if (budget !== null && (typeof budget !== "number" || !(budget > 0))) {
+    throw new Error("invalid_project_budget");
+  }
+
+  const store = readStore();
+  if (!store.projects || typeof store.projects !== "object") {
+    store.projects = {};
+  }
+
+  store.projects[projectPath] = {
+    ...(store.projects[projectPath] ?? {}),
+    budget,
+  };
+  writeStore(store);
+  return budget;
+}
+
+/** Every project that currently has a real budget set - used by the
+ * budget-status endpoint to scan only projects the owner actually
+ * cares to be alerted about. */
+export function listProjectsWithBudget() {
+  const store = readStore();
+  return Object.entries(store.projects ?? {})
+    .filter(([, meta]) => typeof meta?.budget === "number" && meta.budget > 0)
+    .map(([project, meta]) => ({ project, budget: meta.budget }));
 }
 
 export { ALLOWED_COLORS };
