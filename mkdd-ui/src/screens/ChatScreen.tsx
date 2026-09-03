@@ -319,6 +319,7 @@ export default function ChatScreen({
           <div className="chat-employee-info">
             <strong>{employeeName}</strong>
             <span className={`chat-employee-status ${statusColorClass(executionStatus)}`}>
+              {employee.role ? `${employee.role} · ` : ""}
               {getStatusText(executionStatus, language)}
             </span>
           </div>
