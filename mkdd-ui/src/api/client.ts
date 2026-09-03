@@ -59,10 +59,33 @@ export async function fetchProjectGitInfo(
  * (across all employees). Deliberately a separate call from
  * fetchConversation - see BUGS_AND_FIXES.md #65.
  */
-export async function fetchProjectTotalCost(projectSlug: string): Promise<number> {
+export async function fetchProjectTotalCost(
+  projectSlug: string,
+): Promise<{ totalCost: number; budget: number | null }> {
   const r = await fetch(`/api/projects/${encodeURIComponent(projectSlug)}/total-cost`);
   const data = await r.json();
-  return typeof data.totalCost === "number" ? data.totalCost : 0;
+  return {
+    totalCost: typeof data.totalCost === "number" ? data.totalCost : 0,
+    budget: typeof data.budget === "number" ? data.budget : null,
+  };
+}
+
+/**
+ * Sets (or clears, with budget: null) the owner's own real per-project
+ * cost budget in USD (BUGS_AND_FIXES.md #216).
+ */
+export async function setProjectBudget(
+  projectSlug: string,
+  budget: number | null,
+): Promise<number | null> {
+  const r = await fetch(`/api/projects/${encodeURIComponent(projectSlug)}/budget`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ budget }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error ?? "budget_update_failed");
+  return typeof data.budget === "number" ? data.budget : null;
 }
 
 function readFileAsDataUrl(file: File): Promise<string> {

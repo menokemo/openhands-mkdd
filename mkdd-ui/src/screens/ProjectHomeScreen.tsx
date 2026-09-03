@@ -22,7 +22,7 @@ import {
 import type { AgentProfile, Workspace } from "../types";
 import type { ProjectEmployeeStatus } from "../hooks/useProjectTeamStatus";
 import type { ProjectFile, WorkflowState, WorkflowReviewRole } from "../api/client";
-import { fetchProjectFiles, uploadProjectFiles } from "../api/client";
+import { fetchProjectFiles, uploadProjectFiles, setProjectBudget } from "../api/client";
 import WorkflowStepper from "../components/WorkflowStepper";
 import ProjectGitInfoCard from "../components/ProjectGitInfoCard";
 import {
@@ -39,6 +39,8 @@ type Props = {
   employees: AgentProfile[];
   teamStatusByEmployeeId: Map<string, ProjectEmployeeStatus>;
   totalProjectCost: number;
+  projectBudget: number | null;
+  onBudgetChanged: () => void;
   teamStatusLoading: boolean;
   workflow: WorkflowState | null;
   workflowLoading: boolean;
@@ -98,6 +100,8 @@ export default function ProjectHomeScreen({
   employees,
   teamStatusByEmployeeId,
   totalProjectCost,
+  projectBudget,
+  onBudgetChanged,
   teamStatusLoading,
   workflow,
   workflowLoading,
@@ -116,6 +120,12 @@ export default function ProjectHomeScreen({
     title: string;
     entries: Array<{ label: string; text: string }>;
   } | null>(null);
+  // BUGS_AND_FIXES.md #216: modal for the owner to set/edit/clear this
+  // project's own budget.
+  const [budgetModalOpen, setBudgetModalOpen] = useState(false);
+  const [budgetInput, setBudgetInput] = useState("");
+  const [budgetSaving, setBudgetSaving] = useState(false);
+  const [budgetError, setBudgetError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -258,6 +268,42 @@ export default function ProjectHomeScreen({
         <article className="project-summary-card">
           <small>{language === "ar" ? "التكلفة الإجمالية" : "Total project cost"}</small>
           <strong>{teamStatusLoading ? "…" : `$${totalProjectCost.toFixed(4)}`}</strong>
+
+          {projectBudget !== null && (
+            <div className="budget-progress-wrap">
+              <div className="budget-progress-track">
+                <div
+                  className={`budget-progress-fill${
+                    totalProjectCost >= projectBudget ? " over-budget" : ""
+                  }`}
+                  style={{
+                    width: `${Math.min(100, (totalProjectCost / projectBudget) * 100)}%`,
+                  }}
+                />
+              </div>
+              <span className="budget-progress-label">
+                {language === "ar" ? "من ميزانية" : "of"} ${projectBudget.toFixed(2)}
+              </span>
+            </div>
+          )}
+
+          <button
+            type="button"
+            className="budget-set-button"
+            onClick={() => {
+              setBudgetInput(projectBudget !== null ? String(projectBudget) : "");
+              setBudgetError(null);
+              setBudgetModalOpen(true);
+            }}
+          >
+            {projectBudget !== null
+              ? language === "ar"
+                ? "تعديل الميزانية"
+                : "Edit budget"
+              : language === "ar"
+                ? "حدد ميزانية"
+                : "Set budget"}
+          </button>
         </article>
 
         <article className="project-summary-card">
@@ -585,6 +631,94 @@ export default function ProjectHomeScreen({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {budgetModalOpen && (
+        <div className="modal-backdrop" onClick={() => setBudgetModalOpen(false)}>
+          <form
+            className="modal"
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const parsed = Number(budgetInput);
+              if (!budgetInput.trim() || !(parsed > 0)) {
+                setBudgetError(
+                  language === "ar" ? "أدخل رقمًا أكبر من صفر" : "Enter a number above 0",
+                );
+                return;
+              }
+              setBudgetSaving(true);
+              setBudgetError(null);
+              try {
+                await setProjectBudget(projectSlug, parsed);
+                onBudgetChanged();
+                setBudgetModalOpen(false);
+              } catch {
+                setBudgetError(
+                  language === "ar"
+                    ? "فشل الحفظ، حاول مرة أخرى"
+                    : "Save failed, try again",
+                );
+              } finally {
+                setBudgetSaving(false);
+              }
+            }}
+          >
+            <h2>{language === "ar" ? "ميزانية المشروع" : "Project budget"}</h2>
+            <p className="modal-hint">
+              {language === "ar"
+                ? "اختياري — لو حددتها، هيوصلك تنبيه عند 80% وعند تجاوزها"
+                : "Optional - if set, you'll get an alert at 80% and when exceeded"}
+            </p>
+            <input
+              type="number"
+              min="1"
+              step="0.01"
+              value={budgetInput}
+              onChange={(e) => setBudgetInput(e.target.value)}
+              placeholder="$"
+              autoFocus
+              disabled={budgetSaving}
+            />
+            {budgetError && <p className="modal-error">{budgetError}</p>}
+            <div className="modal-actions">
+              {projectBudget !== null && (
+                <button
+                  type="button"
+                  disabled={budgetSaving}
+                  onClick={async () => {
+                    setBudgetSaving(true);
+                    try {
+                      await setProjectBudget(projectSlug, null);
+                      onBudgetChanged();
+                      setBudgetModalOpen(false);
+                    } finally {
+                      setBudgetSaving(false);
+                    }
+                  }}
+                >
+                  {language === "ar" ? "مسح الميزانية" : "Clear budget"}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setBudgetModalOpen(false)}
+                disabled={budgetSaving}
+              >
+                {language === "ar" ? "إلغاء" : "Cancel"}
+              </button>
+              <button type="submit" disabled={budgetSaving}>
+                {budgetSaving
+                  ? language === "ar"
+                    ? "جاري الحفظ..."
+                    : "Saving..."
+                  : language === "ar"
+                    ? "حفظ"
+                    : "Save"}
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </main>

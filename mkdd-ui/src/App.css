@@ -1596,6 +1596,46 @@ header button,
   line-height: 1;
 }
 
+/* BUGS_AND_FIXES.md #216: per-project budget progress bar + set button. */
+.budget-progress-wrap {
+  margin-top: 8px;
+}
+
+.budget-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--mkdd-border-subtle);
+  overflow: hidden;
+}
+
+.budget-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--mkdd-success);
+}
+
+.budget-progress-fill.over-budget {
+  background: var(--mkdd-danger);
+}
+
+.budget-progress-label {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--mkdd-text-muted);
+}
+
+.budget-set-button {
+  margin-top: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--mkdd-border-subtle);
+  border-radius: 8px;
+  background: var(--mkdd-surface-hover);
+  color: var(--mkdd-text-secondary);
+  font-size: 11px;
+  width: 100%;
+}
+
 .employee-card {
   position: relative;
 }

@@ -90,7 +90,11 @@ export default function App({ currentUser, onAvatarChange }: Props) {
       employees,
     });
 
-  const { totalCost: totalProjectCost } = useProjectTotalCost(selectedProject);
+  const {
+    totalCost: totalProjectCost,
+    budget: projectBudget,
+    refresh: refreshProjectCost,
+  } = useProjectTotalCost(selectedProject);
 
   const {
     workflow,
@@ -205,6 +209,8 @@ export default function App({ currentUser, onAvatarChange }: Props) {
         employees={employees}
         teamStatusByEmployeeId={teamStatusByEmployeeId}
         totalProjectCost={totalProjectCost}
+        projectBudget={projectBudget}
+        onBudgetChanged={refreshProjectCost}
         teamStatusLoading={teamStatusLoading}
         workflow={workflow}
         workflowLoading={workflowLoading}
