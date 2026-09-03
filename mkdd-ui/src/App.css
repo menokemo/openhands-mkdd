@@ -963,6 +963,16 @@ header button,
   font-weight: 700;
 }
 
+/* BUGS_AND_FIXES.md #221: the avatar is a real button now (opens the
+   employee profile) - resets default button chrome while keeping the
+   exact same visual appearance as the old plain div. */
+.chat-employee-avatar-button {
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
 .chat-employee-info {
   min-width: 0;
   flex: 1 1 auto;
@@ -3088,21 +3098,58 @@ header button,
    Start fresh conversation button
    ========================= */
 
-.chat-new-conversation-button {
-  flex: 0 0 auto;
-  padding: 6px 12px;
+/* BUGS_AND_FIXES.md #221: employee profile section inside the insights
+   modal - avatar/name/role/new-conversation, moved here from the
+   header, opened by tapping the header avatar. */
+.employee-insights-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 16px 16px;
+  border-bottom: 1px solid var(--mkdd-border-subtle);
+}
+
+.employee-insights-profile-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--mkdd-surface-raised);
+  border: 2px solid var(--mkdd-accent);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.employee-insights-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.employee-insights-profile strong {
+  font-size: 16px;
+}
+
+.employee-insights-profile-role {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--mkdd-text-muted);
+}
+
+.employee-insights-profile-new-conv {
+  margin-top: 6px;
+  padding: 7px 16px;
   border: 1px solid var(--mkdd-border-subtle);
   border-radius: 999px;
   background: var(--mkdd-surface-raised);
   color: var(--mkdd-text-secondary);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  cursor: pointer;
-}
-
-.chat-new-conversation-button:disabled {
-  opacity: 0.6;
-  cursor: default;
 }
 
 /* =========================

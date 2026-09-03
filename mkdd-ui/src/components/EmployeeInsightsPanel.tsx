@@ -28,6 +28,17 @@ type Props = {
   /** Needed to look up this employee's auto-resume log (BUGS_AND_FIXES.md #176). */
   project: string;
   employeeId: string;
+  // BUGS_AND_FIXES.md #221: the header now shows only avatar+name+back,
+  // moving the role, status, and "new conversation" action into this
+  // panel's profile section instead - opened by tapping the avatar.
+  employeeName?: string;
+  employeeRole?: string;
+  employeeAvatarUrl?: string;
+  onStartNewConversation?: () => void;
+  /** Externally controlled open state (avatar tap in the header) -
+   * falls back to fully internal state if not provided. */
+  openOverride?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 type TabKey = "cost" | "workplan" | "activity" | "autoResume";
@@ -136,8 +147,19 @@ export default function EmployeeInsightsPanel({
   currentLlmProfileRef,
   project,
   employeeId,
+  employeeName,
+  employeeRole,
+  employeeAvatarUrl,
+  onStartNewConversation,
+  openOverride,
+  onOpenChange,
 }: Props) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = openOverride ?? internalOpen;
+  const setOpen = (next: boolean) => {
+    setInternalOpen(next);
+    onOpenChange?.(next);
+  };
   const [activeTab, setActiveTab] = useState<TabKey>("cost");
   const [autoResumeLog, setAutoResumeLog] = useState<AutoResumeLogEntry[] | null>(null);
 
@@ -179,15 +201,6 @@ export default function EmployeeInsightsPanel({
 
   return (
     <>
-      <button
-        type="button"
-        className={`employee-details-button ${colorClass}`}
-        onClick={() => setOpen(true)}
-      >
-        <FaCircleInfo />
-        {language === "ar" ? "بيانات الموظف" : "Employee details"}
-      </button>
-
       {open && (
         <div
           className="employee-insights-modal-backdrop"
@@ -211,6 +224,36 @@ export default function EmployeeInsightsPanel({
                 ×
               </button>
             </div>
+
+            {/* BUGS_AND_FIXES.md #221: employee profile - name/role/
+                avatar/new-conversation, moved here from the header. */}
+            {employeeName && (
+              <div className="employee-insights-profile">
+                <div className="employee-insights-profile-avatar">
+                  {employeeAvatarUrl ? (
+                    <img src={employeeAvatarUrl} alt={employeeName} />
+                  ) : (
+                    employeeName.slice(0, 1)
+                  )}
+                </div>
+                <strong>{employeeName}</strong>
+                {employeeRole && (
+                  <span className="employee-insights-profile-role">
+                    <FaCircleInfo />
+                    {employeeRole}
+                  </span>
+                )}
+                {onStartNewConversation && (
+                  <button
+                    type="button"
+                    className="employee-insights-profile-new-conv"
+                    onClick={onStartNewConversation}
+                  >
+                    {language === "ar" ? "محادثة جديدة" : "New conversation"}
+                  </button>
+                )}
+              </div>
+            )}
 
             <div className="employee-insights-modal-tabs">
               {tabs.map((tab) => (

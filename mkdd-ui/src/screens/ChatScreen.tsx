@@ -20,7 +20,6 @@ import type {
 import EmployeeInsightsPanel from "../components/EmployeeInsightsPanel";
 import { formatMessageTime } from "../utils/formatMessageTime";
 import { detectPreviewLinks } from "../utils/detectPreviewLinks";
-import { ROLE_ICONS } from "../utils/roleIcons";
 import { markConversationAsViewed } from "../utils/lastViewed";
 import { uploadProjectFiles } from "../api/client";
 
@@ -125,6 +124,10 @@ export default function ChatScreen({
   // (WhatsApp/Telegram-style) and whether new messages should
   // auto-scroll into view at all.
   const [isNearBottom, setIsNearBottom] = useState(true);
+  // BUGS_AND_FIXES.md #221: header now only shows avatar+name+back -
+  // tapping the avatar opens the full profile (role, status, cost,
+  // work plan, new-conversation action) via EmployeeInsightsPanel.
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpeningConversation) {
@@ -312,30 +315,38 @@ export default function ChatScreen({
             ←
           </button>
 
-          <div className="chat-employee-avatar">
+          <button
+            type="button"
+            className="chat-employee-avatar chat-employee-avatar-button"
+            onClick={() => setProfileOpen(true)}
+            aria-label={language === "ar" ? "بيانات الموظف" : "Employee profile"}
+          >
             {employee.avatarUrl ? (
               <img src={employee.avatarUrl} alt={employeeName ?? employee.name} />
             ) : (
               (employeeName?.slice(0, 1) ?? "?")
             )}
-          </div>
+          </button>
 
           <div className="chat-employee-info">
             <strong>{employeeName}</strong>
-            <span className="chat-employee-role">
-              {(() => {
-                const RoleIcon = ROLE_ICONS[employee.id];
-                return RoleIcon ? <RoleIcon /> : null;
-              })()}
-              {employee.role}
-            </span>
           </div>
 
-          <button
-            type="button"
-            className="chat-new-conversation-button"
-            disabled={sending}
-            onClick={() => {
+          <EmployeeInsightsPanel
+            language={language}
+            activity={activity}
+            executionStatus={executionStatus}
+            cost={cost}
+            workPlan={workPlan}
+            currentLlmProfileRef={employee.llm_profile_ref}
+            project={project.path}
+            employeeId={employee.id}
+            employeeName={employeeName ?? employee.name}
+            employeeRole={employee.role ?? undefined}
+            employeeAvatarUrl={employee.avatarUrl ?? undefined}
+            openOverride={profileOpen}
+            onOpenChange={setProfileOpen}
+            onStartNewConversation={() => {
               if (!message.trim() && pendingImages.length === 0) {
                 alert(
                   language === "ar"
@@ -350,24 +361,13 @@ export default function ChatScreen({
                   ? "هتبدأ محادثة جديدة تمامًا مع الموظف ده. المحادثة الحالية هتفضل موجودة (تقدر توصلها من واجهة OpenHands الأصلية)، بس هتبقى مش النشطة بعد كده. متأكد؟"
                   : "This will start a completely new conversation with this employee. The current conversation stays intact (reachable from OpenHands's own UI) but will no longer be the active one. Continue?",
               );
-              if (confirmed)
+              if (confirmed) {
+                setProfileOpen(false);
                 startFreshConversation(
                   pendingImages.length > 0 ? pendingImages : undefined,
                 );
+              }
             }}
-          >
-            {language === "ar" ? "محادثة جديدة" : "New conversation"}
-          </button>
-
-          <EmployeeInsightsPanel
-            language={language}
-            activity={activity}
-            executionStatus={executionStatus}
-            cost={cost}
-            workPlan={workPlan}
-            currentLlmProfileRef={employee.llm_profile_ref}
-            project={project.path}
-            employeeId={employee.id}
           />
         </div>
       </div>
