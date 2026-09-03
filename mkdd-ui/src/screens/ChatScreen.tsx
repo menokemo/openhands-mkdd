@@ -21,6 +21,7 @@ import EmployeeInsightsPanel from "../components/EmployeeInsightsPanel";
 import { formatMessageTime } from "../utils/formatMessageTime";
 import { detectPreviewLinks } from "../utils/detectPreviewLinks";
 import { markConversationAsViewed } from "../utils/lastViewed";
+import { statusColorClass } from "../utils/employeeStatusColor";
 import { uploadProjectFiles } from "../api/client";
 
 type Props = {
@@ -317,7 +318,7 @@ export default function ChatScreen({
 
           <button
             type="button"
-            className="chat-employee-avatar chat-employee-avatar-button"
+            className={`chat-employee-avatar chat-employee-avatar-button ${statusColorClass(executionStatus)}`}
             onClick={() => setProfileOpen(true)}
             aria-label={language === "ar" ? "بيانات الموظف" : "Employee profile"}
           >

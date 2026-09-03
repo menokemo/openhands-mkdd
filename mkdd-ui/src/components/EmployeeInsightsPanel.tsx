@@ -8,6 +8,7 @@ import type {
 } from "../types";
 import WorkPlanPanel from "./WorkPlanPanel";
 import { fetchEmployeeAutoResumeLog, type AutoResumeLogEntry } from "../api/client";
+import { statusColorClass } from "../utils/employeeStatusColor";
 import { formatMessageTime } from "../utils/formatMessageTime";
 
 type Props = {
@@ -75,23 +76,6 @@ const statusText = {
  * owner's request that both reflect current employee activity at a
  * glance, not just the small dot that existed before.
  */
-function statusColorClass(status: ConversationExecutionStatus | null): string {
-  switch (status) {
-    case "running":
-      return "status-color-running";
-    case "waiting_for_confirmation":
-      return "status-color-waiting";
-    case "paused":
-      return "status-color-paused";
-    case "error":
-    case "stuck":
-      return "status-color-danger";
-    case "finished":
-      return "status-color-finished";
-    default:
-      return "status-color-idle";
-  }
-}
 
 function activityLabel(event: ActivityEvent, language: "ar" | "en") {
   if (event.kind === "ActionEvent") {
