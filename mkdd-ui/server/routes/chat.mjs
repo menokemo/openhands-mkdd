@@ -1,5 +1,8 @@
 import { OPENHANDS_URL, sessionKey, openhands } from "../lib/openhands-client.mjs";
-import { findAuthorizedConversation } from "../lib/authorize-conversation.mjs";
+import {
+  findAuthorizedConversation,
+  findAllEmployeeConversations,
+} from "../lib/authorize-conversation.mjs";
 import { normalizeConversation } from "../lib/normalize-conversation.mjs";
 import { normalizeEvent } from "../lib/normalize-event.mjs";
 import { deriveWorkPlan } from "../lib/work-plan.mjs";
@@ -775,6 +778,76 @@ export async function handleChatOlderEvents(req, res) {
 
   res.writeHead(status, { "content-type": "application/json" });
   res.end(JSON.stringify({ items, hasMore, nextPageId }));
+  return true;
+}
+
+/**
+ * GET /api/chat/older-conversation — BUGS_AND_FIXES.md #218: when the
+ * owner scrolls to the very top of the current conversation's history
+ * (handleChatOlderEvents above returned hasMore: false), this finds
+ * the conversation that came immediately before it for the same
+ * employee+project (from a "start new conversation" break) and loads
+ * its recent events - letting the owner keep scrolling back through
+ * the full real history without ever leaving MKDD-UI. Returns
+ * olderConversationId: null when this is genuinely the first
+ * conversation ever had with this employee on this project.
+ */
+export async function handleChatOlderConversation(req, res) {
+  if (!req.url?.startsWith("/api/chat/older-conversation?")) return false;
+
+  const url = new URL(req.url, "http://mkdd.local");
+  const conversationId = url.searchParams.get("conversation");
+  const project = url.searchParams.get("project");
+  const employeeId = url.searchParams.get("employeeId");
+  const employeeName = url.searchParams.get("employeeName");
+
+  if (!conversationId || !project || !employeeId || !employeeName) {
+    res.writeHead(400, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "conversation_project_employee_required" }));
+    return true;
+  }
+
+  const authorizedConversation = await findAuthorizedConversation({
+    conversationId,
+    project,
+    employeeId,
+    employeeName,
+  });
+
+  if (!authorizedConversation) {
+    res.writeHead(403, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "conversation_employee_mismatch" }));
+    return true;
+  }
+
+  const allConversations = await findAllEmployeeConversations({
+    project,
+    employeeId,
+    employeeName,
+  });
+  const currentIndex = allConversations.findIndex((c) => c.id === conversationId);
+  const olderConversation = currentIndex > 0 ? allConversations[currentIndex - 1] : null;
+
+  if (!olderConversation) {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ olderConversationId: null }));
+    return true;
+  }
+
+  const { status, items, hasMore, nextPageId } = await fetchRecentEvents(
+    olderConversation.id,
+  );
+
+  res.writeHead(status, { "content-type": "application/json" });
+  res.end(
+    JSON.stringify({
+      olderConversationId: olderConversation.id,
+      startedAt: olderConversation.created_at ?? null,
+      items,
+      hasMore,
+      nextPageId,
+    }),
+  );
   return true;
 }
 

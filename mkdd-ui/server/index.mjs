@@ -45,6 +45,7 @@ import {
   handleChatEvents,
   handleChatRecentEvents,
   handleChatOlderEvents,
+  handleChatOlderConversation,
   handleChatWorkPlan,
   handleChatLastMessage,
 } from "./routes/chat.mjs";
@@ -113,6 +114,7 @@ const ROUTES = [
   handleChatEvents,
   handleChatRecentEvents,
   handleChatOlderEvents,
+  handleChatOlderConversation,
   handleChatWorkPlan,
   handleChatLastMessage,
   handlePushVapidKey,

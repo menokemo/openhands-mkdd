@@ -116,3 +116,25 @@ export async function findAuthorizedConversation({
 
   return match;
 }
+
+/**
+ * Every conversation ever created for a specific employee+project (not
+ * just one match), sorted oldest-first (BUGS_AND_FIXES.md #218) - used
+ * to walk backward through "start new conversation" history when the
+ * owner scrolls up in the chat, similar to how #65's total-cost
+ * endpoint already scans every past conversation for the cost sum, just
+ * for display here instead.
+ */
+export async function findAllEmployeeConversations({
+  project,
+  employeeId,
+  employeeName,
+}) {
+  const allConversations = await fetchAllConversations();
+  const matching = allConversations.filter((conversation) =>
+    matchesEmployee(conversation, { project, employeeId, employeeName }),
+  );
+  // fetchAllConversations sorts UPDATED_AT_DESC (newest first) - reverse
+  // for oldest-first, matching the order the owner would scroll through.
+  return matching.reverse();
+}
