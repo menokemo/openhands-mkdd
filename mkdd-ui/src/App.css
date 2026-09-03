@@ -989,23 +989,15 @@ header button,
   text-overflow: ellipsis;
 }
 
-/* BUGS_AND_FIXES.md #220: role shown compactly under the name, Telegram-
-   style (like a status line), instead of a separate badge row above
-   the whole header. */
-.chat-employee-role {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+/* BUGS_AND_FIXES.md #223: real-time execution status shown compactly
+   under the name, Telegram-style (like "online"/"typing..."), colored
+   by the same shared status classes used by the avatar glow and
+   profile modal. */
+.chat-employee-status {
   font-size: 11px;
-  color: var(--mkdd-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.chat-employee-role svg {
-  font-size: 11px;
-  flex: 0 0 auto;
 }
 
 /* =========================

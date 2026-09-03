@@ -8,7 +8,7 @@ import type {
 } from "../types";
 import WorkPlanPanel from "./WorkPlanPanel";
 import { fetchEmployeeAutoResumeLog, type AutoResumeLogEntry } from "../api/client";
-import { statusColorClass } from "../utils/employeeStatusColor";
+import { statusColorClass, getStatusText } from "../utils/employeeStatusColor";
 import { formatMessageTime } from "../utils/formatMessageTime";
 
 type Props = {
@@ -43,31 +43,6 @@ type Props = {
 };
 
 type TabKey = "cost" | "workplan" | "activity" | "autoResume";
-
-const statusText = {
-  ar: {
-    idle: "جاهز",
-    running: "يعمل الآن",
-    paused: "متوقف مؤقتًا",
-    waiting_for_confirmation: "بانتظار موافقتك",
-    finished: "اكتمل",
-    error: "خطأ",
-    stuck: "متعثر",
-    deleting: "جارٍ الحذف",
-    unknown: "غير متاح",
-  },
-  en: {
-    idle: "Ready",
-    running: "Working",
-    paused: "Paused",
-    waiting_for_confirmation: "Waiting for approval",
-    finished: "Finished",
-    error: "Error",
-    stuck: "Stuck",
-    deleting: "Deleting",
-    unknown: "Unavailable",
-  },
-} as const;
 
 /**
  * Maps execution status to one of the shared status color categories
@@ -162,7 +137,6 @@ export default function EmployeeInsightsPanel({
     };
   }, [open, activeTab, project, employeeId]);
 
-  const statusKey = executionStatus ?? "unknown";
   const colorClass = statusColorClass(executionStatus);
   const latestActivity = activity.slice(-30).reverse();
   const totalTokens = cost?.tokens
@@ -197,7 +171,7 @@ export default function EmployeeInsightsPanel({
           >
             <div className="employee-insights-modal-header">
               <span className={`employee-insights-modal-status ${colorClass}`}>
-                {statusText[language][statusKey]}
+                {getStatusText(executionStatus, language)}
               </span>
               <button
                 type="button"

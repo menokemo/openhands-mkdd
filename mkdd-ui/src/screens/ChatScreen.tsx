@@ -21,7 +21,7 @@ import EmployeeInsightsPanel from "../components/EmployeeInsightsPanel";
 import { formatMessageTime } from "../utils/formatMessageTime";
 import { detectPreviewLinks } from "../utils/detectPreviewLinks";
 import { markConversationAsViewed } from "../utils/lastViewed";
-import { statusColorClass } from "../utils/employeeStatusColor";
+import { statusColorClass, getStatusText } from "../utils/employeeStatusColor";
 import { uploadProjectFiles } from "../api/client";
 
 type Props = {
@@ -331,6 +331,9 @@ export default function ChatScreen({
 
           <div className="chat-employee-info">
             <strong>{employeeName}</strong>
+            <span className={`chat-employee-status ${statusColorClass(executionStatus)}`}>
+              {getStatusText(executionStatus, language)}
+            </span>
           </div>
 
           <EmployeeInsightsPanel
