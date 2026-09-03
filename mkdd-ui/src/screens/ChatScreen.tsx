@@ -316,6 +316,13 @@ export default function ChatScreen({
             ←
           </button>
 
+          <div className="chat-employee-info">
+            <strong>{employeeName}</strong>
+            <span className={`chat-employee-status ${statusColorClass(executionStatus)}`}>
+              {getStatusText(executionStatus, language)}
+            </span>
+          </div>
+
           <button
             type="button"
             className={`chat-employee-avatar chat-employee-avatar-button ${statusColorClass(executionStatus)}`}
@@ -328,13 +335,6 @@ export default function ChatScreen({
               (employeeName?.slice(0, 1) ?? "?")
             )}
           </button>
-
-          <div className="chat-employee-info">
-            <strong>{employeeName}</strong>
-            <span className={`chat-employee-status ${statusColorClass(executionStatus)}`}>
-              {getStatusText(executionStatus, language)}
-            </span>
-          </div>
 
           <EmployeeInsightsPanel
             language={language}
