@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { FaRotate } from "react-icons/fa6";
 import type {
   ActivityEvent,
@@ -160,158 +161,160 @@ export default function EmployeeInsightsPanel({
 
   return (
     <>
-      {open && (
-        <div
-          className="employee-insights-modal-backdrop"
-          onClick={() => setOpen(false)}
-          dir={language === "ar" ? "rtl" : "ltr"}
-        >
+      {open &&
+        createPortal(
           <div
-            className={`employee-insights-modal ${colorClass}`}
-            onClick={(e) => e.stopPropagation()}
+            className="employee-insights-modal-backdrop"
+            onClick={() => setOpen(false)}
+            dir={language === "ar" ? "rtl" : "ltr"}
           >
-            <div className="employee-insights-modal-header">
-              <span className={`employee-insights-modal-status ${colorClass}`}>
-                {getStatusText(executionStatus, language)}
-              </span>
-              <button
-                type="button"
-                className="employee-insights-modal-close"
-                onClick={() => setOpen(false)}
-                aria-label={language === "ar" ? "إغلاق" : "Close"}
-              >
-                ×
-              </button>
-            </div>
-
-            {/* BUGS_AND_FIXES.md #221: employee profile - name/role/
-                avatar/new-conversation, moved here from the header. */}
-            {employeeName && (
-              <div className="employee-insights-profile">
-                <div className="employee-insights-profile-avatar">
-                  {employeeAvatarUrl ? (
-                    <img src={employeeAvatarUrl} alt={employeeName} />
-                  ) : (
-                    employeeName.slice(0, 1)
-                  )}
-                </div>
-                <strong>{employeeName}</strong>
-                {employeeRole && (
-                  <span className="employee-insights-profile-role">
-                    {(() => {
-                      const RoleIcon = ROLE_ICONS[employeeId];
-                      return RoleIcon ? <RoleIcon /> : null;
-                    })()}
-                    {employeeRole}
-                  </span>
-                )}
-                {onStartNewConversation && (
-                  <button
-                    type="button"
-                    className="employee-insights-profile-new-conv"
-                    onClick={onStartNewConversation}
-                  >
-                    {language === "ar" ? "محادثة جديدة" : "New conversation"}
-                  </button>
-                )}
-              </div>
-            )}
-
-            <div className="employee-insights-modal-tabs">
-              {tabs.map((tab) => (
+            <div
+              className={`employee-insights-modal ${colorClass}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="employee-insights-modal-header">
+                <span className={`employee-insights-modal-status ${colorClass}`}>
+                  {getStatusText(executionStatus, language)}
+                </span>
                 <button
-                  key={tab.key}
                   type="button"
-                  className={`employee-insights-modal-tab ${
-                    activeTab === tab.key ? "active" : ""
-                  }`}
-                  onClick={() => setActiveTab(tab.key)}
+                  className="employee-insights-modal-close"
+                  onClick={() => setOpen(false)}
+                  aria-label={language === "ar" ? "إغلاق" : "Close"}
                 >
-                  {tab.label}
+                  ×
                 </button>
-              ))}
-            </div>
+              </div>
 
-            <div className="employee-insights-modal-body">
-              {activeTab === "cost" && (
-                <div className="employee-insights-cost-tab">
-                  <strong>{cost ? `$${cost.accumulatedCost.toFixed(4)}` : "—"}</strong>
-                  {totalTokens !== null && (
-                    <span>
-                      {totalTokens.toLocaleString()}{" "}
-                      {language === "ar" ? "توكن" : "tokens"}
+              {/* BUGS_AND_FIXES.md #221: employee profile - name/role/
+                avatar/new-conversation, moved here from the header. */}
+              {employeeName && (
+                <div className="employee-insights-profile">
+                  <div className="employee-insights-profile-avatar">
+                    {employeeAvatarUrl ? (
+                      <img src={employeeAvatarUrl} alt={employeeName} />
+                    ) : (
+                      employeeName.slice(0, 1)
+                    )}
+                  </div>
+                  <strong>{employeeName}</strong>
+                  {employeeRole && (
+                    <span className="employee-insights-profile-role">
+                      {(() => {
+                        const RoleIcon = ROLE_ICONS[employeeId];
+                        return RoleIcon ? <RoleIcon /> : null;
+                      })()}
+                      {employeeRole}
                     </span>
                   )}
-                  {currentLlmProfileRef && (
-                    <small>
-                      {language === "ar" ? "النموذج" : "Model"}: {currentLlmProfileRef}
-                    </small>
+                  {onStartNewConversation && (
+                    <button
+                      type="button"
+                      className="employee-insights-profile-new-conv"
+                      onClick={onStartNewConversation}
+                    >
+                      {language === "ar" ? "محادثة جديدة" : "New conversation"}
+                    </button>
                   )}
                 </div>
               )}
 
-              {activeTab === "workplan" && (
-                <WorkPlanPanel language={language} workPlan={workPlan} />
-              )}
+              <div className="employee-insights-modal-tabs">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    className={`employee-insights-modal-tab ${
+                      activeTab === tab.key ? "active" : ""
+                    }`}
+                    onClick={() => setActiveTab(tab.key)}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
 
-              {activeTab === "activity" && (
-                <div className="activity-list">
-                  {latestActivity.length === 0 ? (
-                    <p className="activity-empty">
-                      {language === "ar"
-                        ? "لا يوجد نشاط مسجل حتى الآن."
-                        : "No activity recorded yet."}
-                    </p>
-                  ) : (
-                    latestActivity.map((event) => (
-                      <article
-                        className={`activity-item activity-${event.kind}`}
-                        key={event.id}
-                      >
-                        <span className="activity-marker" aria-hidden="true" />
+              <div className="employee-insights-modal-body">
+                {activeTab === "cost" && (
+                  <div className="employee-insights-cost-tab">
+                    <strong>{cost ? `$${cost.accumulatedCost.toFixed(4)}` : "—"}</strong>
+                    {totalTokens !== null && (
+                      <span>
+                        {totalTokens.toLocaleString()}{" "}
+                        {language === "ar" ? "توكن" : "tokens"}
+                      </span>
+                    )}
+                    {currentLlmProfileRef && (
+                      <small>
+                        {language === "ar" ? "النموذج" : "Model"}: {currentLlmProfileRef}
+                      </small>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "workplan" && (
+                  <WorkPlanPanel language={language} workPlan={workPlan} />
+                )}
+
+                {activeTab === "activity" && (
+                  <div className="activity-list">
+                    {latestActivity.length === 0 ? (
+                      <p className="activity-empty">
+                        {language === "ar"
+                          ? "لا يوجد نشاط مسجل حتى الآن."
+                          : "No activity recorded yet."}
+                      </p>
+                    ) : (
+                      latestActivity.map((event) => (
+                        <article
+                          className={`activity-item activity-${event.kind}`}
+                          key={event.id}
+                        >
+                          <span className="activity-marker" aria-hidden="true" />
+                          <div>
+                            <strong>{activityLabel(event, language)}</strong>
+                            {event.timestamp && <time>{event.timestamp}</time>}
+                          </div>
+                        </article>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "autoResume" && (
+                  <div className="activity-list">
+                    {autoResumeLog === null && (
+                      <p className="activity-empty">
+                        {language === "ar" ? "جاري التحميل..." : "Loading..."}
+                      </p>
+                    )}
+                    {autoResumeLog?.length === 0 && (
+                      <p className="activity-empty">
+                        {language === "ar"
+                          ? "لسه ماحصلش أي استئناف تلقائي لهذا الموظف."
+                          : "No auto-resume events for this employee yet."}
+                      </p>
+                    )}
+                    {autoResumeLog?.map((entry, i) => (
+                      <article className="activity-item" key={`${entry.at}-${i}`}>
+                        <FaRotate className="activity-marker" aria-hidden="true" />
                         <div>
-                          <strong>{activityLabel(event, language)}</strong>
-                          {event.timestamp && <time>{event.timestamp}</time>}
+                          <strong>
+                            {language === "ar"
+                              ? "رجع يشتغل تلقائيًا بعد ما حد الاستخدام انتهى"
+                              : "Auto-resumed after the usage limit cleared"}
+                          </strong>
+                          <time>{formatMessageTime(entry.at, language)}</time>
                         </div>
                       </article>
-                    ))
-                  )}
-                </div>
-              )}
-
-              {activeTab === "autoResume" && (
-                <div className="activity-list">
-                  {autoResumeLog === null && (
-                    <p className="activity-empty">
-                      {language === "ar" ? "جاري التحميل..." : "Loading..."}
-                    </p>
-                  )}
-                  {autoResumeLog?.length === 0 && (
-                    <p className="activity-empty">
-                      {language === "ar"
-                        ? "لسه ماحصلش أي استئناف تلقائي لهذا الموظف."
-                        : "No auto-resume events for this employee yet."}
-                    </p>
-                  )}
-                  {autoResumeLog?.map((entry, i) => (
-                    <article className="activity-item" key={`${entry.at}-${i}`}>
-                      <FaRotate className="activity-marker" aria-hidden="true" />
-                      <div>
-                        <strong>
-                          {language === "ar"
-                            ? "رجع يشتغل تلقائيًا بعد ما حد الاستخدام انتهى"
-                            : "Auto-resumed after the usage limit cleared"}
-                        </strong>
-                        <time>{formatMessageTime(entry.at, language)}</time>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
