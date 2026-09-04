@@ -1007,11 +1007,11 @@ header button,
   gap: 4px;
   padding: 2px 10px;
   border-radius: 999px;
-  border: 1px solid var(--mkdd-border-subtle);
-  background: var(--mkdd-surface-hover);
+  border: 1px solid color-mix(in srgb, var(--mkdd-accent) 40%, transparent);
+  background: color-mix(in srgb, var(--mkdd-accent) 16%, var(--mkdd-surface));
   font-size: 11px;
   font-weight: 600;
-  color: var(--mkdd-text-secondary);
+  color: var(--mkdd-accent);
   text-align: center;
 }
 
@@ -1179,10 +1179,19 @@ header button,
   gap: 8px;
 }
 
+/* BUGS_AND_FIXES.md #234: fixed (not in normal flow, like the composer
+   already is) so messages genuinely scroll underneath it - visible
+   through its blur/translucency - rather than just sitting above them
+   in the layout. */
 .chat-screen-person {
-  flex: 0 0 auto;
-  margin: 0 4px 10px;
-  padding: 10px 14px;
+  position: fixed;
+  top: 10px;
+  left: 0;
+  right: 0;
+  max-width: 820px;
+  margin: 0 auto;
+  z-index: 20;
+  padding: 10px 18px;
   border-radius: 24px;
   background: color-mix(in srgb, var(--mkdd-surface) 65%, transparent);
   backdrop-filter: blur(14px);
@@ -1224,8 +1233,8 @@ header button,
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 14px 10px
-    calc(var(--composer-height, 90px) + 12px + env(safe-area-inset-bottom));
+  padding: 100px 10px
+    calc(var(--composer-height, 90px) + 24px + env(safe-area-inset-bottom));
   background: var(--mkdd-surface);
   border-radius: 18px;
 }
