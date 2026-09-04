@@ -951,9 +951,9 @@ header button,
 }
 
 .chat-employee-avatar {
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
   overflow: hidden;
   border-radius: 50%;
   display: grid;
@@ -995,13 +995,27 @@ header button,
   text-overflow: ellipsis;
 }
 
-/* BUGS_AND_FIXES.md #227: role shown clearly on its own line under the
-   name (with its icon), separate from the status line below it. */
+/* BUGS_AND_FIXES.md #229: role and status share one row (role in its
+   own mini badge on one side, status on the other) instead of each
+   taking a full separate line - reduces the badge to 2 lines total. */
+.chat-employee-info-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .chat-employee-role {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--mkdd-border-subtle);
+  background: var(--mkdd-surface-hover);
+  font-size: 11px;
+  font-weight: 600;
   color: var(--mkdd-text-secondary);
   white-space: nowrap;
   overflow: hidden;

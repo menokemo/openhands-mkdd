@@ -319,18 +319,22 @@ export default function ChatScreen({
 
           <div className="chat-employee-info">
             <strong>{employeeName}</strong>
-            {employee.role && (
-              <span className="chat-employee-role">
-                {(() => {
-                  const RoleIcon = ROLE_ICONS[employee.id];
-                  return RoleIcon ? <RoleIcon /> : null;
-                })()}
-                {employee.role}
+            <div className="chat-employee-info-row">
+              {employee.role && (
+                <span className="chat-employee-role">
+                  {(() => {
+                    const RoleIcon = ROLE_ICONS[employee.id];
+                    return RoleIcon ? <RoleIcon /> : null;
+                  })()}
+                  {employee.role}
+                </span>
+              )}
+              <span
+                className={`chat-employee-status ${statusColorClass(executionStatus)}`}
+              >
+                {getStatusText(executionStatus, language)}
               </span>
-            )}
-            <span className={`chat-employee-status ${statusColorClass(executionStatus)}`}>
-              {getStatusText(executionStatus, language)}
-            </span>
+            </div>
           </div>
 
           <button
