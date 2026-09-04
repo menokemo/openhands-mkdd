@@ -22,6 +22,7 @@ import { formatMessageTime } from "../utils/formatMessageTime";
 import { detectPreviewLinks } from "../utils/detectPreviewLinks";
 import { markConversationAsViewed } from "../utils/lastViewed";
 import { statusColorClass, getStatusText } from "../utils/employeeStatusColor";
+import { ROLE_ICONS } from "../utils/roleIcons";
 import { uploadProjectFiles } from "../api/client";
 
 type Props = {
@@ -318,8 +319,16 @@ export default function ChatScreen({
 
           <div className="chat-employee-info">
             <strong>{employeeName}</strong>
+            {employee.role && (
+              <span className="chat-employee-role">
+                {(() => {
+                  const RoleIcon = ROLE_ICONS[employee.id];
+                  return RoleIcon ? <RoleIcon /> : null;
+                })()}
+                {employee.role}
+              </span>
+            )}
             <span className={`chat-employee-status ${statusColorClass(executionStatus)}`}>
-              {employee.role ? `${employee.role} · ` : ""}
               {getStatusText(executionStatus, language)}
             </span>
           </div>

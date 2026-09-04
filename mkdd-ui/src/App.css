@@ -984,7 +984,8 @@ header button,
   text-align: center;
   padding: 8px 22px;
   border-radius: 999px;
-  background: var(--mkdd-surface-hover);
+  background: color-mix(in srgb, var(--mkdd-surface) 55%, transparent);
+  backdrop-filter: blur(10px);
 }
 
 .chat-employee-info strong {
@@ -992,6 +993,24 @@ header button,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* BUGS_AND_FIXES.md #227: role shown clearly on its own line under the
+   name (with its icon), separate from the status line below it. */
+.chat-employee-role {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--mkdd-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-employee-role svg {
+  font-size: 11px;
+  flex: 0 0 auto;
 }
 
 /* BUGS_AND_FIXES.md #223: real-time execution status shown compactly
@@ -3127,9 +3146,14 @@ header button,
 .employee-insights-profile-role {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--mkdd-border-subtle);
+  background: var(--mkdd-surface-hover);
+  color: var(--mkdd-text-secondary);
   font-size: 12px;
-  color: var(--mkdd-text-muted);
+  font-weight: 600;
 }
 
 .employee-insights-profile-new-conv {

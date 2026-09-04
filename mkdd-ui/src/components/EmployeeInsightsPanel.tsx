@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FaCircleInfo, FaRotate } from "react-icons/fa6";
+import { FaRotate } from "react-icons/fa6";
 import type {
   ActivityEvent,
   ConversationCost,
@@ -9,6 +9,7 @@ import type {
 import WorkPlanPanel from "./WorkPlanPanel";
 import { fetchEmployeeAutoResumeLog, type AutoResumeLogEntry } from "../api/client";
 import { statusColorClass, getStatusText } from "../utils/employeeStatusColor";
+import { ROLE_ICONS } from "../utils/roleIcons";
 import { formatMessageTime } from "../utils/formatMessageTime";
 
 type Props = {
@@ -197,7 +198,10 @@ export default function EmployeeInsightsPanel({
                 <strong>{employeeName}</strong>
                 {employeeRole && (
                   <span className="employee-insights-profile-role">
-                    <FaCircleInfo />
+                    {(() => {
+                      const RoleIcon = ROLE_ICONS[employeeId];
+                      return RoleIcon ? <RoleIcon /> : null;
+                    })()}
                     {employeeRole}
                   </span>
                 )}
