@@ -319,36 +319,34 @@ export default function ChatScreen({
 
           <div className="chat-employee-info">
             <strong>{employeeName}</strong>
-            <div className="chat-employee-info-row">
-              {employee.role && (
-                <span className="chat-employee-role">
-                  {(() => {
-                    const RoleIcon = ROLE_ICONS[employee.id];
-                    return RoleIcon ? <RoleIcon /> : null;
-                  })()}
-                  {employee.role}
-                </span>
-              )}
-              <span
-                className={`chat-employee-status ${statusColorClass(executionStatus)}`}
-              >
-                {getStatusText(executionStatus, language)}
+            {employee.role && (
+              <span className="chat-employee-role">
+                {(() => {
+                  const RoleIcon = ROLE_ICONS[employee.id];
+                  return RoleIcon ? <RoleIcon /> : null;
+                })()}
+                {employee.role}
               </span>
-            </div>
+            )}
           </div>
 
-          <button
-            type="button"
-            className={`chat-employee-avatar chat-employee-avatar-button ${statusColorClass(executionStatus)}`}
-            onClick={() => setProfileOpen(true)}
-            aria-label={language === "ar" ? "بيانات الموظف" : "Employee profile"}
-          >
-            {employee.avatarUrl ? (
-              <img src={employee.avatarUrl} alt={employeeName ?? employee.name} />
-            ) : (
-              (employeeName?.slice(0, 1) ?? "?")
-            )}
-          </button>
+          <div className="chat-employee-avatar-wrap">
+            <button
+              type="button"
+              className={`chat-employee-avatar chat-employee-avatar-button ${statusColorClass(executionStatus)}`}
+              onClick={() => setProfileOpen(true)}
+              aria-label={language === "ar" ? "بيانات الموظف" : "Employee profile"}
+            >
+              {employee.avatarUrl ? (
+                <img src={employee.avatarUrl} alt={employeeName ?? employee.name} />
+              ) : (
+                (employeeName?.slice(0, 1) ?? "?")
+              )}
+            </button>
+            <span className={`chat-employee-status ${statusColorClass(executionStatus)}`}>
+              {getStatusText(executionStatus, language)}
+            </span>
+          </div>
 
           <EmployeeInsightsPanel
             language={language}

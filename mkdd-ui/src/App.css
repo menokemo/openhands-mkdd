@@ -1001,14 +1001,6 @@ header button,
 /* BUGS_AND_FIXES.md #229: role and status share one row (role in its
    own mini badge on one side, status on the other) instead of each
    taking a full separate line - reduces the badge to 2 lines total. */
-.chat-employee-info-row {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
 .chat-employee-role {
   display: flex;
   align-items: center;
@@ -1020,9 +1012,7 @@ header button,
   font-size: 11px;
   font-weight: 600;
   color: var(--mkdd-text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  text-align: center;
 }
 
 .chat-employee-role svg {
@@ -1030,15 +1020,22 @@ header button,
   flex: 0 0 auto;
 }
 
-/* BUGS_AND_FIXES.md #223: real-time execution status shown compactly
-   under the name, Telegram-style (like "online"/"typing..."), colored
-   by the same shared status classes used by the avatar glow and
-   profile modal. */
+/* BUGS_AND_FIXES.md #232: status moved under the avatar (its own
+   column), separate from the name/role badge, per explicit request. */
+.chat-employee-avatar-wrap {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
 .chat-employee-status {
-  font-size: 12px;
+  font-size: 10px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 70px;
 }
 
 /* =========================
@@ -1205,7 +1202,7 @@ header button,
   justify-self: start;
 }
 
-.chat-screen-person-row > .chat-employee-avatar {
+.chat-screen-person-row > .chat-employee-avatar-wrap {
   justify-self: end;
 }
 
