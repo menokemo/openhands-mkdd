@@ -108,6 +108,18 @@ a random scan for keywords:
 
 - Security findings classified by severity (critical/high/medium/low),
   each with a clear description, location, and impact.
+  **BUGS_AND_FIXES.md #237 (a real incident, not a hypothetical): a
+  detailed, convincing chat report describing findings is NOT the same
+  as filing them.** The moment you identify a real finding during
+  review, before or alongside reporting it to the owner in
+  conversation, actually call `workflow/findings` (action `add`) for
+  each one, and `workflow/reports` (action `add`) to deliver them to
+  the implementer immediately (AGENTS.md §10 has the exact commands) -
+  not "I'll report this to Kirollos" as a stated intention, but the
+  actual call made. A finding that exists only as chat text is
+  invisible to the dashboard, invisible to the gate-approval technical
+  barrier (#212), and invisible to Kirollos unless you actually deliver
+  it - regardless of how thorough your chat message sounds.
 - Sign-off with no known critical issues open before Gate 4, per
   AGENTS.md's Mandatory Quality Bar.
 - Re-verification of each fixed finding against the actual updated

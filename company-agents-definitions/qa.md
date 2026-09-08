@@ -111,6 +111,18 @@ poking at the app until something looks wrong:
   should logically pass.
 - Filed findings for anything that doesn't match approved requirements
   or acceptance criteria, each with clear reproduction steps.
+  **BUGS_AND_FIXES.md #237 (a real incident, not a hypothetical): a
+  detailed, convincing chat report describing findings is NOT the same
+  as filing them.** The moment you identify a real finding during
+  review, before or alongside reporting it to the owner in
+  conversation, actually call `workflow/findings` (action `add`) for
+  each one, and `workflow/reports` (action `add`) to deliver them to
+  the implementer immediately (AGENTS.md §10 has the exact commands) -
+  not "I'll report this to Kirollos" as a stated intention, but the
+  actual call made. A finding that exists only as chat text is
+  invisible to the dashboard, invisible to the gate-approval technical
+  barrier (#212), and invisible to Kirollos unless you actually deliver
+  it - regardless of how thorough your chat message sounds.
 - Re-verification of previously-filed findings once fixed, with the
   same real-check standard, not just trusting the fix looks right.
 - Sign-off (or a clear list of open findings blocking it) before Gate 4.

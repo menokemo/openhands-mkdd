@@ -3,6 +3,56 @@ import path from "node:path";
 
 const STATE_DIR = process.env.MKDD_DATA_DIR ?? "/mkdd-data";
 const STATE_FILE = path.join(STATE_DIR, "workflow-state.json");
+const LOCK_FILE = `${STATE_FILE}.lock`;
+
+/**
+ * BUGS_AND_FIXES.md #238: a real live incident showed a workflow-state
+ * update silently losing prior real data (project approvals vanished
+ * after adding a single finding) - readStore/writeStore's
+ * read-modify-write cycle had no protection against a concurrent
+ * write landing in between, from any source (another request, a
+ * container restart mid-write, etc). This is a real OS-level exclusive
+ * lock file (not just an in-process queue, which would do nothing to
+ * protect against a second OS process/container writing the same
+ * file) - any writer must acquire it before touching STATE_FILE, and
+ * any writer that can't acquire it retries briefly rather than
+ * proceeding with a stale read.
+ */
+function withFileLock(fn) {
+  const maxAttempts = 50;
+  const retryDelayMs = 20;
+  let fd = null;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      fd = fs.openSync(LOCK_FILE, "wx");
+      break;
+    } catch (error) {
+      if (error?.code !== "EEXIST") throw error;
+      // Someone else holds the lock - a genuinely concurrent writer
+      // this time, not a hypothetical. Wait briefly and retry rather
+      // than reading a state that's about to be overwritten.
+      const until = Date.now() + retryDelayMs;
+      while (Date.now() < until) {
+        /* busy-wait briefly - this function is intentionally
+           synchronous end-to-end, matching readStore/writeStore, so a
+           real async sleep isn't available here without turning every
+           call site of updateWorkflowState into an async chain. */
+      }
+    }
+  }
+
+  if (fd === null) {
+    throw new Error("workflow_state_lock_timeout");
+  }
+
+  try {
+    return fn();
+  } finally {
+    fs.closeSync(fd);
+    fs.unlinkSync(LOCK_FILE);
+  }
+}
 
 const GATES = ["requirements", "ui_ux", "architecture", "production"];
 
@@ -118,29 +168,31 @@ export function listWorkflowSummaries() {
 }
 
 export function updateWorkflowState(project, updater) {
-  const store = readStore();
+  return withFileLock(() => {
+    const store = readStore();
 
-  if (!store.projects || typeof store.projects !== "object") {
-    store.projects = {};
-  }
+    if (!store.projects || typeof store.projects !== "object") {
+      store.projects = {};
+    }
 
-  const current = normalizeProjectState(project, store.projects[project]);
-  const next = updater(structuredClone(current));
+    const current = normalizeProjectState(project, store.projects[project]);
+    const next = updater(structuredClone(current));
 
-  if (!next || typeof next !== "object") {
-    throw new Error("invalid_workflow_state");
-  }
+    if (!next || typeof next !== "object") {
+      throw new Error("invalid_workflow_state");
+    }
 
-  if (!GATES.includes(next.currentGate)) {
-    throw new Error("invalid_current_gate");
-  }
+    if (!GATES.includes(next.currentGate)) {
+      throw new Error("invalid_current_gate");
+    }
 
-  next.project = project;
-  next.updatedAt = new Date().toISOString();
-  store.projects[project] = next;
-  writeStore(store);
+    next.project = project;
+    next.updatedAt = new Date().toISOString();
+    store.projects[project] = next;
+    writeStore(store);
 
-  return next;
+    return next;
+  });
 }
 
 export { GATES, REVIEW_ROLES };

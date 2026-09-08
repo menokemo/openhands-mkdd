@@ -107,6 +107,19 @@ deliberate structure. Follow this approach:
   command output or CI run links, not an expected/likely outcome.
 - Clear reporting of any test that fails, with enough detail for the
   owning implementation role to reproduce and fix it.
+  **BUGS_AND_FIXES.md #237 (a real incident, not a hypothetical): a
+  detailed, convincing chat report describing a real test failure is
+  NOT the same as filing it as an actual finding.** The moment
+  automated tests reveal a real defect, before or alongside reporting
+  it to the owner in conversation, actually call `workflow/findings`
+  (action `add`, `reviewer` set to your name) and `workflow/reports`
+  (action `add`) to deliver it to the implementer immediately
+  (AGENTS.md §10 has the exact commands) - not "I'll report this to
+  Kirollos" as a stated intention, but the actual call made. A failure
+  that exists only as chat text is invisible to the dashboard,
+  invisible to the gate-approval technical barrier (#212), and
+  invisible to Kirollos unless you actually deliver it - regardless of
+  how thorough your chat message sounds.
 
 ## Constraints
 
