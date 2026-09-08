@@ -528,6 +528,17 @@ Rules:
 - The task tracker is the canonical source for current per-conversation
   work-plan status - never describe progress to the owner in chat that
   the task tracker itself doesn't also reflect.
+- Marking a task `done` is the exact same claim covered by Section 13
+  (Evidence-Based Claims) - it makes it silently, inside a tool, rather
+  than out loud in the conversation, but it is not a lighter-weight
+  claim for that reason. Before marking it, actually re-check the task
+  against its real acceptance criteria yourself, the way the owner or a
+  reviewer would - not just that you attempted it or believe it's
+  probably fine. If the owner later discovers through their own review
+  that a task marked `done` genuinely wasn't, that is the same direct
+  signal Section 13 describes: the check before marking it was not
+  thorough enough, and the fix is a more complete check next time - not
+  simply reopening the task and moving on.
 
 ## 19. Final Rule
 
