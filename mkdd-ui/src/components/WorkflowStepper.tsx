@@ -72,7 +72,7 @@ const APPROVAL_ERROR_LABELS = {
   },
 } as const;
 
-const GATE_ICONS: Record<
+export const GATE_ICONS: Record<
   WorkflowGateName,
   React.ComponentType<{ className?: string }>
 > = {

@@ -23,7 +23,7 @@ import type { AgentProfile, Workspace } from "../types";
 import type { ProjectEmployeeStatus } from "../hooks/useProjectTeamStatus";
 import type { ProjectFile, WorkflowState, WorkflowReviewRole } from "../api/client";
 import { fetchProjectFiles, uploadProjectFiles, setProjectBudget } from "../api/client";
-import WorkflowStepper from "../components/WorkflowStepper";
+import WorkflowStepper, { GATE_ICONS } from "../components/WorkflowStepper";
 import ProjectGitInfoCard from "../components/ProjectGitInfoCard";
 import {
   REVIEW_ROLES,
@@ -315,6 +315,12 @@ export default function ProjectHomeScreen({
                 ? getGateLabel(workflow.currentGate, language)
                 : "—"}
           </strong>
+          {!workflowLoading &&
+            workflow &&
+            (() => {
+              const GateIcon = GATE_ICONS[workflow.currentGate];
+              return GateIcon ? <GateIcon className="current-gate-card-icon" /> : null;
+            })()}
         </article>
       </section>
 

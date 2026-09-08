@@ -1662,6 +1662,16 @@ header button,
   background: var(--mkdd-surface);
 }
 
+/* BUGS_AND_FIXES.md #240: current-gate icon shown under the gate name,
+   matching the same icon already used in WorkflowStepper for the same
+   gate. */
+.current-gate-card-icon {
+  display: block;
+  margin-top: 6px;
+  font-size: 16px;
+  color: var(--mkdd-accent);
+}
+
 .project-summary-card small {
   display: block;
   color: var(--mkdd-text-muted);
