@@ -1,4 +1,5 @@
 import type { WorkPlan } from "../types";
+import { FaSquareCheck, FaSquare, FaArrowsRotate } from "react-icons/fa6";
 
 type Props = {
   language: "ar" | "en";
@@ -22,6 +23,16 @@ export default function WorkPlanPanel({ language, workPlan }: Props) {
   const title = language === "ar" ? "خطة العمل" : "Work Plan";
   const empty =
     language === "ar" ? "لا توجد خطة عمل مسجلة حتى الآن." : "No tracked work plan yet.";
+
+  // BUGS_AND_FIXES.md #235: a real, clear checklist icon per status -
+  // the owner explicitly asked for this to be an obvious checklist,
+  // not a small ambiguous colored dot.
+  function TaskIcon({ status }: { status: "todo" | "in_progress" | "done" }) {
+    if (status === "done") return <FaSquareCheck className="work-plan-task-icon" />;
+    if (status === "in_progress")
+      return <FaArrowsRotate className="work-plan-task-icon" />;
+    return <FaSquare className="work-plan-task-icon" />;
+  }
 
   if (!workPlan) {
     return (
@@ -66,7 +77,7 @@ export default function WorkPlanPanel({ language, workPlan }: Props) {
             className={`work-plan-task ${task.status}`}
             key={`${task.title}-${index}`}
           >
-            <span className="work-plan-task-marker" aria-hidden="true" />
+            <TaskIcon status={task.status} />
             <div>
               <strong>{task.title}</strong>
               {task.notes && <p>{task.notes}</p>}

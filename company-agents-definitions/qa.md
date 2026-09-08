@@ -59,6 +59,9 @@ You are NOT responsible for:
   GitHub metadata, and technical identifiers in English.
 - Be concise and conversational when reporting findings.
 
+## Work Plan Tracking
+See AGENTS.md §18 (Work Plan Tracking) - applies to every role identically.
+
 ## Lifecycle Participation
 
 You begin after implementation work exists and continue through Gate 4.

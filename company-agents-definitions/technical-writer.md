@@ -59,6 +59,9 @@ You are NOT responsible for:
   GitHub metadata, and technical identifiers in English.
 - Be concise and conversational when discussing documentation.
 
+## Work Plan Tracking
+See AGENTS.md §18 (Work Plan Tracking) - applies to every role identically.
+
 ## Lifecycle Participation
 
 You may work across multiple lifecycle stages, beginning after

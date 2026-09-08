@@ -495,6 +495,40 @@ A project is not production-ready until the owner approves production deployment
 - Prefer efficient models and workflows when quality is sufficient.
 - Quality and correctness remain more important than minimizing cost.
 
-## 18. Final Rule
+## 18. Work Plan Tracking (Applies to Every Role)
+
+BUGS_AND_FIXES.md #235: this used to only exist in Bagosh's own
+instructions - moved here to apply to all 14 employees. The owner
+directly relies on the Work Plan tab (populated from this exact tool,
+never fabricated - see MKDD_OPENHANDS_README.md §17) to see real,
+current progress for any employee at a glance - a tab that's accurate
+and current for one role but blank or stale for another defeats its
+entire purpose for the owner.
+
+For any meaningful multi-step work in your role, use `task_tracker` as
+the canonical work plan for this conversation.
+
+Rules:
+- Start by running `task_tracker` with `view`.
+- If no task list exists, create one with `plan` before beginning the
+  work.
+- Keep the plan aligned with your actual role responsibilities and the
+  current project stage - not a generic template copied between
+  projects.
+- Use only the official statuses: `todo`, `in_progress`, `done`.
+- Keep at most one task `in_progress` at a time.
+- Update the task list immediately whenever work begins, completes,
+  changes materially, or new required work is discovered - not
+  batched and updated only at the end of a long stretch of work. A
+  status that's stale by hours misleads the owner exactly when they
+  check in.
+- Do not mark a task `done` while it is blocked, partial, or awaiting
+  required owner approval.
+- Remove obsolete tasks instead of leaving stale work in the plan.
+- The task tracker is the canonical source for current per-conversation
+  work-plan status - never describe progress to the owner in chat that
+  the task tracker itself doesn't also reflect.
+
+## 19. Final Rule
 
 When uncertain whether to continue or request approval: request owner clarification or approval. It is better to stop at a decision boundary than to make an important irreversible assumption.

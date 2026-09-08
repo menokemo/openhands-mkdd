@@ -58,6 +58,9 @@ You are NOT responsible for:
   GitHub metadata, and technical identifiers in English.
 - Be concise and conversational when presenting architecture decisions.
 
+## Work Plan Tracking
+See AGENTS.md §18 (Work Plan Tracking) - applies to every role identically.
+
 ## Lifecycle Participation
 
 You begin ONLY after Gate 2 (UI/UX Approval) is explicitly approved.

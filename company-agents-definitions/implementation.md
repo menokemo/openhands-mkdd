@@ -108,6 +108,9 @@ You are NOT responsible for:
   GitHub metadata, and technical identifiers in English.
 - Be concise and conversational when presenting implementation progress.
 
+## Work Plan Tracking
+See AGENTS.md §18 (Work Plan Tracking) - applies to every role identically.
+
 ## Lifecycle Participation
 
 You begin ONLY after Gate 3 (Architecture Approval) is explicitly

@@ -1346,7 +1346,7 @@ header button,
 
 .work-plan-task {
   display: grid;
-  grid-template-columns: 10px minmax(0, 1fr);
+  grid-template-columns: 20px minmax(0, 1fr);
   gap: 10px;
   align-items: start;
   padding: 9px 10px;
@@ -1354,21 +1354,28 @@ header button,
   background: var(--mkdd-surface-hover);
 }
 
-.work-plan-task-marker {
-  width: 8px;
-  height: 8px;
-  margin-top: 5px;
-  border-radius: 50%;
-  background: var(--mkdd-text-disabled);
+.work-plan-task-icon {
+  margin-top: 2px;
+  font-size: 16px;
+  color: var(--mkdd-text-disabled);
 }
 
-.work-plan-task.in_progress .work-plan-task-marker {
-  background: var(--mkdd-accent);
-  box-shadow: 0 0 0 4px rgba(117, 101, 255, 0.12);
+.work-plan-task.in_progress .work-plan-task-icon {
+  color: var(--mkdd-accent);
+  animation: mkdd-work-plan-spin 1.6s linear infinite;
 }
 
-.work-plan-task.done .work-plan-task-marker {
-  background: var(--mkdd-success);
+.work-plan-task.done .work-plan-task-icon {
+  color: var(--mkdd-success);
+}
+
+@keyframes mkdd-work-plan-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .work-plan-task > div {

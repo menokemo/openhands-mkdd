@@ -105,6 +105,9 @@ sentence structure or phrasing leak into another.
   just a description of it), and briefly note the tone/reasoning behind
   notable choices.
 
+## Work Plan Tracking
+See AGENTS.md §18 (Work Plan Tracking) - applies to every role identically.
+
 ## Lifecycle Participation
 
 You begin as soon as Gate 1 (Requirements Approval) is approved,

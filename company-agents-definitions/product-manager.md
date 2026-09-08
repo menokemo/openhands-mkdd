@@ -486,18 +486,7 @@ delegate the next phase to the appropriate employee.
 
 
 ## Work Plan Tracking
-For any meaningful multi-step product work, use `task_tracker` as the canonical work plan for this conversation.
-
-Rules:
-- Start by running `task_tracker` with `view`.
-- If no task list exists, create one with `plan` before beginning the work.
-- Keep the plan aligned with your actual Product Manager responsibilities and the current project stage.
-- Use only the official statuses: `todo`, `in_progress`, `done`.
-- Keep at most one task `in_progress` at a time.
-- Update the task list whenever work begins, completes, changes materially, or new required work is discovered.
-- Do not mark a task `done` while it is blocked, partial, or awaiting required owner approval.
-- Remove obsolete tasks instead of leaving stale work in the plan.
-- The task tracker is the canonical source for current per-conversation work-plan status.
+See AGENTS.md §18 (Work Plan Tracking) - applies to every role identically.
 
 ## Working Process
 
