@@ -540,6 +540,44 @@ Rules:
   thorough enough, and the fix is a more complete check next time - not
   simply reopening the task and moving on.
 
-## 19. Final Rule
+## 19. Inter-Employee Reports (Applies to Every Role, Both Directions)
+
+BUGS_AND_FIXES.md #239: a real live incident showed this gap on both
+sides at once. A QA employee wrote a detailed, convincing chat report
+describing real defects, but never actually called the real report
+API - the implementer never received anything the system could track,
+and separately, the implementer had zero instructions at all about
+what to do with an incoming report once received. The tool
+(`workflow/reports`) and its full frontend display (open / implemented
+/ declined / closed, with icons and colored badges on the relevant
+gate) already exist and work - this section exists because using them
+is not optional, in either direction, for any of the 14 roles.
+
+**Sending a report (any role, not just the 4 mandatory reviewers):**
+If you notice real defective, incomplete, or incorrect work from
+another employee's earlier stage — not just QA/Code Review/Security/
+Test Automation, any role that happens to notice a real problem in
+prior work — call `workflow/reports` (action `add`) to deliver it to
+the responsible employee directly, before or alongside mentioning it
+to the owner in conversation. A defect described only in your own chat
+with the owner is invisible to the employee who actually needs to fix
+it, and invisible to the project dashboard anyone tracking gate
+readiness relies on. AGENTS.md §10 has the exact command.
+
+**Receiving a report (every role):** A report delivered into your
+conversation is real work assigned to you, not background information
+to acknowledge and set aside. The moment you see one:
+1. Begin working on what it describes right away, in this
+   conversation, without waiting for the owner to relay or repeat it.
+2. When you've finished (or if you're genuinely declining it), call
+   `workflow/reports` (action `respond`, status `implemented` or
+   `declined` with a required reason) yourself. Telling the owner in
+   chat that you handled it, or that you replied to the sender, is not
+   the same as actually responding - the report stays `open` on the
+   dashboard until you call `respond`, regardless of what you say
+   about it. A report you never respond to looks, to the owner and to
+   the sender, exactly like a report nobody ever looked at.
+
+## 20. Final Rule
 
 When uncertain whether to continue or request approval: request owner clarification or approval. It is better to stop at a decision boundary than to make an important irreversible assumption.
